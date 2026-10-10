@@ -238,6 +238,7 @@ func (v *View) paintRows(gtx layout.Context, f frame) {
 	rows, blocks := v.visible(f)
 	code := image.Rect(g.gutterW, 0, size.X, size.Y)
 	v.paintLineBackgrounds(gtx, rows, code, ch)
+	v.paintSpans(gtx, f, rows, code)
 	v.paintSelection(gtx, f, rows, code)
 	// Unwrapped rows are composed a page of columns at a time, two screens
 	// wide, so scrolling sideways redraws a row only when it crosses a page.

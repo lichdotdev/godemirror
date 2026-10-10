@@ -31,6 +31,12 @@ type DiffOptions struct {
 	// gets what it acts on and the function its click calls.
 	ExpandWidget func(g Gap, expand func()) layout.Widget
 	RevertWidget func(c Chunk, revert func()) layout.Widget
+
+	// HighlightChanges tints the words that changed within a line, in each
+	// deleted line and the added line it pairs with by position in its
+	// chunk, with the theme's ChangeColors.Changed. Lines with no word in
+	// common are left whole.
+	HighlightChanges bool
 }
 
 // DiffView shows the difference between two versions of a file, unified in
@@ -190,6 +196,9 @@ func (d *DiffView) Layout(gtx layout.Context) (layout.Dimensions, error) {
 // layOut lays the rows out, unified and side by side.
 func (d *DiffView) layOut() {
 	d.rows = d.src.rows(d.filled)
+	if d.opts.HighlightChanges {
+		markChanges(d.rows)
+	}
 	for _, r := range d.rows {
 		if r.gap != nil {
 			r.gap.gen = d.gen
@@ -242,7 +251,7 @@ func (d *DiffView) content(s side, v *View, shows func(Side) bool) Content {
 
 // rowDecoration is how a row is drawn; its colors come from the theme.
 func rowDecoration(r diffRow) LineDecoration {
-	d := LineDecoration{HoverGroup: r.chunk}
+	d := LineDecoration{HoverGroup: r.chunk, Spans: r.spans}
 	switch r.kind {
 	case rowAdded:
 		d.role = roleAdded

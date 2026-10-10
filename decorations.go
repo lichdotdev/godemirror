@@ -36,6 +36,9 @@ type LineDecoration struct {
 	// HoverBackground replaces Background while the line's group is under
 	// the pointer; zero keeps Background.
 	HoverBackground color.NRGBA
+	// Spans tint stretches of the line's characters over its background:
+	// the words that changed in a diff, say.
+	Spans []Span
 
 	// role, set only by a DiffView, takes the colors from the view's
 	// Theme.Diff when the line is painted, so a theme change needs no new
@@ -58,6 +61,14 @@ func (d LineDecoration) themed(c DiffColors) LineDecoration {
 	change := func(cc ChangeColors) {
 		d.Background, d.HoverBackground = cc.Background, cc.HoverBackground
 		d.GutterBackground, d.GutterStrip = cc.GutterBackground, cc.Strip
+		if len(d.Spans) == 0 {
+			return
+		}
+		spans := make([]Span, len(d.Spans))
+		for i, s := range d.Spans {
+			spans[i] = Span{s.From, s.To, cc.Changed}
+		}
+		d.Spans = spans
 	}
 	switch d.role {
 	case roleAdded:
@@ -87,11 +98,7 @@ func (v *View) paintLineBackgrounds(gtx layout.Context, rows []visibleRow, code 
 	for _, r := range rows {
 		d := v.decoration(r.line)
 		row := image.Rect(code.Min.X, r.y, code.Max.X, r.y+ch)
-		background := d.Background
-		if d.HoverGroup != 0 && d.HoverGroup == v.hot && d.HoverBackground.A != 0 {
-			background = d.HoverBackground
-		}
-		fill(gtx, v.Theme.Background, background, row)
+		fill(gtx, v.Theme.Background, v.background(d), row)
 		mid := r.y + ch/2
 		fill(gtx, v.Theme.Background, d.Rule, image.Rect(code.Min.X, mid, code.Max.X, mid+1))
 		if d.Hatch.A != 0 {
@@ -99,6 +106,15 @@ func (v *View) paintLineBackgrounds(gtx layout.Context, rows []visibleRow, code 
 			v.paintImage(gtx, img, row.Min, code)
 		}
 	}
+}
+
+// background is what d tints its line with now: HoverBackground while its
+// group is under the pointer.
+func (v *View) background(d LineDecoration) color.NRGBA {
+	if d.HoverGroup != 0 && d.HoverGroup == v.hot && d.HoverBackground.A != 0 {
+		return d.HoverBackground
+	}
+	return d.Background
 }
 
 type hatchKey struct {

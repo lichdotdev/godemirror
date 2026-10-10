@@ -33,7 +33,8 @@ file is the trap alone.
   horizontal one. Inside a parent that also scrolls (a list of diff cards), a wheel at the view's top or bottom
   edge does not pass to the parent while the view still has room to scroll sideways.
 - **Row images are cached by what they hold**: `rowKey` is the line, the wrapped segment, the first column and
-  the span of cells, and a view drops them all when its own font size in pixels or its `Theme` changes. The two
+  the span of cells, and a view drops them all when its own font size in pixels or its `Theme` changes (spans
+  and the selection are painted beneath the images and never join the key). The two
   sides of a `Split` share one rasterizer, so a view must compare against the size it composed at, never ask the
   rasterizer whether the size changed: the first side to set it would be the only one told. Anything new that
   changes a row's pixels (a per-cell style, a ligature) must join the key or drop the cache, or the old image

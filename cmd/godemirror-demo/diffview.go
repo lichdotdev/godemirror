@@ -27,6 +27,8 @@ func newDiffViewDemo() (*diffViewDemo, error) {
 		Collapse: &godemirror.Collapse{Margin: 3, MinSize: 4},
 		Expand:   d.expand,
 		Revert:   func(c godemirror.Chunk) { log.Printf("revert %+v", c) },
+
+		HighlightChanges: *flagChanges,
 	}
 	view, err := godemirror.NewDiffView(*flagFont, unit.Sp(*flagSize), opts)
 	if err != nil {

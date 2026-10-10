@@ -44,6 +44,8 @@ type diffRow struct {
 	// gap is the unchanged run a separator stands for, when it can be
 	// expanded.
 	gap *Gap
+	// spans are the words that changed against the row it pairs with.
+	spans []Span
 }
 
 // hunk is a stretch of the diff that is shown. Its starts are the line

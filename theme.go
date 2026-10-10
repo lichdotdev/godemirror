@@ -41,13 +41,17 @@ type DiffColors struct {
 
 // ChangeColors are how an added or a deleted line is drawn: its Background,
 // and HoverBackground while the pointer is over its chunk; its gutter cell's
-// GutterBackground, and a Strip down that cell's left edge.
+// GutterBackground, and a Strip down that cell's left edge. Changed tints the
+// words that changed within the line (DiffOptions.HighlightChanges), over its
+// background.
 type ChangeColors struct {
-	Background, HoverBackground, GutterBackground, Strip color.NRGBA
+	Background, HoverBackground, GutterBackground, Strip, Changed color.NRGBA
 }
 
 // The emerald and red of the diff colors, at the percentages a CSS
-// color-mix gives them as alpha.
+// color-mix gives them as alpha. ChangeColors.Changed has no CSS to come
+// from (the web diff these colors are from has no intra-line highlight): it
+// is a step deeper than the hover tint, picked by eye on the demo.
 var (
 	emerald400 = color.NRGBA{R: 0x00, G: 0xd4, B: 0x92, A: 0xff}
 	emerald500 = color.NRGBA{R: 0x00, G: 0xbc, B: 0x7d, A: 0xff}
@@ -92,10 +96,12 @@ var DarkTheme = Theme{
 		Added: ChangeColors{
 			Background: percent(emerald400, 14), HoverBackground: percent(emerald500, 20),
 			GutterBackground: percent(emerald500, 18), Strip: emerald500,
+			Changed: percent(emerald400, 30),
 		},
 		Deleted: ChangeColors{
 			Background: percent(red400, 12), HoverBackground: percent(red500, 17),
 			GutterBackground: percent(red500, 15), Strip: red500,
+			Changed: percent(red400, 30),
 		},
 		Separator:       percent(rgb(0xffffff), 10),
 		Filler:          percent(rgb(0xffffff), 7),
@@ -127,10 +133,12 @@ var LightTheme = Theme{
 		Added: ChangeColors{
 			Background: percent(emerald500, 12), HoverBackground: percent(emerald500, 20),
 			GutterBackground: percent(emerald500, 18), Strip: emerald500,
+			Changed: percent(emerald500, 25),
 		},
 		Deleted: ChangeColors{
 			Background: percent(red500, 10), HoverBackground: percent(red500, 17),
 			GutterBackground: percent(red500, 15), Strip: red500,
+			Changed: percent(red500, 22),
 		},
 		Separator:       rgb(0xdadadd),
 		Filler:          percent(rgb(0x18181b), 7),
