@@ -8,6 +8,8 @@
     a full screen of code costs a handful of quads.
   </p>
   <p>
+    <a href="https://pkg.go.dev/github.com/lichdotdev/godemirror"><img alt="Go Reference" src="https://pkg.go.dev/badge/github.com/lichdotdev/godemirror.svg" /></a>
+    <a href="https://github.com/lichdotdev/godemirror/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/lichdotdev/godemirror/actions/workflows/ci.yml/badge.svg" /></a>
     <img alt="Go" src="https://img.shields.io/badge/Go-1.27-00ADD8?logo=go&logoColor=white" />
     <img alt="Gio" src="https://img.shields.io/badge/Gio-v0.10-333" />
     <img alt="Platform" src="https://img.shields.io/badge/platform-Linux-333" />
@@ -58,6 +60,8 @@ godemirror lets you:
 
 ## Getting started
 
+godemirror needs **Go 1.27** or later.
+
 ```bash
 go get github.com/lichdotdev/godemirror
 ```
@@ -84,6 +88,38 @@ give `Left` and `Right` their own content.
 The deliberate limits, and what they mean for a caller, are in
 [`docs/ceilings.md`](docs/ceilings.md).
 
+## The diff view
+
+`DiffView` shows the difference between two versions of a file, the way
+CodeMirror's merge view does: unified, with the old and the new line number
+side by side in the gutter, or side by side, with each deletion paired with
+the addition that replaced it.
+
+```go
+diff, err := godemirror.NewDiffView("JetBrainsMono Nerd Font", unit.Sp(13), godemirror.DiffOptions{
+	Collapse:         &godemirror.Collapse{Margin: 3, MinSize: 4},
+	HighlightChanges: true,
+	Revert:           func(c godemirror.Chunk) { /* put c.Lines back in the file */ },
+})
+if err != nil {
+	return err
+}
+diff.SetDocs("main.go", original, modified)
+
+// in your frame loop
+if _, err := diff.Layout(gtx); err != nil {
+	return err
+}
+```
+
+`SetDocs` diffs two documents itself. To show what git already diffed, read the
+patch with `ParsePatch` and pass a file to `SetPatch`; the unchanged lines git
+left out are asked for through `DiffOptions.Expand` and laid in with `FillGap`,
+in as many parts as your backend answers in. `Chunks`, `SelectedRange` and
+`SelectedChanges` read the diff in file line numbers, and `SetBlocks` anchors
+a review thread to a line of either file. The colors live in `Theme.Diff`, in
+both `DarkTheme` and `LightTheme`.
+
 ## The demo
 
 `cmd/godemirror-demo` lays a git diff out the way lich does: expandable gaps,
@@ -96,12 +132,16 @@ go run ./cmd/godemirror-demo -diff /tmp/change.patch -new path/to/changed/file -
 
 In the window: **Alt+W** toggles wrapping, **Alt+S** switches between unified
 and side by side, and **Alt+N** opens a comment under the selected lines.
-`-file` shows a single file instead, and `-bench N` with `-shot out.png` runs it
-headless and reports frame times.
+`-file` shows a single file instead, `-old a.go -file b.go` shows a `DiffView`
+of two files (`-diffview` does the same for `-diff`, and `-changes` adds the
+intra-line highlight), and `-bench N` with `-shot out.png` runs it headless and
+reports frame times.
 
 ## Requirements
 
-- **Go 1.27**. No C toolchain: everything here is pure Go.
+- **Go 1.27**. The library is pure Go and builds with `CGO_ENABLED=0`; the demo
+  opens a window through Gio's `app` package, which needs a C toolchain on
+  Linux.
 - **Gio's system libraries** for your platform (on Linux: Wayland or X11,
   `libxkbcommon`, EGL and Vulkan headers), as listed in
   [Gio's install guide](https://gioui.org/doc/install).
@@ -116,6 +156,9 @@ headless and reports frame times.
 go build ./...
 go test ./...
 ```
+
+[CONTRIBUTING.md](CONTRIBUTING.md) has the gate a change goes through, how to
+run the demo headless, and how to report a bug or propose a change.
 
 ## License
 

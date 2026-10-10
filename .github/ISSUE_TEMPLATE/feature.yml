@@ -1,0 +1,31 @@
+name: Feature request
+description: Something godemirror should do, or should do differently
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Broken behaviour belongs in the bug form instead. This one is for what
+        godemirror does not do yet.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What you are trying to do
+      description: |
+        What your application needs to show or do, and what you write today
+        to get there (or why you cannot). The problem is the half that decides
+        whether this gets built, so it is the only required field.
+    validations:
+      required: true
+
+  - type: textarea
+    id: idea
+    attributes:
+      label: What you have in mind
+      description: |
+        Optional. The API you would like to write, if you know it. A
+        well-described problem often has a better answer than the one either
+        of us reaches for first.
+    validations:
+      required: false

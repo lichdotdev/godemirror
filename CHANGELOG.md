@@ -1,0 +1,49 @@
+# Changelog
+
+All notable changes to this project are documented here.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+### Added
+
+- **A read-only code view for Gio.** `View` shows one document: monospace rows
+  highlighted by chroma from the file name, a line-number gutter (or labels of
+  your own), wrapping or sideways scrolling, and one image per visible row, so
+  a full screen of code costs a handful of quads. Highlighting runs off the UI
+  goroutine; `SetContent` shows a new document from its top and
+  `UpdateContent` swaps in a new version of it without moving the scroll.
+- **Side by side.** `Split` shows two documents row for row, scrolling down
+  together and sideways each on its own, and it can wrap: a pair of lines takes
+  the taller side's rows.
+- **Decorations and widgets.** `LineDecoration` tints a line and its gutter
+  cell, puts a strip down the gutter, rules a separator, hatches a filler row,
+  tints spans of characters, and lights a whole hover group under the pointer.
+  `LineWidget` puts a Gio widget on a line (after its text or at the right
+  edge, optionally only while hovered); `BlockWidget` opens space between lines
+  for any widget, such as a review thread.
+- **Selection.** Drag, double and triple click, Shift+click, Ctrl+A and Ctrl+C,
+  with tabs copied as written. From code: `Select`, `SelectLines`,
+  `Selection`, `SelectedText` and `SelectedLines`, plus `ScrollToLine` with
+  `AlignNearest`, `AlignCenter` and `AlignTop`, `LineCount` and `LineText`.
+- **A diff view.** `DiffView` diffs two documents itself (`SetDocs`, line by
+  line with Myers' algorithm) or shows a file of a `git diff` patch
+  (`ParsePatch`, `SetPatch`). Unified, with an old | new line-number gutter,
+  or side by side, with deletions and additions paired and fillers hatched.
+  Unchanged runs collapse behind an expander (`Collapse`, or the gaps of the
+  patch, filled through `DiffOptions.Expand` and `FillGap`, in parts if need
+  be). Each chunk can be reverted through `DiffOptions.Revert`; `Chunks`,
+  `SelectedRange` and `SelectedChanges` read the diff in file line numbers,
+  and `SetBlocks` anchors widgets to file lines. `HighlightChanges` tints the
+  words that changed within a line. The expander and revert affordances are
+  drawn by the library and can be replaced.
+- **Themes.** `DarkTheme` and `LightTheme`, with the diff colors in
+  `Theme.Diff`. A theme change shows on the next frame.
+- **Fonts without fontconfig.** `New` resolves a family through fontconfig and
+  fails with `ErrNoFontconfig` where it is missing; `NewFromFonts` (and
+  `NewDiffViewFromFonts`) take the font files' contents instead. A character no
+  font covers is drawn as a box.
+
+[Unreleased]: https://github.com/lichdotdev/godemirror/commits/main

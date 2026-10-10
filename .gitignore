@@ -1,0 +1,11 @@
+# Binaries from go build
+/godemirror-demo
+*.test
+*.out
+# Headless shots taken at the root
+/*.png
+# IDE
+.idea/
+.vscode/
+# Claude Code local state
+.claude/

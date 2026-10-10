@@ -1,0 +1,46 @@
+name: Bug report
+description: Something in godemirror is broken
+labels: ["bug"]
+body:
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you did, what you expected, what you got instead. A screenshot helps when it is about what is drawn.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: How to reproduce it
+      description: The smallest Go that shows it, or a demo command line (`go run ./cmd/godemirror-demo ...`).
+      render: go
+    validations:
+      required: false
+
+  - type: input
+    id: version
+    attributes:
+      label: godemirror version
+      description: The tag, or the commit your go.mod pins.
+      placeholder: "v0.1.0"
+    validations:
+      required: true
+
+  - type: input
+    id: go-gio
+    attributes:
+      label: Go and Gio versions
+      placeholder: go1.27.0, gioui.org v0.10.3
+    validations:
+      required: true
+
+  - type: input
+    id: platform
+    attributes:
+      label: Platform
+      description: OS and architecture, and Wayland or X11 on Linux.
+      placeholder: linux/amd64, Wayland
+    validations:
+      required: true
