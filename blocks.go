@@ -15,7 +15,7 @@ import (
 // it; the view does not select or hover there.
 //
 // Its state is the caller's, held outside the view, so rebuilding the content
-// around it — a gap pulled in, a thread resolved — never loses what is half
+// around it (a gap pulled in, a thread resolved) never loses what is half
 // typed inside.
 type BlockWidget struct {
 	// After is the document line (0-based) the block opens under.

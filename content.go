@@ -47,8 +47,8 @@ func (v *View) SetContent(c Content) {
 	v.pending = v.highlight(c, nil)
 }
 
-// UpdateContent replaces what is shown with a new version of it — a diff with
-// lines pulled in — keeping the scroll position. The current content stays
+// UpdateContent replaces what is shown with a new version of it (a diff with
+// lines pulled in, say), keeping the scroll position. The current content stays
 // on screen until c's highlighting is ready, and then c takes its place
 // whole, so text, labels and decorations never show out of step. Until then,
 // whatever reads or addresses the view by line (SelectedLines, Selection,

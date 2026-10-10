@@ -13,7 +13,7 @@ import (
 )
 
 // Split shows two documents side by side whose line i pairs with line i of
-// the other — the two sides of a diff. Each pair of lines starts on the same
+// the other: the two sides of a diff. Each pair of lines starts on the same
 // row: unwrapped that holds by itself, and when the sides wrap, the side that
 // wraps into fewer rows is padded to the other's. A block under a line on one
 // side leaves as much room under its pair on the other. They scroll down
@@ -91,7 +91,7 @@ func (s *Split) Layout(gtx layout.Context) (layout.Dimensions, error) {
 
 // input lets each side take its own pointer and keys, then carries whichever
 // side moved down or up over to the other. A selection lives on one side at a
-// time: starting one clears the other's. The hot block is shared.
+// time: starting one clears the other's. The hover group is shared.
 func (s *Split) input(lgtx, rgtx layout.Context, lf, rf frame) {
 	leftY, rightY := s.Left.scroll.Y, s.Right.scroll.Y
 	if s.Left.handlePointer(lgtx, lf) {
@@ -102,8 +102,8 @@ func (s *Split) input(lgtx, rgtx layout.Context, lf, rf frame) {
 	}
 	s.Left.handleKeys(lgtx)
 	s.Right.handleKeys(rgtx)
-	// A block is one change seen from both sides: lit from either, it lights
-	// on both.
+	// A hover group is one change seen from both sides: lit from either, it
+	// lights on both.
 	hot := s.Left.hot
 	if s.Right.hover >= 0 {
 		hot = s.Right.hot

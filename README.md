@@ -143,22 +143,22 @@ both `DarkTheme` and `LightTheme`.
 
 ## The demo
 
-`cmd/godemirror-demo` shows what the library draws, in a window or headless:
-a file, a `DiffView` of two files or of a git patch, and a hand-built diff
-layout with expandable gaps, Revert on hover and review threads, which shows
-how far `Content` alone goes.
+`cmd/godemirror-demo` shows what the library draws, in a window or headless: a
+file in a `View`, or a diff in a `DiffView`, with expandable gaps, Revert on
+hover and comments anchored to lines as `DiffBlock`s.
 
 ```bash
+go run ./cmd/godemirror-demo -file view.go                   # a file
+go run ./cmd/godemirror-demo -old a.go -file b.go -changes   # a diff of two files
 git diff > /tmp/change.patch
 go run ./cmd/godemirror-demo -diff /tmp/change.patch -new path/to/changed/file -split
 ```
 
-In the window: **Alt+W** toggles wrapping, **Alt+S** switches between unified
-and side by side, and **Alt+N** opens a comment under the selected lines.
-`-file` shows a single file instead, `-old a.go -file b.go` shows a `DiffView`
-of two files (`-diffview` does the same for `-diff`, and `-changes` adds the
-intra-line highlight), and `-bench N` with `-shot out.png` runs it headless and
-reports frame times.
+In the window: **Alt+W** toggles wrapping, **Alt+S** switches a diff between
+unified and side by side, and **Alt+N** opens a comment under the selected
+lines. Reverting a chunk of two files puts it back and shows the diff again.
+`-light` uses `LightTheme`, and `-bench N` with `-shot out.png` runs it headless
+and reports frame times.
 
 ## Requirements
 

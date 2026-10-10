@@ -25,10 +25,10 @@ lives in the code, its godoc, `README.md` and `docs/`; never restate any of it h
 ## Rules of the codebase
 
 - Go 1.27 and Gio v0.10. The `go` directive in `go.mod` is the version CI installs (`go-version-file`), so it
-  moves only on purpose. The library's dependency set is Gio, `golang.org/x/image` and chroma;
-  `golang.org/x/exp/shiny` is the demo's alone. A new dependency needs the maintainer's yes first.
-- **The package stays app-free.** Nothing that belongs to one app enters it: lich's diff layout, its buttons,
-  its strings and its theme live in the demo or in the app. The package takes data (`Content`) and Gio widgets
+  moves only on purpose. The dependency set is Gio, `golang.org/x/image` and chroma; a new one needs the
+  maintainer's yes first.
+- **The package stays app-free.** Nothing that belongs to one app enters it: an app's layout, its buttons, its
+  strings and its theme live in the app. The package takes data (`Content`) and Gio widgets
   (`LineWidget`, `BlockWidget`) and draws them.
 - **Code text never goes through Gio's text stack.** Rows are images composed by `glyphs`; Gio text is only for
   what callers draw inside their own widgets.
@@ -48,9 +48,9 @@ lives in the code, its godoc, `README.md` and `docs/`; never restate any of it h
 - `gofmt -l .` clean and `go vet ./...` clean.
 - `go test ./...` green. Anything asynchronous (highlighting, `UpdateContent`) also passes
   `go test -count=50 -run <Test> ./...`.
-- Changed what is drawn? Take a headless shot with the demo (`-shot`, with `-hover` or `-split` as needed) and
-  look at it before calling it done. The maintainer then reviews it in a real window, and that review is the
-  one to trust.
+- Changed what is drawn? Take a headless shot with the demo (`-shot`, with `-old`, `-hover` or `-split` as
+  needed) and look at it before calling it done. The maintainer then reviews it in a real window, and that
+  review is the one to trust.
 - Changed a limit or a trap? `docs/ceilings.md` moves in the same change.
 - Changed anything a caller can see (exported API, behaviour, what is drawn, a fixed bug)? Its `CHANGELOG.md`
   `[Unreleased]` entry lands in the same commit, under the right group (Added, Changed, Deprecated, Removed,

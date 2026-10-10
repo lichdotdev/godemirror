@@ -150,7 +150,7 @@ func (v *View) handleKeys(gtx layout.Context) {
 }
 
 // lineUnder is the document line on the row under p, -1 off the document or
-// over a block.
+// over a BlockWidget.
 func (v *View) lineUnder(f frame, p image.Point) int {
 	line, segment, ok := locate(v.tops, v.starts, f.ch, v.scroll.Y+p.Y)
 	if !ok || segment < 0 {

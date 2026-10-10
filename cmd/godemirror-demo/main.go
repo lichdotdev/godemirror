@@ -1,6 +1,6 @@
-// Demo of the godemirror code view: opens a file in a window, or, with -bench
-// or -shot, drives it headless — scrolling it frame by frame through Gio's own
-// input router — and reports frame times or writes a PNG.
+// Demo of godemirror: a file in a View, or a diff in a DiffView, in a window
+// or, with -bench or -shot, headless. Headless, it scrolls frame by frame
+// through Gio's own input router and reports frame times or writes a PNG.
 package main
 
 import (
@@ -25,15 +25,14 @@ import (
 )
 
 var (
-	flagFile    = flag.String("file", "view.go", "file to show")
-	flagDiff    = flag.String("diff", "", "show the first file of this unified diff in the demo's own diff layout, instead of -file")
-	flagNew     = flag.String("new", "", "with -diff, the new file's text, so the lines git left out can be pulled in")
-	flagOld     = flag.String("old", "", "show godemirror.DiffView's diff of this file against -file")
-	flagDV      = flag.Bool("diffview", false, "with -diff, show it through godemirror.DiffView instead of the demo's own layout")
-	flagChanges = flag.Bool("changes", false, "with -old or -diffview, tint the words that changed within a line")
-	flagSplit   = flag.Bool("split", false, "with -diff, start side by side")
+	flagFile    = flag.String("file", "view.go", "file to show; with -old, the modified version")
+	flagOld     = flag.String("old", "", "show the diff of this file against -file")
+	flagDiff    = flag.String("diff", "", "show the first file of this unified diff (git diff)")
+	flagNew     = flag.String("new", "", "with -diff, the new file's text, which fills the lines the diff left out")
+	flagChanges = flag.Bool("changes", false, "in a diff, tint the words that changed within a line")
+	flagSplit   = flag.Bool("split", false, "start a diff side by side")
 	flagWrap    = flag.Bool("wrap", false, "wrap long lines instead of scrolling sideways")
-	flagLight   = flag.Bool("light", false, "draw the code in godemirror.LightTheme; the diff's tints and buttons stay dark")
+	flagLight   = flag.Bool("light", false, "use godemirror.LightTheme")
 	flagFont    = flag.String("font", "JetBrainsMono Nerd Font", "font family, resolved to files by fc-match")
 	flagSize    = flag.Float64("size", 13, "font size in sp")
 	flagWidth   = flag.Int("width", 1200, "window width in px")
@@ -46,21 +45,9 @@ var (
 	flagSettle  = flag.Duration("settle", time.Second, "headless: wait this long before the first frame, for highlighting to finish")
 )
 
-// screen is what the demo shows: its own diff layout, or a DiffView.
-type screen interface {
-	layout(gtx layout.Context) error
-}
-
-func newScreen() (screen, error) {
-	if *flagOld != "" || *flagDV {
-		return newDiffViewDemo()
-	}
-	return newDemo()
-}
-
 func main() {
 	flag.Parse()
-	d, err := newScreen()
+	d, err := newDemo()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -72,7 +59,7 @@ func main() {
 	}
 	go func() {
 		w := new(app.Window)
-		w.Option(app.Title("godemirror — Alt+W wrap, Alt+S side by side, Alt+N comment on the selection"), app.Size(unit.Dp(*flagWidth), unit.Dp(*flagHeight)))
+		w.Option(app.Title("godemirror: Alt+W wrap, Alt+S side by side, Alt+N comment on the selection"), app.Size(unit.Dp(*flagWidth), unit.Dp(*flagHeight)))
 		if err := runWindow(w, d); err != nil {
 			log.Fatal(err)
 		}
@@ -81,7 +68,7 @@ func main() {
 	app.Main()
 }
 
-func runWindow(w *app.Window, d screen) error {
+func runWindow(w *app.Window, d *demo) error {
 	var ops op.Ops
 	for {
 		switch e := w.Event().(type) {
@@ -97,7 +84,7 @@ func runWindow(w *app.Window, d screen) error {
 	}
 }
 
-func runHeadless(d screen) error {
+func runHeadless(d *demo) error {
 	size := image.Pt(*flagWidth, *flagHeight)
 	win, err := headless.NewWindow(size.X, size.Y)
 	if err != nil {

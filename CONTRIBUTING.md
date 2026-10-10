@@ -37,11 +37,11 @@ go test ./...
 The demo shows what the library draws, in a window or headless:
 
 ```bash
-go run ./cmd/godemirror-demo                                  # a file
+go run ./cmd/godemirror-demo                                  # a file in a View
 go run ./cmd/godemirror-demo -old a.go -file b.go -split      # a DiffView of two files
 git diff > /tmp/change.patch
-go run ./cmd/godemirror-demo -diffview -diff /tmp/change.patch -new path/to/file
-go run ./cmd/godemirror-demo -split -shot out.png             # headless PNG of the last frame
+go run ./cmd/godemirror-demo -diff /tmp/change.patch -new path/to/file
+go run ./cmd/godemirror-demo -old a.go -file b.go -shot out.png   # headless PNG of the last frame
 ```
 
 `go run ./cmd/godemirror-demo -h` lists every flag.
