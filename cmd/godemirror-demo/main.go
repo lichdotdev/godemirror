@@ -26,7 +26,7 @@ import (
 
 var (
 	flagFile    = flag.String("file", "view.go", "file to show")
-	flagDiff    = flag.String("diff", "", "show the first file of this unified diff, the way lich's diff view does, instead of -file")
+	flagDiff    = flag.String("diff", "", "show the first file of this unified diff in the demo's own diff layout, instead of -file")
 	flagNew     = flag.String("new", "", "with -diff, the new file's text, so the lines git left out can be pulled in")
 	flagOld     = flag.String("old", "", "show godemirror.DiffView's diff of this file against -file")
 	flagDV      = flag.Bool("diffview", false, "with -diff, show it through godemirror.DiffView instead of the demo's own layout")

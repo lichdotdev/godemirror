@@ -1,9 +1,11 @@
 # godemirror
 
-`godemirror` is a **read-only code view for [Gio](https://gioui.org)**: the code view (`View`, `Split`) and the
-diff view (`DiffView`, unified and side by side) that [lich](https://github.com/omartelo/lich) needs for its
-native port, in place of CodeMirror. It is built for other developers to use, not only for lich: docs, errors
-and defaults answer to a stranger. Linux first, since fonts resolve through fontconfig.
+`godemirror` is an **open-source Go library that brings CodeMirror's read-only experience to native Go**, on
+[Gio](https://gioui.org): the code view (`View`, `Split`) and the diff view (`DiffView`, unified and side by
+side). That is the goal every decision answers to: when in doubt, ask what CodeMirror gives a caller and how a Go
+caller would want it. [lich](https://github.com/omartelo/lich) is its first user, not its purpose: docs, errors
+and defaults answer to a stranger, and nothing about lich belongs in the public docs. Linux first, since fonts
+resolve through fontconfig.
 
 **This file is instruction, not documentation.** Rules, gates and the workflow live here. What the library *is*
 lives in the code, its godoc, `README.md` and `docs/`; never restate any of it here.

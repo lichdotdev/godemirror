@@ -1,11 +1,12 @@
 <div align="center">
   <h1>godemirror</h1>
-  <p><strong>A read-only code view for Gio, built to stand in for CodeMirror.</strong></p>
+  <p><strong>CodeMirror's read-only experience, native to Go.</strong></p>
   <p>
-    Syntax-highlighted code with a line gutter, wrapping or sideways scrolling,
-    selection and copy, line decorations, widgets on and between lines, and a
-    side-by-side split that stays level. Drawn as one image per visible row, so
-    a full screen of code costs a handful of quads.
+    A code view and a diff view for <a href="https://gioui.org">Gio</a>:
+    syntax-highlighted code with a line gutter, wrapping or sideways scrolling,
+    selection and copy, line decorations, widgets on and between lines, and
+    diffs unified or side by side. Drawn as one image per visible row, so a full
+    screen of code costs a handful of quads.
   </p>
   <p>
     <a href="https://pkg.go.dev/github.com/lichdotdev/godemirror"><img alt="Go Reference" src="https://pkg.go.dev/badge/github.com/lichdotdev/godemirror.svg" /></a>
@@ -15,16 +16,17 @@
     <img alt="Platform" src="https://img.shields.io/badge/platform-Linux-333" />
     <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/license-MIT-blue" /></a>
   </p>
-  <img src="docs/media/split.png" alt="A git diff side by side: deletions on the left, additions on the right, a posted review thread under one line and a comment being typed under another, with the lines below them still level" width="1000" />
+  <img src="docs/media/diff.png" alt="A DiffView side by side: deletions on the left and additions on the right, unchanged runs collapsed behind expanders, filler rows hatched where only one side has lines, the words that changed within a line tinted, and the chunk under the pointer lit with its Revert" width="1000" />
 </div>
 
 ## Why godemirror
 
-[lich](https://github.com/omartelo/lich) is moving from a web window to a native
-[Gio](https://gioui.org) app, and the one thing it used CodeMirror for is showing
-code: the diff of a checkout, unified or side by side, and the preview of a file.
-None of that edits text. godemirror is that viewer, and nothing lich-specific is
-in it, so any Gio app can show code with it.
+On the web, an app that shows code reaches for
+[CodeMirror](https://codemirror.net): highlighting, decorations, widgets
+between lines, a merge view. A native Go app has had nothing like it, and
+drawing code with a GUI toolkit's text stack is slow at full screen.
+godemirror brings that experience to Go, for viewing: file previews, diffs,
+code review, logs. It does not edit text.
 
 godemirror lets you:
 
@@ -41,7 +43,7 @@ godemirror lets you:
   with labels of your own: everything a diff needs.
 - **Put widgets on lines.** Any Gio widget after a line's text or against the
   right edge (an *Expand 44 unchanged lines* button, a *Revert*), optionally
-  shown only while the pointer is over the line's block.
+  shown only while the pointer is over the line's hover group.
 - **Open space between lines.** A `BlockWidget` lays out any Gio widget under a
   line: a review thread, a comment box with an Editor. Its state is yours, so
   rebuilding the content around it never loses what was being typed.
@@ -88,6 +90,25 @@ give `Left` and `Right` their own content.
 The deliberate limits, and what they mean for a caller, are in
 [`docs/ceilings.md`](docs/ceilings.md).
 
+## Coming from CodeMirror
+
+| CodeMirror 6 | godemirror |
+|---|---|
+| `EditorView` with `EditorState.readOnly` | `View` |
+| `EditorView.lineWrapping` | `View.Wrap` |
+| `EditorView.theme`, `classHighlighter` | `Theme`, `TokenClass` |
+| `lineNumbers({formatNumber})` | `Content.Labels` |
+| `Decoration.line`, `gutterLineClass` | `LineDecoration` |
+| `Decoration.mark` | `LineDecoration.Spans` |
+| `Decoration.widget` | `LineWidget` (on a line), `BlockWidget` (between lines) |
+| `state.selection`, `dispatch({selection})` | `Selection`, `Select`, `SelectLines` |
+| `EditorView.scrollIntoView` | `ScrollToLine` |
+| `state.doc.lines`, `doc.line(n)` | `LineCount`, `LineText` |
+| `MergeView`, `unifiedMergeView` | `DiffView` (`Split` on or off) |
+| `collapseUnchanged` | `DiffOptions.Collapse`, or the gaps of a patch |
+| `mergeControls` | `DiffOptions.Revert`, `Chunks` |
+| `highlightChanges` | `DiffOptions.HighlightChanges` |
+
 ## The diff view
 
 `DiffView` shows the difference between two versions of a file, the way
@@ -122,8 +143,10 @@ both `DarkTheme` and `LightTheme`.
 
 ## The demo
 
-`cmd/godemirror-demo` lays a git diff out the way lich does: expandable gaps,
-Revert on hover, review threads and the side-by-side split.
+`cmd/godemirror-demo` shows what the library draws, in a window or headless:
+a file, a `DiffView` of two files or of a git patch, and a hand-built diff
+layout with expandable gaps, Revert on hover and review threads, which shows
+how far `Content` alone goes.
 
 ```bash
 git diff > /tmp/change.patch
