@@ -49,3 +49,28 @@ func ExampleView() {
 	// 	println("hi")
 	// }
 }
+
+func ExampleView_SetSearch() {
+	view, err := godemirror.New("monospace", unit.Sp(13))
+	if errors.Is(err, godemirror.ErrNoFontconfig) {
+		view, err = godemirror.NewFromFonts(godemirror.Fonts{Regular: gomono.TTF}, unit.Sp(13))
+	}
+	if err != nil {
+		log.Fatal(err)
+	}
+	view.SetContent(godemirror.Content{Text: "foo bar\nFoo(bar)\nbaz foo"})
+
+	// A search box calls SetSearch as its text changes, and FindNext on Enter.
+	if err := view.SetSearch(godemirror.SearchQuery{Text: "foo", WholeWord: true}); err != nil {
+		log.Fatal(err)
+	}
+	for range 4 {
+		m, _ := view.FindNext()
+		fmt.Println(m.From, m.To)
+	}
+	// Output:
+	// {0 0} {0 3}
+	// {1 0} {1 3}
+	// {2 4} {2 7}
+	// {0 0} {0 3}
+}

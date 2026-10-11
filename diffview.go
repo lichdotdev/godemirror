@@ -174,6 +174,37 @@ func (d *DiffView) FillGap(g Gap, lines []string) {
 	d.update()
 }
 
+// SetSearch is View.SetSearch for the diff: the same query looks through
+// every view it has, unified and both sides of the split, and follows the
+// diff as it is replaced, expanded or given blocks. A Match's Pos counts the
+// rows of the view on screen, deletions and additions included, not file
+// lines; select it with FindNext and read the file lines off SelectedRange.
+func (d *DiffView) SetSearch(q SearchQuery) error {
+	m, err := compileSearch(q)
+	d.unified.useSearch(m)
+	d.split.Left.useSearch(m)
+	d.split.Right.useSearch(m)
+	return err
+}
+
+// FindNext is View.FindNext in the view on screen: the unified one, or, side
+// by side, the side that holds the selection, or else the right one. A match
+// lies in one side, so a search that wraps never leaves it.
+func (d *DiffView) FindNext() (Match, bool) { return d.searched().FindNext() }
+
+// FindPrevious is View.FindPrevious in the view FindNext searches.
+func (d *DiffView) FindPrevious() (Match, bool) { return d.searched().FindPrevious() }
+
+func (d *DiffView) searched() *View {
+	switch {
+	case !d.Split:
+		return d.unified
+	case !d.split.Left.sel.empty():
+		return d.split.Left
+	}
+	return d.split.Right
+}
+
 // Chunks are the runs of changed lines of the diff set last, in order, with
 // lines filled into a gap counted. Like everything set on a DiffView, they
 // reach the screen once highlighted (see UpdateContent).

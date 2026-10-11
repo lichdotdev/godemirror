@@ -55,6 +55,11 @@ godemirror lets you:
   `git diff` patch: unified with old and new line numbers, or side by side,
   unchanged runs collapsed behind an expander, a Revert on each chunk, and
   review threads anchored to file lines. Its colors are part of the theme.
+- **Search.** `SetSearch` highlights every match of a literal or a regexp,
+  case-sensitive or not, whole words or not; `FindNext` and `FindPrevious` walk
+  the matches, wrapping, selecting each one and scrolling it into view. The
+  search box is yours to draw. In a `DiffView` one query looks through the
+  unified view and both sides of the split.
 - **Select and copy.** Drag (past an edge the view scrolls along), double click
   for a word, triple click for a line, Shift+click to extend, Ctrl+A and
   Ctrl+C. Copying gives back the text as it was, tabs included, and
@@ -102,6 +107,7 @@ The deliberate limits, and what they mean for a caller, are in
 | `Decoration.mark` | `LineDecoration.Spans` |
 | `Decoration.widget` | `LineWidget` (on a line), `BlockWidget` (between lines) |
 | `state.selection`, `dispatch({selection})` | `Selection`, `Select`, `SelectLines` |
+| `SearchQuery`, `findNext`, `findPrevious` | `SearchQuery`, `SetSearch`, `FindNext`, `FindPrevious`, `Matches` (no panel: draw your own search box) |
 | `EditorView.scrollIntoView` | `ScrollToLine` |
 | `state.doc.lines`, `doc.line(n)` | `LineCount`, `LineText` |
 | `MergeView`, `unifiedMergeView` | `DiffView` (`Split` on or off) |
@@ -157,7 +163,8 @@ go run ./cmd/godemirror-demo -diff /tmp/change.patch -new path/to/changed/file -
 In the window: **Alt+W** toggles wrapping, **Alt+S** switches a diff between
 unified and side by side, and **Alt+N** opens a comment under the selected
 lines. Reverting a chunk of two files puts it back and shows the diff again.
-`-light` uses `LightTheme`, and `-bench N` with `-shot out.png` runs it headless
+`-search text` highlights its matches and selects the first, `-light` uses
+`LightTheme`, and `-bench N` with `-shot out.png` runs it headless
 and reports frame times.
 
 ## Requirements

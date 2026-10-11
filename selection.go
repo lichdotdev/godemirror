@@ -201,9 +201,11 @@ func (v *View) lineAt(p pos) selection {
 }
 
 // paintSelection fills the selected cells of every visible row. A line the
-// selection runs past also has its newline lit, one cell beyond its end.
+// selection runs past also has its newline lit, one cell beyond its end. A
+// selection that is exactly a search match is the current match, which
+// paintSpans already lit in the theme's SearchCurrent.
 func (v *View) paintSelection(gtx layout.Context, f frame, rows []visibleRow, code image.Rectangle) {
-	if v.sel.empty() {
+	if v.sel.empty() || v.isCurrentMatch() {
 		return
 	}
 	from, to := v.sel.ordered()

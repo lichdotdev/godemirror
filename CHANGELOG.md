@@ -42,6 +42,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and `SetBlocks` anchors widgets to file lines. `HighlightChanges` tints the
   words that changed within a line. The expander and revert affordances are
   drawn by the library and can be replaced.
+- **Search.** `View.SetSearch` takes a `SearchQuery` (literal or regexp, case
+  sensitivity, whole word) and highlights every match, beneath the text, in
+  `Theme.SearchMatch`; the selected match is the current one, in
+  `Theme.SearchCurrent`. `Matches` lists them and `FindNext` and `FindPrevious`
+  select the one after or before the selection, wrapping, and scroll it into
+  view. A match never spans lines, and a bad regexp is the only error.
+  `DiffView.SetSearch`, `FindNext` and `FindPrevious` do the same across its
+  unified view and both sides of the split.
 - **Themes.** `DarkTheme` and `LightTheme`, with the diff colors in
   `Theme.Diff`. A theme change shows on the next frame.
 - **Fonts without fontconfig.** `New` resolves a family through fontconfig and

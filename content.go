@@ -83,6 +83,7 @@ func (v *View) showContent(c Content, doc *document) {
 	v.sel = selection{}
 	v.wrapCols = -1
 	v.setDocument(doc)
+	v.findMatches()
 }
 
 func (v *View) setDocument(doc *document) {

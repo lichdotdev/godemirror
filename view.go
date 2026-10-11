@@ -77,6 +77,10 @@ type View struct {
 	press press
 	// drag scrolls the view while a selection is held beyond its edge.
 	drag dragScroll
+	// matcher is the search set with SetSearch, and matches what it found in
+	// the document on screen, in document order.
+	matcher *matcher
+	matches []Match
 	// hover is the document line under the pointer, -1 for none, and hot the
 	// hover group it belongs to (LineDecoration.HoverGroup), 0 for none.
 	hover int

@@ -124,6 +124,27 @@ func (d *demo) loadPatch() error {
 	return nil
 }
 
+// search highlights the matches of text and selects the first one, as a
+// caller's search box would on Enter. Empty text searches nothing.
+func (d *demo) search(text string) error {
+	if text == "" {
+		return nil
+	}
+	q := godemirror.SearchQuery{Text: text}
+	if d.diff == nil {
+		if err := d.file.SetSearch(q); err != nil {
+			return err
+		}
+		d.file.FindNext()
+		return nil
+	}
+	if err := d.diff.SetSearch(q); err != nil {
+		return err
+	}
+	d.diff.FindNext()
+	return nil
+}
+
 // expand answers a gap of the patch from -new, fillPart lines at a time.
 func (d *demo) expand(g godemirror.Gap) {
 	for g.From <= g.To && g.From <= len(d.newLines) {

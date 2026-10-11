@@ -3,6 +3,7 @@ package godemirror
 import (
 	"image"
 	"image/color"
+	"slices"
 
 	"gioui.org/layout"
 )
@@ -26,13 +27,17 @@ func (v *View) spanCells(line int, s Span) (from, to int) {
 	return cell(s.From), cell(s.To)
 }
 
-// paintSpans tints the spans of every visible row over the row's background.
-// They are painted beneath the text like the selection, so the row images
-// never hold them.
+// paintSpans tints the spans of every visible row over the row's background,
+// and the search matches after them. They are painted beneath the text like
+// the selection, so the row images never hold them.
 func (v *View) paintSpans(gtx layout.Context, f frame, rows []visibleRow, code image.Rectangle) {
 	for _, r := range rows {
 		d := v.decoration(r.line)
-		if len(d.Spans) == 0 {
+		spans := d.Spans
+		if found := v.searchSpans(r.line); len(found) > 0 {
+			spans = slices.Concat(spans, found)
+		}
+		if len(spans) == 0 {
 			continue
 		}
 		base := v.Theme.Background
@@ -44,7 +49,7 @@ func (v *View) paintSpans(gtx layout.Context, f frame, rows []visibleRow, code i
 		if !v.Wrap {
 			x -= v.scroll.X
 		}
-		for _, s := range d.Spans {
+		for _, s := range spans {
 			from, to := v.spanCells(r.line, s)
 			from, to = max(from, segFrom), min(to, segTo)
 			if from >= to {

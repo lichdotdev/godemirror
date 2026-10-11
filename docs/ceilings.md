@@ -33,8 +33,8 @@ file is the trap alone.
   horizontal one. Inside a parent that also scrolls (a list of diff cards), a wheel at the view's top or bottom
   edge does not pass to the parent while the view still has room to scroll sideways.
 - **Row images are cached by what they hold**: `rowKey` is the line, the wrapped segment, the first column and
-  the span of cells, and a view drops them all when its own font size in pixels or its `Theme` changes (spans
-  and the selection are painted beneath the images and never join the key). The two
+  the span of cells, and a view drops them all when its own font size in pixels or its `Theme` changes (spans,
+  search matches and the selection are painted beneath the images and never join the key). The two
   sides of a `Split` share one rasterizer, so a view must compare against the size it composed at, never ask the
   rasterizer whether the size changed: the first side to set it would be the only one told. Anything new that
   changes a row's pixels (a per-cell style, a ligature) must join the key or drop the cache, or the old image
@@ -60,3 +60,17 @@ file is the trap alone.
   area's width, so a block does not scroll sideways with the code under it.
 - **The first text Gio shapes costs about 28ms**, once per process (font loading and shaper caches). A view
   whose first widget with a label appears on hover pays it on that hover; an app warms it with its other UI.
+- **Search is per line, and runs on the UI goroutine**: `SetSearch` looks through one line at a time, so a regexp
+  never matches across a line end (`\s` and `\n` cannot join two lines) and a literal containing a newline finds
+  nothing. Matches do not overlap (leftmost first) and an empty regexp match is dropped. The whole document is one
+  pass on the caller's goroutine at every `SetSearch` and every change of content, about 25ms for 13,000 lines
+  of 70 characters, so a search box that searches as you type pays that per keystroke on a big file. A match
+  count in the millions costs memory, 32 bytes each. Between `UpdateContent` and its swap `Matches`, `FindNext`
+  and `FindPrevious` read the old content's lines, as the rest of the view does.
+- **`FindNext` scrolls vertically only**: it goes through `ScrollToLine`, which never scrolls sideways, so in an
+  unwrapped view a match past the right edge is selected and its line is in view, but the match is not until the
+  caller scrolls or turns `Wrap` on.
+- **The current match is the selection**: a selection that is exactly a match is lit in `Theme.SearchCurrent`
+  and `Theme.Selection` is not painted over it; drag it wider or narrower and it is a plain selection again. In
+  a `DiffView` a `Match`'s lines count the rows of the view on screen (deletions and additions included), not
+  file lines, and `FindNext` stays on the side of a split that holds the selection.

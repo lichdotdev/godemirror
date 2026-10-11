@@ -20,6 +20,11 @@ type Theme struct {
 	// Syntax styles each TokenClass, indexed by it; Plain is the text's own
 	// color.
 	Syntax [NumTokenClasses]TokenStyle
+	// SearchMatch tints every match of the search (SetSearch), and
+	// SearchCurrent the one that is selected, the current match. Like
+	// Selection they may be translucent: they are mixed over the line's
+	// background in sRGB. Zero highlights nothing.
+	SearchMatch, SearchCurrent color.NRGBA
 	// Diff colors a DiffView's changes and the rows around them.
 	Diff DiffColors
 }
@@ -59,6 +64,15 @@ var (
 	red500     = color.NRGBA{R: 0xfb, G: 0x2c, B: 0x36, A: 0xff}
 )
 
+// The yellow and the orange of the search colors, after CodeMirror's: a
+// yellowish tint for the matches and a stronger one for the selected match.
+// The percentages have no CSS to come from; they were picked by eye on the
+// demo (-search), so that code reads on both themes.
+var (
+	amber400  = color.NRGBA{R: 0xfb, G: 0xbf, B: 0x24, A: 0xff}
+	orange500 = color.NRGBA{R: 0xf9, G: 0x73, B: 0x16, A: 0xff}
+)
+
 func percent(c color.NRGBA, p int) color.NRGBA {
 	c.A = uint8(255 * p / 100)
 	return c
@@ -78,6 +92,8 @@ var DarkTheme = Theme{
 	Background:       rgb(0x09090b),
 	Border:           over(color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 26}, rgb(0x09090b)),
 	Selection:        color.NRGBA{R: 0x3b, G: 0x82, B: 0xf6, A: 90},
+	SearchMatch:      percent(amber400, 30),
+	SearchCurrent:    percent(orange500, 60),
 	GutterBackground: rgb(0x09090b),
 	GutterForeground: rgb(0x9f9fa9),
 	Syntax: [NumTokenClasses]TokenStyle{
@@ -115,6 +131,8 @@ var LightTheme = Theme{
 	Background:       rgb(0xebebed),
 	Border:           rgb(0xdadadd),
 	Selection:        color.NRGBA{R: 0x3b, G: 0x82, B: 0xf6, A: 90},
+	SearchMatch:      percent(amber400, 55),
+	SearchCurrent:    percent(orange500, 60),
 	GutterBackground: rgb(0xebebed),
 	GutterForeground: rgb(0x64636e),
 	Syntax: [NumTokenClasses]TokenStyle{
