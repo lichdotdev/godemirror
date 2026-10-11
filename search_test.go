@@ -312,3 +312,63 @@ func TestDiffViewFindActsOnTheViewOnScreen(t *testing.T) {
 		t.Fatalf("FindPrevious left the selection at %v, want line 1", from)
 	}
 }
+
+// matchOnScreen reports whether the cells of m lie inside the code area as
+// the view is scrolled now.
+func matchOnScreen(h *harness, m Match) bool {
+	cw := h.v.r.CellW()
+	g := h.v.geometry(h.size, cw)
+	from, to := h.v.cellPos(m.From).col*cw, h.v.cellPos(m.To).col*cw
+	return from >= h.v.scroll.X && to <= h.v.scroll.X+h.size.X-g.textX
+}
+
+func TestFindNextScrollsSidewaysToAMatchPastTheEdge(t *testing.T) {
+	line := strings.Repeat("x", 300) + "needle" + strings.Repeat("x", 300)
+	h := newHarness(t, "needle\n"+line)
+	if err := h.v.SetSearch(SearchQuery{Text: "needle"}); err != nil {
+		t.Fatal(err)
+	}
+	h.v.FindNext()
+	h.frame()
+	m, _ := h.v.FindNext()
+	h.frame()
+	if !matchOnScreen(h, m) {
+		t.Fatalf("match %v is off screen at scroll %v", m, h.v.scroll)
+	}
+	m, _ = h.v.FindNext()
+	h.frame()
+	if m.From.Line != 0 || h.v.scroll.X != 0 {
+		t.Fatalf("wrapping back to %v left the view scrolled to %v", m, h.v.scroll)
+	}
+}
+
+func TestFindNextDoesNotScrollAWrappedViewSideways(t *testing.T) {
+	h := newHarness(t, strings.Repeat("x", 300)+"needle")
+	h.v.Wrap = true
+	h.frame()
+	if err := h.v.SetSearch(SearchQuery{Text: "needle"}); err != nil {
+		t.Fatal(err)
+	}
+	h.v.FindNext()
+	h.frame()
+	if h.v.scroll.X != 0 {
+		t.Fatalf("a wrapped view scrolled sideways to %d", h.v.scroll.X)
+	}
+}
+
+func TestDiffViewMatchesAreThoseOfTheViewOnScreen(t *testing.T) {
+	h, d := newDiffHarness(t, DiffOptions{})
+	d.SetDocs("main.go", "a\nold x\nc", "a\nnew x x\nc")
+	h.frame()
+	if err := d.SetSearch(SearchQuery{Text: "x"}); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(d.Matches()); got != 3 {
+		t.Fatalf("unified: %d matches, want 3", got)
+	}
+	d.Split = true
+	h.frame()
+	if got := len(d.Matches()); got != 2 {
+		t.Fatalf("side by side: %d matches, want the right side's 2", got)
+	}
+}

@@ -165,7 +165,7 @@ func (v *View) FindPrevious() (m Match, ok bool) {
 
 func (v *View) reveal(m Match) (Match, bool) {
 	v.Select(m.From, m.To)
-	v.ScrollToLine(m.From.Line, AlignNearest)
+	v.target = &scrollTarget{line: m.From.Line, align: AlignNearest, match: &m}
 	return m, true
 }
 

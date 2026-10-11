@@ -192,6 +192,10 @@ func (d *DiffView) SetSearch(q SearchQuery) error {
 // lies in one side, so a search that wraps never leaves it.
 func (d *DiffView) FindNext() (Match, bool) { return d.searched().FindNext() }
 
+// Matches are View.Matches of the view FindNext searches: what a search box
+// counts ("3 of 12"). Their lines are that view's rows, not file lines.
+func (d *DiffView) Matches() []Match { return d.searched().Matches() }
+
 // FindPrevious is View.FindPrevious in the view FindNext searches.
 func (d *DiffView) FindPrevious() (Match, bool) { return d.searched().FindPrevious() }
 

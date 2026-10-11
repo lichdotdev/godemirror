@@ -74,10 +74,10 @@ func (s *Split) Layout(gtx layout.Context) (layout.Dimensions, error) {
 	extra := pairedHeights(s.Left.extra, s.Right.extra)
 	s.Left.tops = lineTops(s.Left.starts, lf.ch, extra)
 	s.Right.tops = lineTops(s.Right.starts, rf.ch, extra)
-	if s.Left.scrollToTarget(lf) {
+	if s.Left.scrollToTarget(lgtx, lf) {
 		s.Right.scroll.Y = s.Left.scroll.Y
 	}
-	if s.Right.scrollToTarget(rf) {
+	if s.Right.scrollToTarget(rgtx, rf) {
 		s.Left.scroll.Y = s.Right.scroll.Y
 	}
 	s.input(lgtx, rgtx, lf, rf)

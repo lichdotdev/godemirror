@@ -1,5 +1,10 @@
 package godemirror
 
+import (
+	"gioui.org/layout"
+	"gioui.org/unit"
+)
+
 // Align is where ScrollToLine puts its line in the view.
 type Align int
 
@@ -13,9 +18,15 @@ const (
 	AlignTop
 )
 
+// revealMargin is the room FindNext leaves beside a match it scrolls to
+// sideways: CodeMirror's scrollIntoView xMargin (5px).
+const revealMargin = unit.Dp(5)
+
 type scrollTarget struct {
 	line  int
 	align Align
+	// match, when set, is brought into view sideways too, unwrapped.
+	match *Match
 }
 
 // ScrollToLine scrolls the view down or up so that line (0-based) sits where
@@ -23,12 +34,12 @@ type scrollTarget struct {
 // Layout, against the content shown then; a line past the end is the last
 // line. It never scrolls sideways. On either side of a Split it scrolls both.
 func (v *View) ScrollToLine(line int, align Align) {
-	v.target = &scrollTarget{line, align}
+	v.target = &scrollTarget{line: line, align: align}
 }
 
 // scrollToTarget applies ScrollToLine once the rows are placed in tops, and
 // reports whether it scrolled.
-func (v *View) scrollToTarget(f frame) bool {
+func (v *View) scrollToTarget(gtx layout.Context, f frame) bool {
 	t := v.target
 	if t == nil {
 		return false
@@ -52,5 +63,23 @@ func (v *View) scrollToTarget(f frame) bool {
 	}
 	maxY := max(v.tops[len(v.tops)-1]-f.size.Y, 0)
 	v.scroll.Y = min(max(y, 0), maxY)
+	if t.match != nil && !v.Wrap {
+		v.revealColumns(gtx, f, *t.match)
+	}
 	return true
+}
+
+// revealColumns scrolls an unwrapped view sideways as little as brings m's
+// cells into view, revealMargin clear of either edge.
+func (v *View) revealColumns(gtx layout.Context, f frame, m Match) {
+	from, to := v.cellPos(m.From).col*f.cw, v.cellPos(m.To).col*f.cw
+	width, margin := f.size.X-f.g.textX, gtx.Dp(revealMargin)
+	x := v.scroll.X
+	if from < x+margin {
+		x = from - margin
+	} else if to > x+width-margin {
+		x = to - width + margin
+	}
+	maxX := max(v.longest*f.cw+gtx.Dp(scrollEndMargin)-width, 0)
+	v.scroll.X = min(max(x, 0), maxX)
 }

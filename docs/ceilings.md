@@ -67,9 +67,6 @@ file is the trap alone.
   of 70 characters, so a search box that searches as you type pays that per keystroke on a big file. A match
   count in the millions costs memory, 32 bytes each. Between `UpdateContent` and its swap `Matches`, `FindNext`
   and `FindPrevious` read the old content's lines, as the rest of the view does.
-- **`FindNext` scrolls vertically only**: it goes through `ScrollToLine`, which never scrolls sideways, so in an
-  unwrapped view a match past the right edge is selected and its line is in view, but the match is not until the
-  caller scrolls or turns `Wrap` on.
 - **The current match is the selection**: a selection that is exactly a match is lit in `Theme.SearchCurrent`
   and `Theme.Selection` is not painted over it; drag it wider or narrower and it is a plain selection again. In
   a `DiffView` a `Match`'s lines count the rows of the view on screen (deletions and additions included), not

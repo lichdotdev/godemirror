@@ -155,7 +155,7 @@ func (v *View) Layout(gtx layout.Context) (layout.Dimensions, error) {
 	}
 	v.starts = rowStarts(v.wraps, nil)
 	v.tops = lineTops(v.starts, f.ch, v.extra)
-	v.scrollToTarget(f)
+	v.scrollToTarget(gtx, f)
 	v.handlePointer(gtx, f)
 	v.handleKeys(gtx)
 	return v.paint(gtx, f), nil
