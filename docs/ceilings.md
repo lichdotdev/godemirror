@@ -13,9 +13,13 @@ file is the trap alone.
   (fontconfig gone mid-session, a broken font file), is drawn as a box and never fails `Layout`. The miss is
   cached per character until the size changes, so a font installed while the view is open shows only after
   that. The fonts' own `.notdef` is not used: Go Mono, JetBrains Mono and Noto Sans Mono leave it empty.
-- **One rune is one cell**: CJK and emoji are drawn in a single cell and overlap their neighbour, and a
-  selection or a click there lands by cell, not by character. Fixing it needs a width table in `document.add`
-  and everywhere a column is turned into pixels.
+- **A character is one or two cells, never zero**: the width table (`glyphs.Width`, Unicode 18.0.0's East
+  Asian Wide and Fullwidth plus Emoji_Presentation) gives the wide ones two. Zero-width characters (combining
+  marks, ZWJ, variation selectors) still take a cell each: a combining accent leaves a gap after its letter,
+  and an emoji sequence (a flag, a family, a skin tone) is its parts side by side. A text emoji made emoji by
+  U+FE0F (❤️) stays one cell. Color emoji fonts (Noto Color Emoji is CBDT) cannot be rasterized by `x/image`:
+  fontconfig still picks them, so those emoji are blank, two cells wide, not boxes. A wide glyph is drawn from
+  the left of its two cells, so a CJK font with a 1em advance leaves a sliver on its right.
 - **Highlighting is chroma, not lezer**: chroma's lexers tag every call as a function name, so calls take the
   Definition color where CodeMirror colors only the declaration, and some lexers (Go) leave type names used as
   values uncolored. A theme ported from CodeMirror will look busier on calls.

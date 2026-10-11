@@ -9,7 +9,7 @@ import (
 )
 
 // Span is a stretch of a line's characters, From to To in rune columns
-// (0-based, To excluded, a tab one column), and the Color it is tinted with.
+// (0-based, To excluded, a tab or a wide character one column), and the Color it is tinted with.
 type Span struct {
 	From, To int
 	Color    color.NRGBA

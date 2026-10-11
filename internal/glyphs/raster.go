@@ -258,7 +258,7 @@ func (r *Rasterizer) Mask(k Key) *Mask {
 	if m, ok := r.masks[k]; ok {
 		return m
 	}
-	m := r.tofu()
+	m := r.tofu(Width(k.R))
 	if f := r.faceFor(k); f != nil {
 		m = &Mask{}
 		dr, src, sp, _, ok := f.face.Glyph(fixed.P(0, r.ascent), k.R)
@@ -272,11 +272,12 @@ func (r *Rasterizer) Mask(k Key) *Mask {
 	return m
 }
 
-// tofu is the box a character no font covers is drawn as. The fonts' own
-// .notdef glyph is not used: in common monospace fonts (Go Mono, JetBrains
-// Mono, Noto Sans Mono) it is empty, which would hide the character.
-func (r *Rasterizer) tofu() *Mask {
-	box := image.Rect(0, 0, r.cellW, r.cellH).Inset(max(r.cellW/8, 1))
+// tofu is the box a character no font covers is drawn as, across the cells
+// it takes. The fonts' own .notdef glyph is not used: in common monospace
+// fonts (Go Mono, JetBrains Mono, Noto Sans Mono) it is empty, which would
+// hide the character.
+func (r *Rasterizer) tofu(cells int) *Mask {
+	box := image.Rect(0, 0, cells*r.cellW, r.cellH).Inset(max(r.cellW/8, 1))
 	a := image.NewAlpha(image.Rect(0, 0, box.Dx(), box.Dy()))
 	stroke := max(r.cellW/12, 1)
 	inner := a.Bounds().Inset(stroke)

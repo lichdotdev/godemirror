@@ -57,5 +57,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   fails with `ErrNoFontconfig` where it is missing; `NewFromFonts` (and
   `NewDiffViewFromFonts`) take the font files' contents instead. A character no
   font covers is drawn as a box.
+- **Wide characters take two cells.** CJK, fullwidth forms and emoji are laid
+  out on the monospace grid as a terminal lays them out, so the columns after
+  them line up; a click on either half lands before or after the character,
+  wrapping never splits one, and a gutter label's width counts them too.
+  `Pos.Col` and `Span` still count runes.
 
 [Unreleased]: https://github.com/lichdotdev/godemirror/commits/main

@@ -7,7 +7,9 @@ const tabSize = 4
 
 // wrapLine returns where each visual row of l starts when it wraps at cols
 // cells, breaking after a space when the row has one, as CSS pre-wrap does,
-// and mid-word only when a word is longer than a row. cols <= 0 never wraps.
+// and mid-word only when a word is longer than a row, never inside a wide
+// character: one that cannot fit a row of one cell takes the row alone.
+// cols <= 0 never wraps.
 func wrapLine(l []rune, cols int) []int {
 	segments := []int{0}
 	if cols <= 0 {
@@ -20,6 +22,15 @@ func wrapLine(l []rune, cols int) []int {
 				end = p
 				break
 			}
+		}
+		if isTail(l[end]) {
+			end--
+		}
+		if end == start {
+			end += 2
+		}
+		if end == len(l) {
+			break
 		}
 		segments = append(segments, end)
 		start = end

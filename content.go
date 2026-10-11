@@ -137,6 +137,6 @@ func (v *View) measureLabels() {
 	}
 	v.labelWidth = 1
 	for _, l := range v.content.Labels {
-		v.labelWidth = max(v.labelWidth, len([]rune(l)))
+		v.labelWidth = max(v.labelWidth, len(textCells(l)))
 	}
 }

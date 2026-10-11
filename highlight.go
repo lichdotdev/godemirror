@@ -7,6 +7,8 @@ import (
 
 	"github.com/alecthomas/chroma/v2"
 	"github.com/alecthomas/chroma/v2/lexers"
+
+	"github.com/lichdotdev/godemirror/internal/glyphs"
 )
 
 // TokenClass is the role a run of code plays, at the granularity a Theme
@@ -70,12 +72,10 @@ func classOf(t chroma.TokenType) TokenClass {
 	return Plain
 }
 
-// document is text cut into lines of cells, tabs expanded to tabSize stops,
-// with the class of every cell. It keeps each line's own runes too, and the
-// cell each of them starts at, so what is copied out is the text as it was.
-//
-// ponytail: one rune per cell; wide (CJK, emoji) characters overlap their
-// neighbour until a width table decides how many cells each takes.
+// document is text cut into lines of cells, tabs expanded to tabSize stops
+// and wide characters to two cells, with the class of every cell. It keeps
+// each line's own runes too, and the cell each of them starts at, so what is
+// copied out is the text as it was.
 type document struct {
 	lines   [][]rune
 	classes [][]TokenClass
@@ -95,15 +95,49 @@ func (d *document) add(text string, class TokenClass) {
 		}
 		d.source[last] = append(d.source[last], r)
 		d.cellOf[last] = append(d.cellOf[last], len(d.lines[last]))
-		cells := 1
+		start := len(d.lines[last])
 		if r == '\t' {
-			r, cells = ' ', tabSize-len(d.lines[last])%tabSize
+			for range tabSize - start%tabSize {
+				d.lines[last] = append(d.lines[last], ' ')
+			}
+		} else {
+			d.lines[last] = appendCells(d.lines[last], r)
 		}
-		for range cells {
-			d.lines[last] = append(d.lines[last], r)
+		for range len(d.lines[last]) - start {
 			d.classes[last] = append(d.classes[last], class)
 		}
 	}
+}
+
+// appendCells appends the cells r takes: r itself, and for a wide character
+// a second cell holding -r, so a cell always says which character it is part
+// of and whether it is that character's first.
+func appendCells(cells []rune, r rune) []rune {
+	cells = append(cells, r)
+	if glyphs.Width(r) == 2 {
+		cells = append(cells, -r)
+	}
+	return cells
+}
+
+// textCells is s laid out in cells, as a line is with no tabs.
+func textCells(s string) []rune {
+	var cells []rune
+	for _, r := range s {
+		cells = appendCells(cells, r)
+	}
+	return cells
+}
+
+// isTail reports whether a cell is the second half of a wide character.
+func isTail(cell rune) bool { return cell < 0 }
+
+// charAt is the character cell is part of.
+func charAt(cell rune) rune {
+	if isTail(cell) {
+		return -cell
+	}
+	return cell
 }
 
 // sourceText is the original text of cells [from, to) of line: every rune that

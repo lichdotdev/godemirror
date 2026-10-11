@@ -292,7 +292,7 @@ func (v *View) paintImage(gtx layout.Context, img *rowImage, at image.Point, are
 func (v *View) paintGutterLabel(gtx layout.Context, line, y int, g geometry, cw int) {
 	img, ok := v.gutter[line]
 	if !ok {
-		img = v.compose([]rune(v.label(line)), nil)
+		img = v.compose(textCells(v.label(line)), nil)
 		v.gutter[line] = img
 	}
 	img.used = v.frameNo
@@ -326,15 +326,31 @@ func (v *View) row(line, segment, firstCol, cols int) *rowImage {
 	return img
 }
 
-// compose rasterizes runes into a transparent row image, one cell each, styled
-// by their classes; nil classes draws them in the gutter's color.
-func (v *View) compose(runes []rune, classes []TokenClass) *rowImage {
-	cw, ch := v.r.CellW(), v.r.CellH()
-	if len(runes) == 0 {
+// compose rasterizes cells into a transparent row image, styled by their
+// classes; nil classes draws them in the gutter's color. A wide character is
+// drawn from its first cell across both, and from the cell before the image
+// when the image starts at its second half.
+func (v *View) compose(cells []rune, classes []TokenClass) *rowImage {
+	if len(cells) == 0 {
 		return &rowImage{}
 	}
-	dst := image.NewRGBA(image.Rect(0, 0, len(runes)*cw, ch))
-	for i, c := range runes {
+	dst := v.rasterize(cells, classes)
+	o := paint.NewImageOp(dst)
+	o.Filter = paint.FilterNearest
+	return &rowImage{op: o, size: dst.Bounds().Size()}
+}
+
+func (v *View) rasterize(cells []rune, classes []TokenClass) *image.RGBA {
+	cw, ch := v.r.CellW(), v.r.CellH()
+	dst := image.NewRGBA(image.Rect(0, 0, len(cells)*cw, ch))
+	for i, c := range cells {
+		x := i * cw
+		if isTail(c) {
+			if i > 0 {
+				continue
+			}
+			c, x = charAt(c), -cw
+		}
 		if c == ' ' {
 			continue
 		}
@@ -346,12 +362,10 @@ func (v *View) compose(runes []rune, classes []TokenClass) *rowImage {
 		if m.Img == nil {
 			continue
 		}
-		at := m.Img.Bounds().Add(m.Off).Add(image.Pt(i*cw, 0))
+		at := m.Img.Bounds().Add(m.Off).Add(image.Pt(x, 0))
 		draw.DrawMask(dst, at, image.NewUniform(style.Color), image.Point{}, m.Img, image.Point{}, draw.Over)
 	}
-	o := paint.NewImageOp(dst)
-	o.Filter = paint.FilterNearest
-	return &rowImage{op: o, size: dst.Bounds().Size()}
+	return dst
 }
 
 // evict drops the row images the last frame did not draw, so memory follows

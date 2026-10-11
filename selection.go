@@ -72,7 +72,8 @@ func (v *View) SelectedLines() (from, to int, ok bool) {
 func (v *View) ClearSelection() { v.sel = selection{} }
 
 // Pos is a place in the document between two characters: Line is 0-based,
-// and Col counts the runes of the line's text before it, a tab as one.
+// and Col counts the runes of the line's text before it, a tab or a wide
+// character as one.
 type Pos struct{ Line, Col int }
 
 // Select selects the text between from and to, in either order, as a drag
@@ -146,7 +147,16 @@ func (v *View) hit(f frame, p image.Point) pos {
 		x += v.scroll.X
 	}
 	from, to := v.segmentSpan(line, segment)
-	return pos{line, from + min(max(x/f.cw, 0), to-from)}
+	col := from + min(max(x/f.cw, 0), to-from)
+	if cells := v.doc.lines[line]; col < to && isTail(cells[col]) {
+		// Inside a wide character: before it from its left half, after it
+		// from its right.
+		col--
+		if x-f.cw/2 >= (col+1-from)*f.cw {
+			col += 2
+		}
+	}
+	return pos{line, col}
 }
 
 // segmentSpan is the cells [from, to) the row segment of line shows. A row
@@ -169,24 +179,32 @@ func isWordRune(r rune) bool {
 }
 
 // wordAt is the span a double click at p selects: the run of word characters
-// around it, or, off a word, the single cell under it.
+// around it, or, off a word, the single character under it.
 func (v *View) wordAt(p pos) selection {
 	cells := v.doc.lines[p.line]
 	if len(cells) == 0 {
 		return selection{p, p}
 	}
+	word := func(i int) bool { return isWordRune(charAt(cells[i])) }
 	at := min(p.col, len(cells)-1)
-	if !isWordRune(cells[at]) && at > 0 && isWordRune(cells[at-1]) {
+	if !word(at) && at > 0 && word(at-1) {
 		at--
 	}
-	if !isWordRune(cells[at]) {
-		return selection{pos{p.line, at}, pos{p.line, at + 1}}
+	for isTail(cells[at]) {
+		at--
+	}
+	if !word(at) {
+		to := at + 1
+		if to < len(cells) && isTail(cells[to]) {
+			to++
+		}
+		return selection{pos{p.line, at}, pos{p.line, to}}
 	}
 	from, to := at, at+1
-	for from > 0 && isWordRune(cells[from-1]) {
+	for from > 0 && word(from-1) {
 		from--
 	}
-	for to < len(cells) && isWordRune(cells[to]) {
+	for to < len(cells) && word(to) {
 		to++
 	}
 	return selection{pos{p.line, from}, pos{p.line, to}}
