@@ -2,6 +2,7 @@ package godemirror
 
 import (
 	"image"
+	"maps"
 	"strings"
 	"testing"
 	"time"
@@ -181,5 +182,47 @@ func TestChangingTheThemeRecolorsTheRowsOnScreen(t *testing.T) {
 	}
 	if h.v.gutter[0] == label {
 		t.Fatal("line 0's label is still the image composed in the old theme's colors")
+	}
+}
+
+// drawnRows is every row image the last frame drew, by what it holds.
+func (h *harness) drawnRows() map[rowKey]image.Point {
+	drawn := map[rowKey]image.Point{}
+	for k, img := range h.v.rows {
+		if img.used == h.v.frameNo {
+			drawn[k] = img.size
+		}
+	}
+	return drawn
+}
+
+func TestResizedRowsShowWhatAFreshViewShows(t *testing.T) {
+	text := strings.Repeat("short\n"+strings.Repeat("word ", 40)+"\n"+strings.Repeat("x", 150)+"\n", 5)
+	for _, wrap := range []bool{false, true} {
+		dragged := newHarness(t, text)
+		dragged.v.Wrap = wrap
+		for _, width := range []int{400, 403, 520, 260, 1300, 410} {
+			dragged.size = image.Pt(width, 200)
+			dragged.frame()
+			fresh := newHarness(t, text)
+			fresh.v.Wrap = wrap
+			fresh.size = dragged.size
+			fresh.frame()
+			if got, want := dragged.drawnRows(), fresh.drawnRows(); !maps.Equal(got, want) {
+				t.Fatalf("wrap=%v, resized to %dpx: drew rows %v, a fresh view draws %v", wrap, width, got, want)
+			}
+		}
+	}
+}
+
+func TestNarrowingTheViewKeepsItsRowImages(t *testing.T) {
+	h := newHarness(t, strings.Repeat(strings.Repeat("x", 300)+"\nshort\n", 5))
+	before := maps.Clone(h.v.rows)
+	h.size.X -= 2 * h.v.r.CellW()
+	h.frame()
+	for k, img := range h.v.rows {
+		if before[k] != img {
+			t.Fatalf("row %v was composed again after the view narrowed by two cells", k)
+		}
 	}
 }

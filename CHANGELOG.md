@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Resizing a view no longer redraws every row.** A `View`, `Split` or
+  `DiffView` whose width changed every frame (a pane edge being dragged)
+  composed every visible row again each frame; now a row is composed again
+  only when the cells it shows change.
+
 ## [0.1.0] - 2026-10-10
 
 ### Added

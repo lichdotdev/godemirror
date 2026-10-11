@@ -98,9 +98,9 @@ type View struct {
 	gutter  map[int]*rowImage
 }
 
-// rowKey names the cells a row image holds: a segment of line, and, unwrapped,
-// span cells from col. span changes with the view's width, which a view
-// opened small and then grown would otherwise go on showing cut.
+// rowKey names the cells a row image holds: span cells of line from col, cut
+// to the line's end, for its visual row segment. The view's width never joins
+// it, so resizing redraws only the rows whose cells change.
 type rowKey struct{ line, segment, col, span int }
 
 type rowImage struct {
@@ -237,9 +237,6 @@ func (v *View) wrapRows(cols int) {
 		v.wraps[i] = wrapLine(l, want)
 	}
 	v.wrapCols = want
-	// A row image is keyed by its line, segment and first column, which
-	// name different cells once the wrapping changes.
-	v.rows = map[rowKey]*rowImage{}
 }
 
 // visibleRow is one visual row on screen: a segment of a document line, at y.
@@ -252,15 +249,14 @@ func (v *View) paintRows(gtx layout.Context, f frame) {
 	v.paintLineBackgrounds(gtx, rows, code, ch)
 	v.paintSpans(gtx, f, rows, code)
 	v.paintSelection(gtx, f, rows, code)
-	// Unwrapped rows are composed a page of columns at a time, two screens
-	// wide, so scrolling sideways redraws a row only when it crosses a page.
+	page := pageCols(g.cols)
 	firstCol, x := 0, g.textX
 	if !v.Wrap {
-		firstCol = v.scroll.X / cw / g.cols * g.cols
+		firstCol = v.scroll.X / cw / (page / 2) * (page / 2)
 		x -= v.scroll.X - firstCol*cw
 	}
 	for _, r := range rows {
-		img := v.row(r.line, r.segment, firstCol, 2*g.cols)
+		img := v.row(r.line, r.segment, firstCol, page)
 		v.paintImage(gtx, img, image.Pt(x, r.y), code)
 	}
 	v.paintWidgets(gtx, f, rows, code)
@@ -275,6 +271,17 @@ func (v *View) paintRows(gtx layout.Context, f frame) {
 		}
 		v.paintGutterLabel(gtx, r.line, r.y, g, cw)
 	}
+}
+
+// pageStep is the granularity of an unwrapped page, in columns: a view
+// resized by a few cells keeps its page, and its rows, until it crosses one.
+const pageStep = 64
+
+// pageCols is how many columns an unwrapped row image holds: at least two
+// screens, so scrolling sideways redraws a row only when it crosses half a
+// page, rounded up to pageStep.
+func pageCols(cols int) int {
+	return (2*cols + pageStep - 1) / pageStep * pageStep
 }
 
 // paintImage draws img at at, clipped to the area it may show in.
@@ -303,11 +310,6 @@ func (v *View) paintGutterLabel(gtx layout.Context, line, y int, g geometry, cw 
 // row returns the image of one visual row: a wrapped segment of line, or, for
 // an unwrapped view, cols cells from firstCol.
 func (v *View) row(line, segment, firstCol, cols int) *rowImage {
-	k := rowKey{line: line, segment: segment, col: firstCol, span: cols}
-	if img, ok := v.rows[k]; ok {
-		img.used = v.frameNo
-		return img
-	}
 	if segment >= len(v.wraps[line]) {
 		return &rowImage{}
 	}
@@ -320,6 +322,11 @@ func (v *View) row(line, segment, firstCol, cols int) *rowImage {
 		}
 	}
 	from, to = min(from, len(l)), min(to, len(l))
+	k := rowKey{line: line, segment: segment, col: from, span: to - from}
+	if img, ok := v.rows[k]; ok {
+		img.used = v.frameNo
+		return img
+	}
 	img := v.compose(l[from:to], classes[from:to])
 	img.used = v.frameNo
 	v.rows[k] = img
