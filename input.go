@@ -81,6 +81,7 @@ func (v *View) handlePointer(gtx layout.Context, f frame) (pressed bool) {
 	}
 	v.scroll.X = min(max(v.scroll.X, 0), maxX)
 	v.scroll.Y = min(max(v.scroll.Y, 0), maxY)
+	v.autoScroll(gtx, f, image.Pt(maxX, maxY))
 	v.hot = v.decoration(v.hover).HoverGroup
 	return pressed
 }
@@ -104,10 +105,12 @@ func (v *View) pointerEvent(gtx layout.Context, f frame, e pointer.Event) (press
 		gtx.Execute(key.FocusCmd{Tag: v})
 		v.selectPress(v.hit(f, at), v.press.next(gtx.Now, at), e.Modifiers.Contain(key.ModShift))
 		v.press.dragging = true
+		v.drag.pointer = at
 		return true
 	case pointer.Drag:
 		if v.press.dragging {
 			v.sel.head = v.hit(f, at)
+			v.drag.pointer = at
 		}
 	case pointer.Release, pointer.Cancel:
 		v.press.dragging = false

@@ -75,6 +75,8 @@ type View struct {
 
 	sel   selection
 	press press
+	// drag scrolls the view while a selection is held beyond its edge.
+	drag dragScroll
 	// hover is the document line under the pointer, -1 for none, and hot the
 	// hover group it belongs to (LineDecoration.HoverGroup), 0 for none.
 	hover int
@@ -131,6 +133,12 @@ func (v *View) dropRows() {
 // Layout draws the view into the whole of gtx.Constraints.Max, takes the
 // pointer and key events addressed to it (scroll, select, copy), and lays out
 // each LineWidget on screen and every BlockWidget exactly once.
+//
+// While a selection is dragged beyond the view's top or bottom edge, or, when
+// unwrapped, its left or right, Layout scrolls the view by the time since its
+// last frame (gtx.Now) and asks for the next frame, faster the farther the
+// pointer is beyond the edge. It scrolls no more at the document's ends, on
+// release, or once the pointer is back inside.
 //
 // An error means nothing was drawn this frame: either the fonts could not be
 // scaled to the size gtx asks for, or the content last set could not be

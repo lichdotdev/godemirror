@@ -55,10 +55,10 @@ godemirror lets you:
   `git diff` patch: unified with old and new line numbers, or side by side,
   unchanged runs collapsed behind an expander, a Revert on each chunk, and
   review threads anchored to file lines. Its colors are part of the theme.
-- **Select and copy.** Drag, double click for a word, triple click for a line,
-  Shift+click to extend, Ctrl+A and Ctrl+C. Copying gives back the text as it
-  was, tabs included, and `SelectedLines` turns the selection into the line span
-  an action works on.
+- **Select and copy.** Drag (past an edge the view scrolls along), double click
+  for a word, triple click for a line, Shift+click to extend, Ctrl+A and
+  Ctrl+C. Copying gives back the text as it was, tabs included, and
+  `SelectedLines` turns the selection into the line span an action works on.
 
 ## Getting started
 

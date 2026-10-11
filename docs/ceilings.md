@@ -50,9 +50,12 @@ file is the trap alone.
 - **A `DiffView` calls back after the frame**: `DiffOptions.Expand` and `Revert` run at the end of `Layout`,
   never while it paints, so a callback may set a new diff at once. A `DiffBlock` on a line inside a gap is not
   shown until the gap is filled.
-- **Selection does not scroll the view**: dragging past an edge stops the selection at the edge, and `Select`
-  leaves the scroll alone (pair it with `ScrollToLine`). In a `Split` a selection lives on one side; starting
-  one with the pointer clears the other, but `Select` on one side does not.
+- **A held drag scrolls the view; `Select` does not**: dragging a selection past an edge scrolls the view for as
+  long as the button is held there, and each such frame asks for the next with `op.InvalidateCmd`, so the host
+  must honor it (a window that redraws only on input events scrolls only as the pointer moves). The time of a
+  step is `gtx.Now`, so a caller that lays out with a fixed `Now` sees no scrolling. `Select` leaves the scroll
+  alone (pair it with `ScrollToLine`). In a `Split` a selection lives on one side; starting one with the pointer
+  clears the other, but `Select` on one side does not.
 - **Widgets have fixed boxes**: a `LineWidget` gets one row's height, and a `BlockWidget` the visible code
   area's width, so a block does not scroll sideways with the code under it.
 - **The first text Gio shapes costs about 28ms**, once per process (font loading and shaper caches). A view

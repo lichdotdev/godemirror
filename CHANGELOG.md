@@ -28,6 +28,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   with tabs copied as written. From code: `Select`, `SelectLines`,
   `Selection`, `SelectedText` and `SelectedLines`, plus `ScrollToLine` with
   `AlignNearest`, `AlignCenter` and `AlignTop`, `LineCount` and `LineText`.
+  A selection dragged past the view's edge scrolls it, faster the farther the
+  pointer is beyond (sideways too when unwrapped), and keeps going on frames
+  where the pointer does not move.
 - **A diff view.** `DiffView` diffs two documents itself (`SetDocs`, line by
   line with Myers' algorithm) or shows a file of a `git diff` patch
   (`ParsePatch`, `SetPatch`). Unified, with an old | new line-number gutter,
