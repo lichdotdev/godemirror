@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-10-10
+
 ### Added
 
 - **A read-only code view for Gio.** `View` shows one document: monospace rows
@@ -63,4 +65,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   wrapping never splits one, and a gutter label's width counts them too.
   `Pos.Col` and `Span` still count runes.
 
-[Unreleased]: https://github.com/lichdotdev/godemirror/commits/main
+[Unreleased]: https://github.com/lichdotdev/godemirror/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/lichdotdev/godemirror/releases/tag/v0.1.0
