@@ -40,6 +40,11 @@ const highlightPoll = 16 * time.Millisecond
 type View struct {
 	// Wrap breaks lines at the view's width instead of scrolling sideways.
 	Wrap bool
+	// Nested is a view laid out inside a parent that scrolls vertically, a
+	// panel listing several: a vertical wheel the view cannot scroll down by
+	// goes on to the parent, and turns sideways only while the pointer last
+	// reported Shift held.
+	Nested bool
 	// Theme colors the view; it starts as DarkTheme. A change shows on the
 	// next Layout, which composes the rows on screen again.
 	Theme Theme
@@ -84,6 +89,9 @@ type View struct {
 	// hover is the document line under the pointer, -1 for none, and hot the
 	// hover group it belongs to (LineDecoration.HoverGroup), 0 for none.
 	hover int
+	// shift is whether the last pointer event had Shift held, which a Nested
+	// view reads before the wheel arrives to know whether to claim it.
+	shift bool
 	hot   int
 	// widgetAreas are where last frame's widgets were drawn, which a press
 	// leaves to them rather than starting a selection.

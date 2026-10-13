@@ -52,6 +52,9 @@ type DiffView struct {
 	Split bool
 	// Wrap breaks long lines instead of scrolling them sideways.
 	Wrap bool
+	// Nested is View.Nested: the diff sits in a parent that scrolls
+	// vertically.
+	Nested bool
 
 	opts    DiffOptions
 	unified *View
@@ -221,10 +224,10 @@ func (d *DiffView) Chunks() []Chunk { return slices.Clone(d.chunks) }
 func (d *DiffView) Layout(gtx layout.Context) (layout.Dimensions, error) {
 	defer d.affordances.runQueued()
 	if d.Split {
-		d.split.Wrap = d.Wrap
+		d.split.Wrap, d.split.Nested = d.Wrap, d.Nested
 		return d.split.Layout(gtx)
 	}
-	d.unified.Wrap = d.Wrap
+	d.unified.Wrap, d.unified.Nested = d.Wrap, d.Nested
 	return d.unified.Layout(gtx)
 }
 

@@ -27,6 +27,8 @@ type Split struct {
 	Left, Right *View
 	// Wrap breaks both sides' lines instead of scrolling them sideways.
 	Wrap bool
+	// Nested is View.Nested for both sides.
+	Nested bool
 }
 
 // NewSplit builds a split view whose two sides draw family at size, from one
@@ -58,6 +60,7 @@ func (s *Split) Layout(gtx layout.Context) (layout.Dimensions, error) {
 	rgtx.Constraints = layout.Exact(image.Pt(size.X-rightX, size.Y))
 
 	s.Left.Wrap, s.Right.Wrap = s.Wrap, s.Wrap
+	s.Left.Nested, s.Right.Nested = s.Nested, s.Nested
 	lf, err := s.Left.prepare(lgtx)
 	if err != nil {
 		return layout.Dimensions{}, err

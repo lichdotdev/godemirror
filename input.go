@@ -58,15 +58,20 @@ func (v *View) handlePointer(gtx layout.Context, f frame) (pressed bool) {
 	}
 	sideways := pointer.ScrollRange{Min: -v.scroll.X, Max: maxX - v.scroll.X}
 	down := pointer.ScrollRange{Min: -v.scroll.Y, Max: maxY - v.scroll.Y}
+	// Shift turns a vertical wheel sideways, which Gio leaves to the handler:
+	// it clamps the wheel by the vertical range first, so that range also
+	// admits what the sideways one would. A nested view does so only while
+	// Shift is held, or it would take every wheel its parent should scroll by.
+	vertical := down
+	if !v.Nested || v.shift {
+		vertical = pointer.ScrollRange{Min: min(down.Min, sideways.Min), Max: max(down.Max, sideways.Max)}
+	}
 	for {
-		// Shift turns a vertical wheel sideways, which Gio leaves to the
-		// handler: it clamps the wheel by the vertical range first, so that
-		// range also admits what the sideways one would.
 		ev, ok := gtx.Event(pointer.Filter{
 			Target:  v,
 			Kinds:   pointer.Scroll | pointer.Press | pointer.Drag | pointer.Release | pointer.Move | pointer.Enter | pointer.Leave,
 			ScrollX: sideways,
-			ScrollY: pointer.ScrollRange{Min: min(down.Min, sideways.Min), Max: max(down.Max, sideways.Max)},
+			ScrollY: vertical,
 		})
 		if !ok {
 			break
@@ -89,6 +94,7 @@ func (v *View) handlePointer(gtx layout.Context, f frame) (pressed bool) {
 func (v *View) pointerEvent(gtx layout.Context, f frame, e pointer.Event) (pressed bool) {
 	at := e.Position.Round()
 	v.hover = v.lineUnder(f, at)
+	v.shift = e.Modifiers.Contain(key.ModShift)
 	switch e.Kind {
 	case pointer.Leave:
 		v.hover = -1
