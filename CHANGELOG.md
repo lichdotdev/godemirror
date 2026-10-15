@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **CodeMirror's highlighting tags.** The new `tags` package is
+  `@lezer/highlight`'s vocabulary: every standard tag and the `Definition`,
+  `Constant`, `Function`, `Standard`, `Local` and `Special` modifiers, falling
+  back from specific to general the way CodeMirror's do. chroma's tokens are
+  tagged with them, punctuation down to parens, braces and separators.
+- **`HighlightStyle`, as in CodeMirror.** `NewHighlightStyle` takes `TagStyle`
+  specs (tags, color, bold, italic, underline, line-through) and resolves a
+  token's style like `HighlightStyle.define`: the most specific styled tag
+  wins, and a later spec for a tag replaces an earlier one.
+- **Ported CodeMirror themes**: `OneDark` (`@codemirror/theme-one-dark`), and
+  `Dracula`, `GitHubLight`, `GitHubDark` and `Nord` (`@uiw/codemirror-themes`),
+  spec for spec. The demo takes `-theme`.
+
+### Changed
+
+- **Themes style tags, not classes.** `Theme.Syntax`, `TokenStyle` and
+  `TokenClass` are gone. A theme of your own sets `Theme.Foreground` (what
+  `Syntax[Plain].Color` was) and `Theme.Highlight`, a `*HighlightStyle` built
+  from `TagStyle` specs naming `tags`. `DarkTheme` and `LightTheme` keep their
+  colors, and a few tokens move with the finer tags: `self`/`this` take the
+  keyword color, HTML entities the string color, exception names the type
+  color, symbols and atoms the literal color; markdown headings and strong text
+  are bold, emphasis italic, links underlined.
+
 ### Fixed
 
 - **Resizing a view no longer redraws every row.** A `View`, `Split` or

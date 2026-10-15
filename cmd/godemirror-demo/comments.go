@@ -143,7 +143,7 @@ func (d *demo) posted(gtx layout.Context, c *comment) layout.Dimensions {
 
 // foreground is the views' text color, which the comments share.
 func (d *demo) foreground() color.NRGBA {
-	return d.theme.Syntax[godemirror.Plain].Color
+	return d.theme.Foreground
 }
 
 // button is a small rounded button with the hand cursor; primary is the

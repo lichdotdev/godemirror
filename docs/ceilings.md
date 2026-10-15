@@ -20,9 +20,15 @@ file is the trap alone.
   U+FE0F (❤️) stays one cell. Color emoji fonts (Noto Color Emoji is CBDT) cannot be rasterized by `x/image`:
   fontconfig still picks them, so those emoji are blank, two cells wide, not boxes. A wide glyph is drawn from
   the left of its two cells, so a CJK font with a 1em advance leaves a sliver on its right.
-- **Highlighting is chroma, not lezer**: chroma's lexers tag every call as a function name, so calls take the
-  Definition color where CodeMirror colors only the declaration, and some lexers (Go) leave type names used as
-  values uncolored. A theme ported from CodeMirror will look busier on calls.
+- **Highlighting is chroma, not lezer**: every token is tagged with the CodeMirror tag a lezer grammar gives the
+  same construct (`tagmap.go`), but chroma knows less than a parse tree. Every call is tagged
+  `Function(VariableName)` like the declaration, so a theme that colors only declarations colors calls too; Go type
+  names used as values, and a declared name, stay `VariableName`; operators are all `Operator`. A ported theme is
+  faithful tag for tag and still looks busier or flatter than in CodeMirror wherever chroma is coarser.
+- **A token has one tag and one style**: CodeMirror nests styles (a link inside a heading is both) and applies
+  `HighlightStyle.define`'s CSS; godemirror draws a token's single most specific style, and only its color, bold,
+  italic, underline and line-through. A spec's background, border or outline is dropped, so it is not in
+  `TagStyle`. Each cell holds its tag as a pointer: eight bytes a cell, about 8 MB for a 13k-line file.
 - **A new document shows plain before it shows colored**: `SetContent` draws the text at once and swaps the
   colors in when the goroutine finishes, about half a second for a 13k-line file. `UpdateContent` does the
   opposite: the *old* content stays on screen until the new one is colored. For those milliseconds anything

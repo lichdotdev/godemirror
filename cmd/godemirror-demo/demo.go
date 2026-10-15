@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"image"
 	"log"
 	"os"
@@ -48,10 +49,25 @@ type demo struct {
 	comments []*comment
 }
 
+var portedThemes = map[string]godemirror.Theme{
+	"onedark":     godemirror.OneDark,
+	"dracula":     godemirror.Dracula,
+	"githublight": godemirror.GitHubLight,
+	"githubdark":  godemirror.GitHubDark,
+	"nord":        godemirror.Nord,
+}
+
 func newDemo() (*demo, error) {
 	d := &demo{theme: godemirror.DarkTheme, th: material.NewTheme()}
 	if *flagLight {
 		d.theme = godemirror.LightTheme
+	}
+	if *flagTheme != "" {
+		t, ok := portedThemes[*flagTheme]
+		if !ok {
+			return nil, fmt.Errorf("-theme %q: not a ported theme", *flagTheme)
+		}
+		d.theme = t
 	}
 	if *flagOld == "" && *flagDiff == "" {
 		return d, d.loadFile()

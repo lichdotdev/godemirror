@@ -9,86 +9,26 @@ import (
 	"github.com/alecthomas/chroma/v2/lexers"
 
 	"github.com/lichdotdev/godemirror/internal/glyphs"
+	"github.com/lichdotdev/godemirror/tags"
 )
-
-// TokenClass is the role a run of code plays, at the granularity a Theme
-// colors: CodeMirror's classHighlighter classes, folded into the roles a
-// syntax palette usually tells apart.
-type TokenClass uint8
-
-const (
-	// Plain is text no other class claims, and every file no lexer matches.
-	Plain TokenClass = iota
-	// Keyword is the language's reserved words.
-	Keyword
-	// String is string and character literals.
-	String
-	// Comment is comments, line and block.
-	Comment
-	// Literal is numbers and the language's named constants (true, nil).
-	Literal
-	// TypeName is type, class and namespace names.
-	TypeName
-	// Property is fields, attributes and markup tags.
-	Property
-	// Definition is function names. chroma tags calls the same as
-	// declarations, so calls take this class too.
-	Definition
-	// Punctuation is operators and punctuation.
-	Punctuation
-	// Invalid is what the lexer could not read.
-	Invalid
-	// NumTokenClasses is the number of classes above, the length of
-	// Theme.Syntax.
-	NumTokenClasses
-)
-
-// classOf maps a chroma token to its class. The order matters: chroma files
-// type names and constants under Keyword, and the more specific roles must win.
-func classOf(t chroma.TokenType) TokenClass {
-	switch {
-	case t == chroma.KeywordType, t == chroma.NameClass, t == chroma.NameNamespace:
-		return TypeName
-	case t == chroma.KeywordConstant, t.InSubCategory(chroma.LiteralNumber):
-		return Literal
-	case t.InCategory(chroma.Keyword):
-		return Keyword
-	case t.InSubCategory(chroma.LiteralString):
-		return String
-	case t.InCategory(chroma.Comment):
-		return Comment
-	case t == chroma.NameAttribute, t == chroma.NameProperty, t == chroma.NameTag:
-		return Property
-	// ponytail: chroma's lexers tag every call as NameFunction where lezer
-	// tags only the declaration, so calls take the definition color too; a
-	// tree-sitter backend would tell them apart.
-	case t == chroma.NameFunction:
-		return Definition
-	case t.InCategory(chroma.Operator), t == chroma.Punctuation:
-		return Punctuation
-	case t == chroma.Error:
-		return Invalid
-	}
-	return Plain
-}
 
 // document is text cut into lines of cells, tabs expanded to tabSize stops
-// and wide characters to two cells, with the class of every cell. It keeps
+// and wide characters to two cells, with the highlighting tag of every cell. It keeps
 // each line's own runes too, and the cell each of them starts at, so what is
 // copied out is the text as it was.
 type document struct {
-	lines   [][]rune
-	classes [][]TokenClass
-	source  [][]rune
-	cellOf  [][]int
+	lines  [][]rune
+	tags   [][]*tags.Tag
+	source [][]rune
+	cellOf [][]int
 }
 
-func (d *document) add(text string, class TokenClass) {
+func (d *document) add(text string, tag *tags.Tag) {
 	for _, r := range text {
 		last := len(d.lines) - 1
 		if r == '\n' {
 			d.lines = append(d.lines, nil)
-			d.classes = append(d.classes, nil)
+			d.tags = append(d.tags, nil)
 			d.source = append(d.source, nil)
 			d.cellOf = append(d.cellOf, nil)
 			continue
@@ -104,7 +44,7 @@ func (d *document) add(text string, class TokenClass) {
 			d.lines[last] = appendCells(d.lines[last], r)
 		}
 		for range len(d.lines[last]) - start {
-			d.classes[last] = append(d.classes[last], class)
+			d.tags[last] = append(d.tags[last], tag)
 		}
 	}
 }
@@ -156,14 +96,14 @@ func normalize(text string) string {
 }
 
 func newDocument() *document {
-	return &document{lines: [][]rune{nil}, classes: [][]TokenClass{nil}, source: [][]rune{nil}, cellOf: [][]int{nil}}
+	return &document{lines: [][]rune{nil}, tags: [][]*tags.Tag{nil}, source: [][]rune{nil}, cellOf: [][]int{nil}}
 }
 
-// plain builds the document of text with every cell Plain. Its cells are
+// plain builds the document of text with every cell untagged. Its cells are
 // exactly highlight's, so one can stand in for the other.
 func plain(text string) *document {
 	d := newDocument()
-	d.add(normalize(text), Plain)
+	d.add(normalize(text), nil)
 	return d
 }
 
@@ -182,11 +122,11 @@ func highlight(filename, text string) (*document, error) {
 	}
 	d := newDocument()
 	for t := it(); t != chroma.EOF; t = it() {
-		d.add(t.Value, classOf(t.Type))
+		d.addToken(t)
 	}
 	// Lexers that ensure a final newline hand one back the text never had.
 	lines := strings.Count(text, "\n") + 1
-	d.lines, d.classes = d.lines[:lines], d.classes[:lines]
+	d.lines, d.tags = d.lines[:lines], d.tags[:lines]
 	d.source, d.cellOf = d.source[:lines], d.cellOf[:lines]
 	return d, nil
 }

@@ -31,9 +31,10 @@ code review, logs. It does not edit text.
 godemirror lets you:
 
 - **Show code that reads like code.** Monospace rows highlighted by
-  [chroma](https://github.com/alecthomas/chroma) from the file name, sorted
-  into CodeMirror's classHighlighter classes and colored by `DarkTheme`,
-  `LightTheme` or a theme of your own. Highlighting runs off the UI
+  [chroma](https://github.com/alecthomas/chroma) from the file name, tagged
+  with CodeMirror's highlighting tags and colored by a `HighlightStyle`, as in
+  CodeMirror: `DarkTheme`, `LightTheme`, a ported CodeMirror theme (`OneDark`,
+  `Dracula`, `GitHubLight`, `GitHubDark`, `Nord`) or a theme of your own. Highlighting runs off the UI
   goroutine: a 13,000-line file shows at once and takes its colors when they are
   ready.
 - **Wrap, or don't.** Lines break after spaces the way CSS `pre-wrap` does, or
@@ -101,7 +102,8 @@ The deliberate limits, and what they mean for a caller, are in
 |---|---|
 | `EditorView` with `EditorState.readOnly` | `View` |
 | `EditorView.lineWrapping` | `View.Wrap` |
-| `EditorView.theme`, `classHighlighter` | `Theme`, `TokenClass` |
+| `EditorView.theme` | `Theme` |
+| `tags` (`@lezer/highlight`), `HighlightStyle.define` | package `tags`, `NewHighlightStyle` |
 | `lineNumbers({formatNumber})` | `Content.Labels` |
 | `Decoration.line`, `gutterLineClass` | `LineDecoration` |
 | `Decoration.mark` | `LineDecoration.Spans` |

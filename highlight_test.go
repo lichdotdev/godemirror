@@ -1,8 +1,9 @@
 package godemirror
 
 import (
-	"slices"
 	"testing"
+
+	"github.com/lichdotdev/godemirror/tags"
 )
 
 func TestHighlightCutsLinesAndExpandsTabsToStops(t *testing.T) {
@@ -18,49 +19,56 @@ func TestHighlightCutsLinesAndExpandsTabsToStops(t *testing.T) {
 		if string(d.lines[i]) != want[i] {
 			t.Fatalf("line %d = %q, want %q", i, string(d.lines[i]), want[i])
 		}
-		if len(d.classes[i]) != len(d.lines[i]) {
-			t.Fatalf("line %d has %d classes for %d cells", i, len(d.classes[i]), len(d.lines[i]))
+		if len(d.tags[i]) != len(d.lines[i]) {
+			t.Fatalf("line %d has %d tags for %d cells", i, len(d.tags[i]), len(d.lines[i]))
 		}
 	}
 }
 
-func TestHighlightClassesGoCode(t *testing.T) {
-	d, err := highlight("main.go", "func main() {\n\t// hi\n\treturn \"x\", 42\n}\n")
+// The tags are the ones @lezer/go gives the same code, but for main: lezer
+// tags a declared function definition(function(variableName)), and chroma
+// cannot tell a declaration from a call.
+func TestHighlightTagsGoCode(t *testing.T) {
+	d, err := highlight("main.go", "func main() {\n\t// hi\n\treturn \"x\", 42, true, nil\n}\n")
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(d.lines) != 4 {
 		t.Fatalf("got %d lines, want 4", len(d.lines))
 	}
-	classAt := func(line int, word string) TokenClass {
+	tagAt := func(line int, word string) *tags.Tag {
 		text := string(d.lines[line])
 		for i := range len(text) - len(word) + 1 {
 			if text[i:i+len(word)] == word {
-				return d.classes[line][i]
+				return d.tags[line][i]
 			}
 		}
 		t.Fatalf("%q not on line %d (%q)", word, line, text)
-		return Plain
+		return nil
 	}
 	cases := []struct {
 		line int
 		word string
-		want TokenClass
+		want *tags.Tag
 	}{
-		{0, "func", Keyword},
-		{0, "main", Definition},
-		{1, "// hi", Comment},
-		{2, "return", Keyword},
-		{2, `"x"`, String},
-		{2, "42", Literal},
+		{0, "func", tags.DefinitionKeyword},
+		{0, "main", tags.Function(tags.VariableName)},
+		{0, "(", tags.Paren},
+		{0, ")", tags.Paren},
+		{0, "{", tags.Brace},
+		{1, "// hi", tags.LineComment},
+		{2, "return", tags.Keyword},
+		{2, `"x"`, tags.String},
+		{2, ",", tags.Separator},
+		{2, "42", tags.Integer},
+		{2, "true", tags.Bool},
+		{2, "nil", tags.Null},
+		{3, "}", tags.Brace},
 	}
 	for _, c := range cases {
-		if got := classAt(c.line, c.word); got != c.want {
-			t.Errorf("%q on line %d: class %d, want %d", c.word, c.line, got, c.want)
+		if got := tagAt(c.line, c.word); got != c.want {
+			t.Errorf("%q on line %d: tag %v, want %v", c.word, c.line, got, c.want)
 		}
-	}
-	if !slices.Contains(d.classes[3], Punctuation) {
-		t.Errorf("closing brace not punctuation: %v", d.classes[3])
 	}
 }
 

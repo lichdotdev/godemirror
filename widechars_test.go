@@ -120,7 +120,7 @@ func TestAWideGutterLabelTakesTwoCells(t *testing.T) {
 // wide character's second half, which must still show that half.
 func TestARowStartingInsideAWideCharacterDrawsItsSecondHalf(t *testing.T) {
 	h := newHarness(t, wideSample)
-	img := h.v.rasterize(h.v.doc.lines[0][2:], h.v.doc.classes[0][2:])
+	img := h.v.rasterize(h.v.doc.lines[0][2:], h.v.doc.tags[0][2:])
 	for y := range img.Bounds().Dy() {
 		for x := range h.v.r.CellW() {
 			if img.RGBAAt(x, y).A != 0 {

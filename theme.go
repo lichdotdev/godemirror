@@ -1,6 +1,10 @@
 package godemirror
 
-import "image/color"
+import (
+	"image/color"
+
+	"github.com/lichdotdev/godemirror/tags"
+)
 
 // Theme is the view's palette. Selection may be translucent, as may the
 // colors of a LineDecoration: they are mixed over Background in sRGB, the way
@@ -17,9 +21,12 @@ type Theme struct {
 	// numbers or Content.Labels in it.
 	GutterBackground color.NRGBA
 	GutterForeground color.NRGBA
-	// Syntax styles each TokenClass, indexed by it; Plain is the text's own
-	// color.
-	Syntax [NumTokenClasses]TokenStyle
+	// Foreground is the code's color where Highlight gives it none, as the
+	// color of CodeMirror's editor theme is.
+	Foreground color.NRGBA
+	// Highlight styles the code by its highlighting tags; nil draws it all in
+	// Foreground.
+	Highlight *HighlightStyle
 	// SearchMatch tints every match of the search (SetSearch), and
 	// SearchCurrent the one that is selected, the current match. Like
 	// Selection they may be translucent: they are mixed over the line's
@@ -78,13 +85,6 @@ func percent(c color.NRGBA, p int) color.NRGBA {
 	return c
 }
 
-// TokenStyle is how one TokenClass is drawn: its color, and whether in the
-// family's italic.
-type TokenStyle struct {
-	Color  color.NRGBA
-	Italic bool
-}
-
 // DarkTheme is the palette a new View starts with: zinc greys under an oklch
 // syntax palette, converted to sRGB. A theme of your own starts as a copy of
 // DarkTheme or LightTheme with the fields you want changed.
@@ -96,18 +96,12 @@ var DarkTheme = Theme{
 	SearchCurrent:    percent(orange500, 60),
 	GutterBackground: rgb(0x09090b),
 	GutterForeground: rgb(0x9f9fa9),
-	Syntax: [NumTokenClasses]TokenStyle{
-		Plain:       {Color: rgb(0xfafafa)},
-		Keyword:     {Color: rgb(0xc396f5)},
-		String:      {Color: rgb(0x82cb92)},
-		Comment:     {Color: rgb(0x9f9fa9), Italic: true},
-		Literal:     {Color: rgb(0xeca760)},
-		TypeName:    {Color: rgb(0x71d0d5)},
-		Property:    {Color: rgb(0x82b1ed)},
-		Definition:  {Color: rgb(0x82b1ed)},
-		Punctuation: {Color: rgb(0x9f9fa9)},
-		Invalid:     {Color: rgb(0xff6467)},
-	},
+	Foreground:       rgb(0xfafafa),
+	Highlight: zincHighlight(zincColors{
+		keyword: rgb(0xc396f5), str: rgb(0x82cb92), comment: rgb(0x9f9fa9), literal: rgb(0xeca760),
+		typeName: rgb(0x71d0d5), property: rgb(0x82b1ed), definition: rgb(0x82b1ed),
+		punctuation: rgb(0x9f9fa9), invalid: rgb(0xff6467),
+	}),
 	Diff: DiffColors{
 		Added: ChangeColors{
 			Background: percent(emerald400, 14), HoverBackground: percent(emerald500, 20),
@@ -135,18 +129,12 @@ var LightTheme = Theme{
 	SearchCurrent:    percent(orange500, 60),
 	GutterBackground: rgb(0xebebed),
 	GutterForeground: rgb(0x64636e),
-	Syntax: [NumTokenClasses]TokenStyle{
-		Plain:       {Color: rgb(0x18181b)},
-		Keyword:     {Color: rgb(0x6c329f)},
-		String:      {Color: rgb(0x206b38)},
-		Comment:     {Color: rgb(0x64636e), Italic: true},
-		Literal:     {Color: rgb(0x9d5300)},
-		TypeName:    {Color: rgb(0x006e74)},
-		Property:    {Color: rgb(0x17559b)},
-		Definition:  {Color: rgb(0x17559b)},
-		Punctuation: {Color: rgb(0x64636e)},
-		Invalid:     {Color: rgb(0xe7000b)},
-	},
+	Foreground:       rgb(0x18181b),
+	Highlight: zincHighlight(zincColors{
+		keyword: rgb(0x6c329f), str: rgb(0x206b38), comment: rgb(0x64636e), literal: rgb(0x9d5300),
+		typeName: rgb(0x006e74), property: rgb(0x17559b), definition: rgb(0x17559b),
+		punctuation: rgb(0x64636e), invalid: rgb(0xe7000b),
+	}),
 	Diff: DiffColors{
 		Added: ChangeColors{
 			Background: percent(emerald500, 12), HoverBackground: percent(emerald500, 20),
@@ -162,6 +150,33 @@ var LightTheme = Theme{
 		Filler:          percent(rgb(0x18181b), 7),
 		AffordanceHover: rgb(0xdedee0),
 	},
+}
+
+// zincColors are the syntax colors of DarkTheme and LightTheme, one per role
+// a syntax palette usually tells apart.
+type zincColors struct {
+	keyword, str, comment, literal, typeName, property, definition, punctuation, invalid color.NRGBA
+}
+
+// zincHighlight lays c over the tags in the groups of CodeMirror's
+// classHighlighter, with processing instructions under the comment color so
+// a preprocessor directive reads as it does in most editors.
+func zincHighlight(c zincColors) *HighlightStyle {
+	return NewHighlightStyle(
+		TagStyle{Tags: []*tags.Tag{tags.Keyword}, Color: c.keyword},
+		TagStyle{Tags: []*tags.Tag{tags.String, tags.Regexp, tags.Escape, tags.Special(tags.String)}, Color: c.str},
+		TagStyle{Tags: []*tags.Tag{tags.Comment, tags.ProcessingInstruction}, Color: c.comment, Italic: true},
+		TagStyle{Tags: []*tags.Tag{tags.Literal, tags.Number, tags.Bool, tags.Null, tags.Atom}, Color: c.literal},
+		TagStyle{Tags: []*tags.Tag{tags.TypeName, tags.ClassName, tags.Namespace}, Color: c.typeName},
+		TagStyle{Tags: []*tags.Tag{tags.PropertyName, tags.TagName}, Color: c.property},
+		TagStyle{Tags: []*tags.Tag{tags.Function(tags.VariableName)}, Color: c.definition},
+		TagStyle{Tags: []*tags.Tag{tags.Punctuation, tags.Operator, tags.OperatorKeyword}, Color: c.punctuation},
+		TagStyle{Tags: []*tags.Tag{tags.Invalid}, Color: c.invalid},
+		TagStyle{Tags: []*tags.Tag{tags.Strong, tags.Heading}, Bold: true},
+		TagStyle{Tags: []*tags.Tag{tags.Emphasis}, Italic: true},
+		TagStyle{Tags: []*tags.Tag{tags.Link}, Underline: true},
+		TagStyle{Tags: []*tags.Tag{tags.Strikethrough}, Strikethrough: true},
+	)
 }
 
 func rgb(v uint32) color.NRGBA {

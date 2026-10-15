@@ -29,6 +29,7 @@ import (
 	"gioui.org/unit"
 
 	"github.com/lichdotdev/godemirror/internal/glyphs"
+	"github.com/lichdotdev/godemirror/tags"
 )
 
 // highlightPoll is how soon a frame looks again for highlighting still being
@@ -321,7 +322,7 @@ func (v *View) row(line, segment, firstCol, cols int) *rowImage {
 	if segment >= len(v.wraps[line]) {
 		return &rowImage{}
 	}
-	l, classes := v.doc.lines[line], v.doc.classes[line]
+	l, cellTags := v.doc.lines[line], v.doc.tags[line]
 	from, to := firstCol, firstCol+cols
 	if v.Wrap {
 		from, to = v.wraps[line][segment], len(l)
@@ -335,31 +336,36 @@ func (v *View) row(line, segment, firstCol, cols int) *rowImage {
 		img.used = v.frameNo
 		return img
 	}
-	img := v.compose(l[from:to], classes[from:to])
+	img := v.compose(l[from:to], cellTags[from:to])
 	img.used = v.frameNo
 	v.rows[k] = img
 	return img
 }
 
 // compose rasterizes cells into a transparent row image, styled by their
-// classes; nil classes draws them in the gutter's color. A wide character is
+// tags; nil tags draws them in the gutter's color. A wide character is
 // drawn from its first cell across both, and from the cell before the image
 // when the image starts at its second half.
-func (v *View) compose(cells []rune, classes []TokenClass) *rowImage {
+func (v *View) compose(cells []rune, cellTags []*tags.Tag) *rowImage {
 	if len(cells) == 0 {
 		return &rowImage{}
 	}
-	dst := v.rasterize(cells, classes)
+	dst := v.rasterize(cells, cellTags)
 	o := paint.NewImageOp(dst)
 	o.Filter = paint.FilterNearest
 	return &rowImage{op: o, size: dst.Bounds().Size()}
 }
 
-func (v *View) rasterize(cells []rune, classes []TokenClass) *image.RGBA {
+func (v *View) rasterize(cells []rune, cellTags []*tags.Tag) *image.RGBA {
 	cw, ch := v.r.CellW(), v.r.CellH()
 	dst := image.NewRGBA(image.Rect(0, 0, len(cells)*cw, ch))
 	for i, c := range cells {
 		x := i * cw
+		style := TagStyle{Color: v.Theme.GutterForeground}
+		if cellTags != nil {
+			style = v.Theme.Highlight.style(cellTags[i], v.Theme.Foreground)
+		}
+		v.decorate(dst, x, style)
 		if isTail(c) {
 			if i > 0 {
 				continue
@@ -369,11 +375,7 @@ func (v *View) rasterize(cells []rune, classes []TokenClass) *image.RGBA {
 		if c == ' ' {
 			continue
 		}
-		style := TokenStyle{Color: v.Theme.GutterForeground}
-		if classes != nil {
-			style = v.Theme.Syntax[classes[i]]
-		}
-		m := v.r.Mask(glyphs.Key{R: c, Italic: style.Italic})
+		m := v.r.Mask(glyphs.Key{R: c, Bold: style.Bold, Italic: style.Italic})
 		if m.Img == nil {
 			continue
 		}
@@ -381,6 +383,22 @@ func (v *View) rasterize(cells []rune, classes []TokenClass) *image.RGBA {
 		draw.DrawMask(dst, at, image.NewUniform(style.Color), image.Point{}, m.Img, image.Point{}, draw.Over)
 	}
 	return dst
+}
+
+// decorate draws style's underline and line-through across the cell at x,
+// spaces included, as CSS text-decoration runs under a span's spaces.
+func (v *View) decorate(dst *image.RGBA, x int, style TagStyle) {
+	var rules []glyphs.Rule
+	if style.Underline {
+		rules = append(rules, v.r.Underline())
+	}
+	if style.Strikethrough {
+		rules = append(rules, v.r.Strikethrough())
+	}
+	for _, r := range rules {
+		line := image.Rect(x, r.Y, x+v.r.CellW(), r.Y+r.Thickness)
+		draw.Draw(dst, line, image.NewUniform(style.Color), image.Point{}, draw.Over)
+	}
 }
 
 // evict drops the row images the last frame did not draw, so memory follows

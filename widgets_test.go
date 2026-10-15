@@ -9,6 +9,8 @@ import (
 	"gioui.org/io/pointer"
 	"gioui.org/layout"
 	"gioui.org/widget"
+
+	"github.com/lichdotdev/godemirror/tags"
 )
 
 // button is a clickable that counts its clicks, as a widget reads them:
@@ -103,8 +105,8 @@ func TestUpdateContentKeepsScrollAndSwapsWhole(t *testing.T) {
 	if h.v.scroll != scrolled {
 		t.Fatalf("scroll %v, want it kept at %v", h.v.scroll, scrolled)
 	}
-	if len(h.v.doc.lines) != 251 || h.v.label(0) != "x" || h.v.doc.classes[0][0] != Keyword {
-		t.Fatalf("content not swapped whole: %d lines, label %q, class %d", len(h.v.doc.lines), h.v.label(0), h.v.doc.classes[0][0])
+	if len(h.v.doc.lines) != 251 || h.v.label(0) != "x" || h.v.doc.tags[0][0] != tags.ModuleKeyword {
+		t.Fatalf("content not swapped whole: %d lines, label %q, tag %v", len(h.v.doc.lines), h.v.label(0), h.v.doc.tags[0][0])
 	}
 }
 

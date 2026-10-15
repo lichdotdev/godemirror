@@ -71,6 +71,8 @@ type Rasterizer struct {
 	cellW  int
 	cellH  int
 	ascent int
+
+	underline, strikethrough Rule
 	// fcLookup names a font file covering a character; nil looks nothing up.
 	fcLookup func(r rune) (string, error)
 }
@@ -210,6 +212,7 @@ func (r *Rasterizer) SetSize(px float64) error {
 	r.cellW = adv.Ceil()
 	r.ascent = m.Ascent.Ceil()
 	r.cellH = (m.Ascent + m.Descent).Ceil()
+	r.underline, r.strikethrough = r.rules(m)
 	r.masks = map[Key]*Mask{}
 	r.byRune = map[rune]*fontFace{}
 	return nil
@@ -290,6 +293,35 @@ func (r *Rasterizer) tofu(cells int) *Mask {
 	}
 	return &Mask{Img: a, Off: box.Min}
 }
+
+// Rule is a line across a cell, as text decorations draw it: Y is its top in
+// pixels from the cell's top.
+type Rule struct {
+	Y, Thickness int
+}
+
+// rules are the underline and the strikethrough at the current size. The
+// underline comes from the font's post table, as browsers take it; the
+// strikethrough sits across the middle of the x-height with the same
+// thickness, since sfnt does not read the OS/2 table that names it.
+func (r *Rasterizer) rules(m font.Metrics) (underline, strikethrough Rule) {
+	sf := r.styles[0].sf
+	thickness, below := 1, 1
+	if post := sf.PostTable(); post != nil && sf.UnitsPerEm() > 0 {
+		scale := r.px / float64(sf.UnitsPerEm())
+		thickness = max(int(float64(post.UnderlineThickness)*scale+0.5), 1)
+		below = max(int(float64(-post.UnderlinePosition)*scale+0.5), 1)
+	}
+	underline = Rule{Y: min(r.ascent+below, r.cellH-thickness), Thickness: thickness}
+	strikethrough = Rule{Y: r.ascent - m.XHeight.Round()/2 - thickness/2, Thickness: thickness}
+	return underline, strikethrough
+}
+
+// Underline is where an underline is drawn at the current size.
+func (r *Rasterizer) Underline() Rule { return r.underline }
+
+// Strikethrough is where a line-through is drawn at the current size.
+func (r *Rasterizer) Strikethrough() Rule { return r.strikethrough }
 
 // CellW is the width of one monospace cell in pixels at the current size.
 func (r *Rasterizer) CellW() int { return r.cellW }
