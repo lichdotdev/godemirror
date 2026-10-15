@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-10-15
+
 ### Added
 
 - **`StyleTags` add styleTags rules to a Lezer grammar**, as a CodeMirror
@@ -158,7 +160,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   wrapping never splits one, and a gutter label's width counts them too.
   `Pos.Col` and `Span` still count runes.
 
-[Unreleased]: https://github.com/lichdotdev/godemirror/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/lichdotdev/godemirror/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/lichdotdev/godemirror/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/lichdotdev/godemirror/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/lichdotdev/godemirror/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/lichdotdev/godemirror/compare/v0.1.0...v0.2.0
