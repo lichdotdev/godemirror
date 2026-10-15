@@ -10,20 +10,6 @@ import (
 	"github.com/lichdotdev/godemirror/internal/lezer"
 )
 
-// Term ids of the tokens the external tokenizers and specializer produce,
-// as @lezer/css 1.3.9's generated src/parser.terms.js numbers them.
-const (
-	termDescendantOp      = 148
-	termUnit              = 1
-	termIdentifier        = 149
-	termCallee            = 150
-	termVariableName      = 2
-	termQueryIdentifier   = 151
-	termQueryVariableName = 3
-	termQueryCallee       = 4
-	termHashNameColor     = 152
-)
-
 // space is the code units tokens.js counts as whitespace before a token.
 var space = []int{9, 10, 11, 12, 13, 32, 133, 160, 5760, 8192, 8193, 8194, 8195, 8196, 8197,
 	8198, 8199, 8200, 8201, 8202, 8232, 8233, 8239, 8287, 12288}
@@ -105,7 +91,7 @@ func readEscape(in *lezer.InputStream) {
 
 func identifierKind(in *lezer.InputStream, s *lezer.Stack, dashes, id, varName, callee int) int {
 	switch {
-	case dashes >= 2 && s.CanShift(termVariableName):
+	case dashes >= 2 && s.CanShift(nodeVariableName):
 		return varName
 	case in.Next == parenL:
 		return callee
@@ -141,7 +127,7 @@ func unitToken(in *lezer.InputStream, _ *lezer.Stack) {
 	next := in.Next
 	if next == percent {
 		in.Advance(1)
-		in.AcceptToken(termUnit, 0)
+		in.AcceptToken(nodeUnit, 0)
 	}
 	if isAlpha(next) {
 		for {
@@ -150,7 +136,7 @@ func unitToken(in *lezer.InputStream, _ *lezer.Stack) {
 				break
 			}
 		}
-		in.AcceptToken(termUnit, 0)
+		in.AcceptToken(nodeUnit, 0)
 	}
 }
 
@@ -174,8 +160,8 @@ var externals = lezer.Externals{
 	Tokenizers: map[string]lezer.Tokenizer{
 		"descendant":       {Token: descendant},
 		"unitToken":        {Token: unitToken},
-		"identifiers":      {Token: identifierTokens(termIdentifier, termVariableName, termCallee), Contextual: true},
-		"queryIdentifiers": {Token: identifierTokens(termQueryIdentifier, termQueryVariableName, termQueryCallee), Contextual: true},
+		"identifiers":      {Token: identifierTokens(termIdentifier, nodeVariableName, termCallee), Contextual: true},
+		"queryIdentifiers": {Token: identifierTokens(termQueryIdentifier, termQueryVariableName, nodeQueryCallee), Contextual: true},
 	},
 	Specializers: map[string]lezer.Specializer{"hashColor": hashColor},
 }

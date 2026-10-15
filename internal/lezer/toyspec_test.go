@@ -4,6 +4,42 @@ package lezer_test
 
 import "github.com/lichdotdev/godemirror/internal/lezer"
 
+// Term ids, as lezer-generator numbered them, for the ported external
+// tokenizers, specializers and context tracker.
+const (
+	nodeSpread             = 1
+	nodeTypeName           = 2
+	nodeShallowMark        = 3
+	nodeDeepMark           = 4
+	termInsertedSemi       = 61
+	termKwLet              = 5
+	termKwIf               = 6
+	termKwElse             = 7
+	termKwAs               = 8
+	nodeLineComment        = 9
+	nodeBlockComment       = 10
+	nodeProgram            = 11
+	nodeDefinition         = 13
+	nodeNumber             = 15
+	nodeString             = 16
+	nodeEscape             = 18
+	nodeInterpolation      = 20
+	termInterpolationStart = 21
+	termStringEnd          = 22
+	nodeBooleanLiteral     = 23
+	nodeVariableName       = 24
+	nodeParamList          = 29
+	nodeArgList            = 33
+	nodePropertyName       = 37
+	termPipe               = 43
+	termFor                = 46
+	termOf                 = 47
+	nodeBlock              = 49
+	termAssert             = 52
+	nodeSingleExpression   = 55
+	dialectStrict          = 0
+)
+
 var spec = lezer.Spec{
 	Version:         14,
 	States:          "-UQ]Q^OOO!ZQYOOO!rOpO'#ClOOQ`'#Cs'#CsOOQ`'#Ct'#CtO#fQYO'#CwO#pQWO'#CxO#uQWO'#C|O#zQhO'#DdO!ZQYO'#DSOOQ`'#Dp'#DpO$cQWO'#ChO$hQ^O'#D_O!ZQYO'#D`O!ZQYO'#DaO$ZQhO'#DcOOQU'#Dn'#DnOOQU'#Df'#DfQ]Q^OOO$cQWO'#DZQ$oQWOOO!ZQYO'#CpOOOO'#Dg'#DgO%QOpO,59WOOQ`,59W,59WO%`QWO'#CiO%zQWO,59cO&RQWO'#DsO&ZQWO,59eO!ZQYO,59dO&`QZO'#C}OOQ`,59h,59hOOQ`,59j,59jO&jQWO,59kO!ZQYO,59pO!ZQYO,59pO!ZQYO,59pOOQU'#Du'#DuOOQU,5:O,5:OO&oQhO,59nOOQO'#Ci'#CiO'gQWO,59SOOQU,59y,59yO'oQ^O,59yO'vQWO,59zO#zQhO,59{OOQU,59},59}OOQU-E7d-E7dO'}QWO,59uO(SQWO,59[OOOO-E7e-E7eOOQ`1G.r1G.rOOQ`1G.}1G.}O$cQWO'#DhO(ZQWO,5:_OOQO1G/P1G/PO(cQhO1G/OO(|QWO'#DtO!ZQYO'#DtO)WQWO,59iOOQ`'#DR'#DROOQ`1G/V1G/VO*QQhO1G/[O*XQhO1G/[O*`QhO1G/[O!ZQYO1G.nO+WQYO1G.nOOQU1G/e1G/eO+]Q^O1G/fOOQU1G/g1G/gO!ZQYO1G/aOOOO1G.v1G.vOOQO,5:S,5:SOOQO-E7f-E7fO,dQZO'#DiO,kQWO,5:`O,sQWO,5:`OOQ`1G/T1G/TO#zQhO7+$YO,}QWO7+$YO-SQWO7+%QO'vQWO7+${O-XQWO,5:TO!ZQYO,5:TOOQO-E7g-E7gO-cQWO1G/zOOQU<<Gt<<GtO!ZQYO<<GtOOQU<<Hl<<HlOOQU<<Hg<<HgO-kQWO1G/oO#zQhOAN=`OOQUG22zG22z",

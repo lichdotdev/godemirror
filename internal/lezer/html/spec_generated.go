@@ -5,6 +5,44 @@ package html
 
 import "github.com/lichdotdev/godemirror/internal/lezer"
 
+// Term ids, as lezer-generator numbered them, for the ported external
+// tokenizers, specializers and context tracker.
+const (
+	termScriptText              = 55
+	nodeStartCloseScriptTag     = 1
+	termStyleText               = 56
+	nodeStartCloseStyleTag      = 2
+	termTextareaText            = 57
+	nodeStartCloseTextareaTag   = 3
+	nodeEndTag                  = 4
+	nodeSelfClosingEndTag       = 5
+	nodeStartTag                = 6
+	nodeStartScriptTag          = 7
+	nodeStartStyleTag           = 8
+	nodeStartTextareaTag        = 9
+	nodeStartSelfClosingTag     = 10
+	nodeStartCloseTag           = 11
+	nodeNoMatchStartCloseTag    = 12
+	nodeMismatchedStartCloseTag = 13
+	termMissingCloseTag         = 58
+	nodeIncompleteTag           = 14
+	nodeIncompleteCloseTag      = 15
+	termCommentContent          = 59
+	nodeElement                 = 21
+	nodeTagName                 = 23
+	nodeAttribute               = 24
+	nodeAttributeName           = 25
+	nodeAttributeValue          = 27
+	nodeUnquotedAttributeValue  = 28
+	nodeScriptText              = 29
+	nodeStyleText               = 32
+	nodeTextareaText            = 35
+	nodeOpenTag                 = 37
+	nodeCloseTag                = 38
+	dialectNoMatch              = 0
+	dialectSelfClosing          = 1
+)
+
 var spec = lezer.Spec{
 	Version:         14,
 	States:          ",xOVO!rOOO!ZQ#tO'#CrO!`Q#tO'#C{O!eQ#tO'#DOO!jQ#tO'#DRO!oQ#tO'#DTO!tOaO'#CqO#PObO'#CqO#[OdO'#CqO$kO!rO'#CqOOO`'#Cq'#CqO$rO$fO'#DUO$zQ#tO'#DWO%PQ#tO'#DXOOO`'#Dl'#DlOOO`'#DZ'#DZQVO!rOOO%UQ&rO,59^O%aQ&rO,59gO%lQ&rO,59jO%wQ&rO,59mO&SQ&rO,59oOOOa'#D_'#D_O&_OaO'#CyO&jOaO,59]OOOb'#D`'#D`O&rObO'#C|O&}ObO,59]OOOd'#Da'#DaO'VOdO'#DPO'bOdO,59]OOO`'#Db'#DbO'jO!rO,59]O'qQ#tO'#DSOOO`,59],59]OOOp'#Dc'#DcO'vO$fO,59pOOO`,59p,59pO(OQ#|O,59rO(TQ#|O,59sOOO`-E7X-E7XO(YQ&rO'#CtOOQW'#D['#D[O(hQ&rO1G.xOOOa1G.x1G.xOOO`1G/Z1G/ZO(sQ&rO1G/ROOOb1G/R1G/RO)OQ&rO1G/UOOOd1G/U1G/UO)ZQ&rO1G/XOOO`1G/X1G/XO)fQ&rO1G/ZOOOa-E7]-E7]O)qQ#tO'#CzOOO`1G.w1G.wOOOb-E7^-E7^O)vQ#tO'#C}OOOd-E7_-E7_O){Q#tO'#DQOOO`-E7`-E7`O*QQ#|O,59nOOOp-E7a-E7aOOO`1G/[1G/[OOO`1G/^1G/^OOO`1G/_1G/_O*VQ,UO,59`OOQW-E7Y-E7YOOOa7+$d7+$dOOO`7+$u7+$uOOOb7+$m7+$mOOOd7+$p7+$pOOO`7+$s7+$sO*bQ#|O,59fO*gQ#|O,59iO*lQ#|O,59lOOO`1G/Y1G/YO*qO7[O'#CwO+SOMhO'#CwOOQW1G.z1G.zOOO`1G/Q1G/QOOO`1G/T1G/TOOO`1G/W1G/WOOOO'#D]'#D]O+eO7[O,59cOOQW,59c,59cOOOO'#D^'#D^O+vOMhO,59cOOOO-E7Z-E7ZOOQW1G.}1G.}OOOO-E7[-E7[",

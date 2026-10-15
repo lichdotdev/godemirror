@@ -5,25 +5,6 @@ package golang
 
 import "github.com/lichdotdev/godemirror/internal/lezer"
 
-// Terms of @lezer/go 1.0.1's grammar, from its generated parser.terms.js
-// (inlined at the top of dist/index.js).
-const (
-	termInsertedSemi = 177
-	termSpace        = 179
-	termIdentifier   = 184
-	termString       = 12
-	termCloseParen   = 13
-	termNumber       = 17
-	termRune         = 20
-	termCloseBrace   = 25
-	termCloseBracket = 53
-	termIncDecOp     = 95
-	termReturn       = 142
-	termBreak        = 144
-	termContinue     = 145
-	termFallthrough  = 148
-)
-
 const (
 	charNewline        = '\n'
 	charCarriageReturn = '\r'
@@ -61,7 +42,7 @@ func insertsSemicolon(afterTrackedToken bool, next, after int) bool {
 }
 
 var trackedTokens = map[int]bool{
-	termIncDecOp: true, termIdentifier: true, termRune: true, termString: true, termNumber: true,
+	nodeIncDecOp: true, termIdentifier: true, nodeRune: true, nodeString: true, nodeNumber: true,
 	termBreak: true, termContinue: true, termReturn: true, termFallthrough: true,
 	termCloseParen: true, termCloseBracket: true, termCloseBrace: true,
 }

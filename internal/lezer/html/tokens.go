@@ -11,44 +11,6 @@ import (
 	"github.com/lichdotdev/godemirror/internal/lezer"
 )
 
-// Term ids, as @lezer/html 1.3.13's generated src/parser.terms.js numbers
-// them.
-const (
-	termScriptText              = 55
-	termStartCloseScriptTag     = 1
-	termStyleText               = 56
-	termStartCloseStyleTag      = 2
-	termTextareaText            = 57
-	termStartCloseTextareaTag   = 3
-	termEndTag                  = 4
-	termSelfClosingEndTag       = 5
-	termStartTag                = 6
-	termStartScriptTag          = 7
-	termStartStyleTag           = 8
-	termStartTextareaTag        = 9
-	termStartSelfClosingTag     = 10
-	termStartCloseTag           = 11
-	termNoMatchStartCloseTag    = 12
-	termMismatchedStartCloseTag = 13
-	termMissingCloseTag         = 58
-	termIncompleteTag           = 14
-	termIncompleteCloseTag      = 15
-	termCommentContent          = 59
-	termElement                 = 21
-	termTagName                 = 23
-	termAttribute               = 24
-	termAttributeName           = 25
-	termAttributeValue          = 27
-	termUnquotedAttributeValue  = 28
-	termScriptTextNode          = 29
-	termStyleTextNode           = 32
-	termTextareaTextNode        = 35
-	termOpenTag                 = 37
-	termCloseTag                = 38
-	dialectNoMatch              = 0
-	dialectSelfClosing          = 1
-)
-
 const (
 	lessThan    = '<'
 	greaterThan = '>'
@@ -139,7 +101,7 @@ func contextOf(s *lezer.Stack) *elementContext {
 	return cx
 }
 
-var startTagTerms = []int{termStartTag, termStartSelfClosingTag, termStartScriptTag, termStartStyleTag, termStartTextareaTag}
+var startTagTerms = []int{nodeStartTag, nodeStartSelfClosingTag, nodeStartScriptTag, nodeStartStyleTag, nodeStartTextareaTag}
 
 var elementTracker = &lezer.ContextTracker{
 	Shift: func(context any, term int, _ *lezer.Stack, in *lezer.InputStream) any {
@@ -151,7 +113,7 @@ var elementTracker = &lezer.ContextTracker{
 		return &elementContext{name: name, parent: parent}
 	},
 	Reduce: func(context any, term int, _ *lezer.Stack, _ *lezer.InputStream) any {
-		if cx, _ := context.(*elementContext); term == termElement && cx != nil {
+		if cx, _ := context.(*elementContext); term == nodeElement && cx != nil {
 			return contextValue(cx.parent)
 		}
 		return context
@@ -175,9 +137,9 @@ func tagStart(in *lezer.InputStream, s *lezer.Stack) {
 	switch {
 	case !ok:
 	case name == "" && closing:
-		in.AcceptToken(termIncompleteCloseTag, 0)
+		in.AcceptToken(nodeIncompleteCloseTag, 0)
 	case name == "":
-		in.AcceptToken(termIncompleteTag, 0)
+		in.AcceptToken(nodeIncompleteTag, 0)
 	case closing:
 		closeTag(in, s, name)
 	default:
@@ -189,35 +151,35 @@ func closeTag(in *lezer.InputStream, s *lezer.Stack, name string) {
 	cx := contextOf(s)
 	switch {
 	case cx != nil && name == cx.name:
-		in.AcceptToken(termStartCloseTag, 0)
+		in.AcceptToken(nodeStartCloseTag, 0)
 	case cx != nil && cx.name != "" && (implicitlyClosed[cx.name] || inherited(cx.name)):
 		in.AcceptToken(termMissingCloseTag, -2)
 	case s.DialectEnabled(dialectNoMatch):
-		in.AcceptToken(termNoMatchStartCloseTag, 0)
+		in.AcceptToken(nodeNoMatchStartCloseTag, 0)
 	default:
 		for c := cx; c != nil; c = c.parent {
 			if c.name == name {
 				return
 			}
 		}
-		in.AcceptToken(termMismatchedStartCloseTag, 0)
+		in.AcceptToken(nodeMismatchedStartCloseTag, 0)
 	}
 }
 
 func openTag(in *lezer.InputStream, s *lezer.Stack, name string) {
 	switch {
 	case name == "script":
-		in.AcceptToken(termStartScriptTag, 0)
+		in.AcceptToken(nodeStartScriptTag, 0)
 	case name == "style":
-		in.AcceptToken(termStartStyleTag, 0)
+		in.AcceptToken(nodeStartStyleTag, 0)
 	case name == "textarea":
-		in.AcceptToken(termStartTextareaTag, 0)
+		in.AcceptToken(nodeStartTextareaTag, 0)
 	case selfClosers[name]:
-		in.AcceptToken(termStartSelfClosingTag, 0)
+		in.AcceptToken(nodeStartSelfClosingTag, 0)
 	case closesOnOpen(contextOf(s), name):
 		in.AcceptToken(termMissingCloseTag, -1)
 	default:
-		in.AcceptToken(termStartTag, 0)
+		in.AcceptToken(nodeStartTag, 0)
 	}
 }
 
@@ -267,13 +229,13 @@ func inForeignElement(cx *elementContext) bool {
 func endTag(in *lezer.InputStream, s *lezer.Stack) {
 	switch {
 	case in.Next == slash && in.Peek(1) == greaterThan:
-		term := termEndTag
+		term := nodeEndTag
 		if s.DialectEnabled(dialectSelfClosing) || inForeignElement(contextOf(s)) {
-			term = termSelfClosingEndTag
+			term = nodeSelfClosingEndTag
 		}
 		in.AcceptToken(term, 2)
 	case in.Next == greaterThan:
-		in.AcceptToken(termEndTag, 1)
+		in.AcceptToken(nodeEndTag, 1)
 	}
 }
 
@@ -318,9 +280,9 @@ func contentTokenizer(tag string, textToken, endToken int) lezer.Tokenizer {
 
 var externals = lezer.Externals{
 	Tokenizers: map[string]lezer.Tokenizer{
-		"scriptTokens":   contentTokenizer("script", termScriptText, termStartCloseScriptTag),
-		"styleTokens":    contentTokenizer("style", termStyleText, termStartCloseStyleTag),
-		"textareaTokens": contentTokenizer("textarea", termTextareaText, termStartCloseTextareaTag),
+		"scriptTokens":   contentTokenizer("script", termScriptText, nodeStartCloseScriptTag),
+		"styleTokens":    contentTokenizer("style", termStyleText, nodeStartCloseStyleTag),
+		"textareaTokens": contentTokenizer("textarea", termTextareaText, nodeStartCloseTextareaTag),
 		"endTag":         {Token: endTag},
 		"tagStart":       {Token: tagStart, Contextual: true},
 		"commentContent": {Token: commentContent},

@@ -71,11 +71,11 @@ var attributeParsers = func() map[string]func() *lezer.Parser {
 
 func nest(n *lezer.Node, in lezer.Input) *lezer.NestedParse {
 	switch n.Type().ID {
-	case termScriptTextNode:
+	case nodeScriptText:
 		return nestContent(n, in, scriptTags)
-	case termStyleTextNode:
+	case nodeStyleText:
 		return nestContent(n, in, styleTags)
-	case termAttribute:
+	case nodeAttribute:
 		return nestAttribute(n, in)
 	}
 	return nil
@@ -97,15 +97,15 @@ func nestContent(n *lezer.Node, in lezer.Input, tags []nestedTag) *lezer.NestedP
 // without a value.
 func attributes(openTag *lezer.Node, in lezer.Input) map[string]string {
 	attrs := map[string]string{}
-	for _, att := range children(openTag, termAttribute) {
-		name := child(att, termAttributeName)
+	for _, att := range children(openTag, nodeAttribute) {
+		name := child(att, nodeAttributeName)
 		if name == nil {
 			continue
 		}
 		value := ""
-		if v := child(att, termAttributeValue); v != nil {
+		if v := child(att, nodeAttributeValue); v != nil {
 			value = in.Read(v.From()+1, v.To()-1)
-		} else if v := child(att, termUnquotedAttributeValue); v != nil {
+		} else if v := child(att, nodeUnquotedAttributeValue); v != nil {
 			value = in.Read(v.From(), v.To())
 		}
 		attrs[in.Read(name.From(), name.To())] = value
@@ -126,7 +126,7 @@ func nestAttribute(n *lezer.Node, in lezer.Input) *lezer.NestedParse {
 	}
 	value := n.LastChild()
 	switch value.Type().ID {
-	case termAttributeValue:
+	case nodeAttributeValue:
 		// content.js means to keep the last character of a value whose
 		// closing quote is missing, but tests last.isError, which a
 		// SyntaxNode does not have, so it always drops it.
@@ -134,7 +134,7 @@ func nestAttribute(n *lezer.Node, in lezer.Input) *lezer.NestedParse {
 		if to > from {
 			return &lezer.NestedParse{Parser: parser(), Overlay: []lezer.Range{{From: from, To: to}}}
 		}
-	case termUnquotedAttributeValue:
+	case nodeUnquotedAttributeValue:
 		return &lezer.NestedParse{Parser: parser(), Overlay: []lezer.Range{{From: value.From(), To: value.To()}}}
 	}
 	return nil

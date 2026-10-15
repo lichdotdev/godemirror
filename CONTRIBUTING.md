@@ -46,6 +46,27 @@ go run ./cmd/godemirror-demo -old a.go -file b.go -shot out.png   # headless PNG
 
 `go run ./cmd/godemirror-demo -h` lists every flag.
 
+## Lezer grammars
+
+`internal/lezer` runs CodeMirror's Lezer grammars from tables generated out of
+their npm packages, and checks itself against goldens the real Lezer writes.
+Both come from scripts in `internal/lezer/gen`, run by `go generate`; they need
+**node**, at development time only, and the packages installed outside the
+repository, at the versions the grammar's `go:generate` lines and
+`docs/ceilings.md` name:
+
+```bash
+cd "$(mktemp -d)" && npm init -y && npm install @lezer/lr@1.4.11 @lezer/common@1.5.3 \
+  @lezer/highlight@1.2.5 @lezer/java@1.1.5
+LEZER_NODE_MODULES="$PWD/node_modules" go generate ./internal/lezer/java
+```
+
+That rewrites the grammar's `spec_generated.go` (its tables, styles and term
+ids) and the goldens under its `testdata`. Never edit either by hand: a
+fixture is added by dropping it into `testdata` and generating again. A
+grammar's JavaScript (external tokenizers, specializers, a context tracker) is
+ported by hand next to it, from the same package version.
+
 ## Before you open a pull request
 
 Run the same gate CI runs:

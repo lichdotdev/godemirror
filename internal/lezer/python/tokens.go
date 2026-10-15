@@ -5,62 +5,6 @@ package python
 
 import "github.com/lichdotdev/godemirror/internal/lezer"
 
-// Terms of @lezer/python 1.1.19's grammar, from its generated
-// parser.terms.js (inlined at the top of dist/index.js).
-const (
-	termPrintKeyword                      = 1
-	termEscape                            = 2
-	termReplacementStart                  = 3
-	termParenL                            = 24
-	termParenthesizedExpression           = 25
-	termTupleExpression                   = 49
-	termComprehensionExpression           = 50
-	termBracketL                          = 55
-	termArrayExpression                   = 56
-	termArrayComprehensionExpression      = 57
-	termBraceL                            = 59
-	termDictionaryExpression              = 60
-	termDictionaryComprehensionExpression = 61
-	termSetExpression                     = 62
-	termSetComprehensionExpression        = 63
-	termArgList                           = 65
-	termString                            = 71
-	termFormatString                      = 72
-	termFormatReplacement                 = 73
-	termNestedFormatReplacement           = 77
-	termTypeParamList                     = 112
-	termParamList                         = 130
-	termSequencePattern                   = 151
-	termMappingPattern                    = 152
-	termPatternArgList                    = 155
-	termIndent                            = 194
-	termDedent                            = 195
-	termNewline                           = 196
-	termBlankLineStart                    = 197
-	termNewlineBracketed                  = 198
-	termEOF                               = 199
-	termStringContent                     = 200
-	termStringEnd                         = 201
-	termSubscript                         = 238
-	termStringStart                       = 241
-	termStringStartD                      = 242
-	termStringStartL                      = 243
-	termStringStartLD                     = 244
-	termStringStartR                      = 245
-	termStringStartRD                     = 246
-	termStringStartRL                     = 247
-	termStringStartRLD                    = 248
-	termStringStartF                      = 249
-	termStringStartFD                     = 250
-	termStringStartFL                     = 251
-	termStringStartFLD                    = 252
-	termStringStartFR                     = 253
-	termStringStartFRD                    = 254
-	termStringStartFRL                    = 255
-	termStringStartFRLD                   = 256
-	termImportList                        = 263
-)
-
 const (
 	charNewline        = '\n'
 	charCarriageReturn = '\r'
@@ -92,13 +36,13 @@ const (
 
 // bracketed are the nodes whose reduction closes a bracketed context.
 var bracketed = map[int]bool{
-	termParenthesizedExpression: true, termTupleExpression: true, termComprehensionExpression: true,
-	termImportList: true, termArgList: true, termParamList: true,
-	termArrayExpression: true, termArrayComprehensionExpression: true, termSubscript: true,
-	termSetExpression: true, termSetComprehensionExpression: true,
-	termFormatString: true, termFormatReplacement: true, termNestedFormatReplacement: true,
-	termDictionaryExpression: true, termDictionaryComprehensionExpression: true,
-	termSequencePattern: true, termMappingPattern: true, termPatternArgList: true, termTypeParamList: true,
+	nodeParenthesizedExpression: true, nodeTupleExpression: true, nodeComprehensionExpression: true,
+	termImportList: true, nodeArgList: true, nodeParamList: true,
+	nodeArrayExpression: true, nodeArrayComprehensionExpression: true, termSubscript: true,
+	nodeSetExpression: true, nodeSetComprehensionExpression: true,
+	nodeFormatString: true, nodeFormatReplacement: true, termNestedFormatReplacement: true,
+	nodeDictionaryExpression: true, nodeDictionaryComprehensionExpression: true,
+	nodeSequencePattern: true, nodeMappingPattern: true, nodePatternArgList: true, nodeTypeParamList: true,
 }
 
 // stringFlags are the context flags each kind of string start opens.
@@ -166,7 +110,7 @@ var trackIndent = lezer.ContextTracker{
 			return newContext(cx, countIndent(in, s.Pos()), 0)
 		case termDedent:
 			return cx.parent
-		case termParenL, termBracketL, termBraceL, termReplacementStart:
+		case nodeParenL, nodeBracketL, nodeBraceL, termReplacementStart:
 			return newContext(cx, 0, flagBracketed)
 		}
 		if flags, ok := stringFlags[term]; ok {
@@ -179,7 +123,7 @@ var trackIndent = lezer.ContextTracker{
 
 func closesContext(cx *indentContext, term int) bool {
 	closesBracket := cx.flags&flagBracketed != 0 && bracketed[term]
-	closesString := (term == termString || term == termFormatString) && cx.flags&flagString != 0
+	closesString := (term == nodeString || term == nodeFormatString) && cx.flags&flagString != 0
 	return closesBracket || closesString
 }
 
@@ -209,7 +153,7 @@ func isHex(ch int) bool {
 var newlines = lezer.Tokenizer{Contextual: true, Token: func(in *lezer.InputStream, s *lezer.Stack) {
 	switch {
 	case in.Next < 0:
-		in.AcceptToken(termEOF, 0)
+		in.AcceptToken(termEof, 0)
 	case contextOf(s).flags&flagBracketed != 0:
 		if isLineBreak(in.Next) {
 			in.AcceptToken(termNewlineBracketed, 1)

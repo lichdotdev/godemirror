@@ -28,22 +28,6 @@ import (
 	"github.com/lichdotdev/godemirror/internal/lezer/lezertest"
 )
 
-// Term ids of testdata/grammar, from the parser.terms.js lezer-generator
-// writes next to its parser.
-const (
-	termInsertedSemi = 61
-	termSpread       = 1
-	termTypeName     = 2
-	termShallowMark  = 3
-	termDeepMark     = 4
-	termKwLet        = 5
-	termKwIf         = 6
-	termKwElse       = 7
-	termKwAs         = 8
-	termBlock        = 49
-	dialectStrict    = 0
-)
-
 const (
 	charNewline    = '\n'
 	charCloseBrace = '}'
@@ -87,7 +71,7 @@ func toyExternals() lezer.Externals {
 				return context
 			},
 			Reduce: func(context any, term int, _ *lezer.Stack, _ *lezer.InputStream) any {
-				if term == termBlock {
+				if term == nodeBlock {
 					return context.(int) - 1
 				}
 				return context
@@ -106,7 +90,7 @@ func insertSemicolon(in *lezer.InputStream, s *lezer.Stack) {
 
 func spread(in *lezer.InputStream, _ *lezer.Stack) {
 	if in.Next == charDot && in.Peek(1) == charDot && in.Peek(2) == charDot {
-		in.AcceptToken(termSpread, spreadLength)
+		in.AcceptToken(nodeSpread, spreadLength)
 	}
 }
 
@@ -118,7 +102,7 @@ func typeName(in *lezer.InputStream, _ *lezer.Stack) {
 	for isUpper(in.Peek(length)) || isLower(in.Peek(length)) {
 		length++
 	}
-	in.AcceptToken(termTypeName, length)
+	in.AcceptToken(nodeTypeName, length)
 }
 
 func isUpper(ch int) bool { return ch >= 'A' && ch <= 'Z' }
@@ -133,9 +117,9 @@ func marker(in *lezer.InputStream, s *lezer.Stack) {
 	if strict && !s.DialectEnabled(dialectStrict) {
 		return
 	}
-	term, length := termShallowMark, 1
+	term, length := nodeShallowMark, 1
 	if s.Context().(int) > 1 {
-		term = termDeepMark
+		term = nodeDeepMark
 	}
 	if strict {
 		length = 2

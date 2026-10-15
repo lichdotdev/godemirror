@@ -9,22 +9,6 @@ import (
 	"github.com/lichdotdev/godemirror/internal/lezer"
 )
 
-// Term ids from @lezer/javascript 1.5.6's generated src/parser.terms.js.
-const (
-	termIncdec       = 1
-	termIncdecPrefix = 2
-	termQuestionDot  = 3
-	termJSXStartTag  = 4
-	termLineComment  = 5
-	termBlockComment = 6
-	termNoSemi       = 317
-	termNoSemiType   = 318
-	termInsertSemi   = 319
-	termSpaces       = 321
-	termNewline      = 322
-	dialectJSX       = 0
-)
-
 var space = []int{9, 10, 11, 12, 13, 32, 133, 160, 5760, 8192, 8193, 8194, 8195, 8196, 8197, 8198, 8199, 8200,
 	8201, 8202, 8232, 8233, 8239, 8287, 12288}
 
@@ -57,7 +41,7 @@ var externals = lezer.Externals{
 // that is not whitespace or a comment, which is where automatic semicolon
 // insertion may happen.
 func trackNewline(context any, term int, _ *lezer.Stack, _ *lezer.InputStream) any {
-	if term == termLineComment || term == termBlockComment || term == termSpaces {
+	if term == nodeLineComment || term == nodeBlockComment || term == termSpaces {
 		return context
 	}
 	return term == termNewline
@@ -126,7 +110,7 @@ func identifierChar(ch int, start bool) bool {
 // identifier and a comma or extends, which makes it a type parameter list
 // of an arrow function.
 func jsx(in *lezer.InputStream, s *lezer.Stack) {
-	if in.Next != lt || !s.DialectEnabled(dialectJSX) {
+	if in.Next != lt || !s.DialectEnabled(dialectJsx) {
 		return
 	}
 	in.Advance(1)
@@ -151,7 +135,7 @@ func jsx(in *lezer.InputStream, s *lezer.Stack) {
 		}
 		back += read
 	}
-	in.AcceptToken(termJSXStartTag, -back)
+	in.AcceptToken(nodeJSXStartTag, -back)
 }
 
 func skipSpace(in *lezer.InputStream) int {

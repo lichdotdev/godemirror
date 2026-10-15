@@ -5,17 +5,6 @@ package rust
 
 import "github.com/lichdotdev/godemirror/internal/lezer"
 
-// Terms of @lezer/rust 1.0.3's grammar, from its generated parser.terms.js
-// (inlined at the top of dist/index.js).
-const (
-	termClosureParamDelim = 1
-	termTpOpen            = 2
-	termTpClose           = 3
-	termRawString         = 4
-	termFloat             = 5
-	termAndAnd            = 301
-)
-
 const lastASCII = 0x7f
 
 // literalTokens reads float literals and raw (byte) strings; integers are
@@ -59,7 +48,7 @@ func readFloat(in *lezer.InputStream) {
 		isFloat = true
 	}
 	if isFloat {
-		in.AcceptToken(termFloat, 0)
+		in.AcceptToken(nodeFloat, 0)
 	}
 }
 
@@ -101,7 +90,7 @@ func readRawString(in *lezer.InputStream) {
 		isQuote := in.Next == '"'
 		in.Advance(1)
 		if isQuote && closesRawString(in, hashes) {
-			in.AcceptToken(termRawString, 0)
+			in.AcceptToken(nodeRawString, 0)
 			return
 		}
 	}
@@ -134,8 +123,8 @@ var tpDelim = lezer.Tokenizer{Token: func(in *lezer.InputStream, _ *lezer.Stack)
 }}
 
 var logicAnd = lezer.Tokenizer{Contextual: true, Token: func(in *lezer.InputStream, s *lezer.Stack) {
-	if in.Next == '&' && in.Peek(1) == '&' && s.CanShift(termAndAnd) {
-		in.AcceptToken(termAndAnd, 2)
+	if in.Next == '&' && in.Peek(1) == '&' && s.CanShift(termAndand) {
+		in.AcceptToken(termAndand, 2)
 	}
 }}
 

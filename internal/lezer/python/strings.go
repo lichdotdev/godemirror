@@ -96,7 +96,7 @@ func readEscape(in *lezer.InputStream) {
 		in.Advance(1)
 		skipEscape(in, escaped)
 	}
-	in.AcceptToken(termEscape, 0)
+	in.AcceptToken(nodeEscape, 0)
 }
 
 func skipEscape(in *lezer.InputStream, ch int) {
