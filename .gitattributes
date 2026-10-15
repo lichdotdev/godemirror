@@ -1,0 +1,3 @@
+# Fixtures that test CRLF input keep their line endings in every checkout,
+# whatever core.autocrlf says.
+internal/lezer/**/testdata/crlf* -text
