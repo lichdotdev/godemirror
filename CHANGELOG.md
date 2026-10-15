@@ -17,7 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`HighlightStyle`, as in CodeMirror.** `NewHighlightStyle` takes `TagStyle`
   specs (tags, color, bold, italic, underline, line-through) and resolves a
   token's style like `HighlightStyle.define`: the most specific styled tag
-  wins, and a later spec for a tag replaces an earlier one.
+  wins, and a later spec for a tag replaces an earlier one. `Specs` gives
+  back a style's specs, so a theme can extend another's with specs of its own.
 - **Ported CodeMirror themes**: `OneDark` (`@codemirror/theme-one-dark`), and
   `Dracula`, `GitHubLight`, `GitHubDark` and `Nord` (`@uiw/codemirror-themes`),
   spec for spec. The demo takes `-theme`.

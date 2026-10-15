@@ -2,6 +2,7 @@ package godemirror
 
 import (
 	"image/color"
+	"slices"
 
 	"github.com/lichdotdev/godemirror/tags"
 )
@@ -23,6 +24,7 @@ type TagStyle struct {
 // immutable, so a Theme holding it compares equal exactly while it draws the
 // same.
 type HighlightStyle struct {
+	specs []TagStyle
 	byTag map[*tags.Tag]TagStyle
 }
 
@@ -30,13 +32,33 @@ type HighlightStyle struct {
 // order: when two specs name the same tag, the later one is the tag's style
 // and the earlier one no longer applies to it.
 func NewHighlightStyle(specs ...TagStyle) *HighlightStyle {
-	h := &HighlightStyle{byTag: map[*tags.Tag]TagStyle{}}
-	for _, s := range specs {
+	h := &HighlightStyle{specs: cloneSpecs(specs), byTag: map[*tags.Tag]TagStyle{}}
+	for _, s := range h.specs {
 		for _, t := range s.Tags {
 			h.byTag[t] = s
 		}
 	}
 	return h
+}
+
+// Specs are the specs h was built from, in their order: a copy, so changing
+// them leaves h as it is. A theme of your own can start from another's style
+// with specs of its own appended, which win over the ones they name the same
+// tags as:
+//
+//	t := godemirror.OneDark
+//	t.Highlight = godemirror.NewHighlightStyle(append(t.Highlight.Specs(),
+//		godemirror.TagStyle{Tags: []*tags.Tag{tags.Keyword}, Color: pink, Bold: true})...)
+func (h *HighlightStyle) Specs() []TagStyle {
+	return cloneSpecs(h.specs)
+}
+
+func cloneSpecs(specs []TagStyle) []TagStyle {
+	out := slices.Clone(specs)
+	for i := range out {
+		out[i].Tags = slices.Clone(out[i].Tags)
+	}
+	return out
 }
 
 // style is how a token tagged t is drawn, with fg for a style that sets no

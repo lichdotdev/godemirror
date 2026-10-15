@@ -133,3 +133,30 @@ func TestABoldTokenIsDrawnInTheBoldFace(t *testing.T) {
 		t.Fatalf("bold covers %d, regular %d: want bold heavier", b, r)
 	}
 }
+
+func TestSpecsAppendedToAnotherStyleWinOverItsOwn(t *testing.T) {
+	h := NewHighlightStyle(append(OneDark.Highlight.Specs(),
+		TagStyle{Tags: []*tags.Tag{tags.Keyword}, Color: red, Bold: true})...)
+	if got := h.style(tags.Keyword, fg); got.Color != red || !got.Bold {
+		t.Errorf("keyword = %+v, want the appended spec", got)
+	}
+	want := OneDark.Highlight.style(tags.String, fg)
+	if got := h.style(tags.String, fg); got.Color != want.Color {
+		t.Errorf("string = %v, want OneDark's %v", got.Color, want.Color)
+	}
+}
+
+func TestChangingSpecsLeavesTheStyleAsItIs(t *testing.T) {
+	given := []TagStyle{{Tags: []*tags.Tag{tags.Keyword}, Color: red}}
+	h := NewHighlightStyle(given...)
+	given[0].Tags[0] = tags.String
+	specs := h.Specs()
+	specs[0].Tags[0] = tags.Comment
+	specs[0].Color = blue
+	if got := h.Specs(); got[0].Tags[0] != tags.Keyword || got[0].Color != red {
+		t.Errorf("specs = %+v, want the keyword in red they were built from", got)
+	}
+	if got := h.style(tags.Keyword, fg); got.Color != red {
+		t.Errorf("keyword = %v, want red", got.Color)
+	}
+}
