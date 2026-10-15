@@ -11,8 +11,10 @@
 package tags
 
 import (
+	"fmt"
 	"iter"
 	"slices"
+	"strings"
 	"sync"
 )
 
@@ -41,8 +43,80 @@ func (t *Tag) String() string {
 	return name
 }
 
+// standard and modifiersByName are the standard tags and modifiers by the
+// names String prints, and modifierNames the modifiers in the order they are
+// defined, for Parse. All three are filled while the package initializes and
+// only read afterwards.
+var (
+	standard        = map[string]*Tag{}
+	modifiersByName = map[string]func(*Tag) *Tag{}
+	modifierNames   []string
+)
+
+// Parse is the tag whose String is expr: the format @lezer/highlight's
+// Tag.toString prints, a standard tag's name ("variableName") or a modifier
+// applied to a tag ("function(definition(variableName))"), modifiers in any
+// order. It is how a theme written down outside Go, in JSON or TOML, names the
+// tags it styles. An unknown tag or modifier name, an unbalanced parenthesis
+// or text after the closing one is an error saying what was expected. Parse
+// is safe to call from several goroutines.
+func Parse(expr string) (*Tag, error) {
+	open := strings.IndexByte(expr, '(')
+	if open < 0 {
+		return parseName(expr)
+	}
+	name := expr[:open]
+	modify, ok := modifiersByName[name]
+	if !ok {
+		return nil, fmt.Errorf("%q in %q is not a tag modifier: want one of %s", name, expr, strings.Join(modifierNames, ", "))
+	}
+	end := closingParen(expr, open)
+	if end < 0 {
+		return nil, fmt.Errorf("%q opens a parenthesis it never closes", expr)
+	}
+	if end != len(expr)-1 {
+		return nil, fmt.Errorf("%q has %q after the parenthesis that closes it: want nothing there", expr, expr[end+1:])
+	}
+	t, err := Parse(expr[open+1 : end])
+	if err != nil {
+		return nil, err
+	}
+	return modify(t), nil
+}
+
+// parseName is the standard tag named name.
+func parseName(name string) (*Tag, error) {
+	if strings.IndexByte(name, ')') >= 0 {
+		return nil, fmt.Errorf("%q closes a parenthesis it never opened", name)
+	}
+	t, ok := standard[name]
+	if !ok {
+		return nil, fmt.Errorf("%q is not a highlighting tag: want a standard tag name such as \"variableName\"", name)
+	}
+	return t, nil
+}
+
+// closingParen is the index of the parenthesis closing the one at open in
+// expr, -1 when none does.
+func closingParen(expr string, open int) int {
+	depth := 0
+	for i := open; i < len(expr); i++ {
+		switch expr[i] {
+		case '(':
+			depth++
+		case ')':
+			depth--
+			if depth == 0 {
+				return i
+			}
+		}
+	}
+	return -1
+}
+
 func define(name string, parent *Tag) *Tag {
 	t := &Tag{name: name}
+	standard[name] = t
 	t.set = append(t.set, t)
 	if parent != nil {
 		t.set = append(t.set, parent.set...)
@@ -65,7 +139,7 @@ var nextModifierID int
 func defineModifier(name string) func(*Tag) *Tag {
 	m := &modifier{name: name, id: nextModifierID}
 	nextModifierID++
-	return func(t *Tag) *Tag {
+	apply := func(t *Tag) *Tag {
 		modifiers.Lock()
 		defer modifiers.Unlock()
 		if slices.Contains(t.modified, m) {
@@ -79,6 +153,9 @@ func defineModifier(name string) func(*Tag) *Tag {
 		slices.SortFunc(mods, func(a, b *modifier) int { return a.id - b.id })
 		return modified(base, mods)
 	}
+	modifiersByName[name] = apply
+	modifierNames = append(modifierNames, name)
+	return apply
 }
 
 // modified is base with mods applied, mods sorted by id. Its set holds, for

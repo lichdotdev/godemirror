@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **`tags.Parse`** reads a tag back from the name `String` prints, modifiers
+  included (`"function(definition(variableName))"`), so a theme kept in JSON or
+  TOML can name the tags its `TagStyle`s style.
+
 ### Fixed
 
 - **A line-through sits across the text in every font.** With fonts whose
