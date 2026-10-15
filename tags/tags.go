@@ -1,7 +1,8 @@
 // Package tags is CodeMirror's vocabulary of highlighting tags, the one
 // @lezer/highlight defines: a closed set of tags a highlighter maps to
 // styles, arranged so that a style for a general tag covers its subtags.
-// godemirror tags every token chroma reads with one of them, and a
+// godemirror tags code with them, through a port of the language's Lezer
+// grammar where it has one and from chroma's tokens otherwise, and a
 // HighlightStyle styles them the way CodeMirror's does.
 //
 // A tag's Set is the tag and every tag it falls back to, most specific

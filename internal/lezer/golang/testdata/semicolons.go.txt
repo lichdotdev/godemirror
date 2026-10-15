@@ -1,0 +1,31 @@
+package p
+
+func f() {
+	a := 1 // after identifier
+	b := "s" /* block */
+	c := 'r'
+	d := 1.5   
+	a++
+	b, c = c, b
+	if a > 0 { return }
+	g(a,
+		b,
+	)
+	h := []int{
+		1,
+		2}
+	x := (a)
+	y := s[0]
+	for { break }
+	for {
+		continue
+	}
+	switch a { case 1: fallthrough; case 2: }
+	return
+}
+
+func g(a ...any) {}
+func k() int { return 1 }
+var v = struct {
+	a int
+}{1}

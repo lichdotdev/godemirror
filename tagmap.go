@@ -6,6 +6,7 @@ import (
 
 	"github.com/alecthomas/chroma/v2"
 
+	"github.com/lichdotdev/godemirror/internal/lezer"
 	"github.com/lichdotdev/godemirror/tags"
 )
 
@@ -126,15 +127,23 @@ func punctuationTag(r rune) *tags.Tag {
 	return tags.Punctuation
 }
 
-// addToken adds a token's text to d, tagged.
-func (d *document) addToken(t chroma.Token) {
+// addToken adds a token's text to d, tagged with its one tag.
+func (d *document) addToken(t chroma.Token, sets *lezer.TagSets) {
 	if t.Type != chroma.Punctuation {
-		d.add(t.Value, tagOf(t.Type, t.Value))
+		d.add(t.Value, soleTag(sets, tagOf(t.Type, t.Value)))
 		return
 	}
 	for rest := t.Value; rest != ""; {
 		r, size := utf8.DecodeRuneInString(rest)
-		d.add(rest[:size], punctuationTag(r))
+		d.add(rest[:size], soleTag(sets, punctuationTag(r)))
 		rest = rest[size:]
 	}
+}
+
+// soleTag is the set of tag alone, nil for no tag.
+func soleTag(sets *lezer.TagSets, tag *tags.Tag) *lezer.TagSet {
+	if tag == nil {
+		return nil
+	}
+	return sets.Of(tag)
 }

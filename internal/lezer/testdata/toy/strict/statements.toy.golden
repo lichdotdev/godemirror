@@ -1,0 +1,237 @@
+tree Program(LineComment,LetStatement(let,Definition,"=",BinaryExpression(Number,"*",Number),";"),LetStatement(let,Definition,"=",BinaryExpression(VariableName,"+",Number),⚠),LetStatement(let,Definition,"=",ArrowFunction(ParamList("(",Definition,",",Definition,")"),"=>",CallExpression(VariableName,ArgList("(",String("\"",Interpolation("${",VariableName,"}"),Interpolation("${",VariableName,"}"),Escape,"\""),")"))),⚠),ExpressionStatement(CallExpression(VariableName,ArgList("(",VariableName,",",String("\"","\""),")")),";"),ExpressionStatement(CallExpression(VariableName,ArgList("(",String("\"","\""),",",String("\"","\""),")")),BlockComment,⚠),ForStatement(for,Definition,of,VariableName,Block("{",LetStatement(let,Definition,"=",VariableName,⚠),MarkStatement(ShallowMark,⚠),IfStatement(if,VariableName,Block("{",MarkStatement(DeepMark,";"),Block("{",MarkStatement(DeepMark),"}"),"}"),else,Block("{",ExpressionStatement(CallExpression(VariableName,ArgList("(",VariableName,")"))),"}")),"}")),LetStatement(let,Definition,"=",ArrowFunction(ParamList("(",Definition,")"),"=>",ArrowFunction(ParamList("(",Definition,")"),"=>",BinaryExpression(VariableName,"+",BinaryExpression(UnaryExpression("-",VariableName),"*",ParenthesizedExpression("(",BinaryExpression(VariableName,"+",VariableName),")"))))),⚠),ExpressionStatement(CallExpression(VariableName,ArgList("(",Spread,VariableName,",",ParenthesizedExpression("(",VariableName,")"),",",BooleanLiteral,",",BooleanLiteral,")")),⚠),ExpressionStatement(String("\"",Interpolation("${",String("\"",Interpolation("${",BinaryExpression(VariableName,"+",String("\"",Interpolation("${",VariableName,"}"),"\"")),"}"),"\""),"}"),Escape,Escape,"\""),⚠),AssertStatement(assert,VariableName,⚠),MarkStatement(ShallowMark,⚠),Block("{",Block("{",Block("{",ExpressionStatement(VariableName),"}"),"}"),"}"),ExpressionStatement(CallExpression(CallExpression(CallExpression(MemberExpression(VariableName,".",PropertyName),ArgList("(",MemberExpression(MemberExpression(MemberExpression(MemberExpression(VariableName,".",PropertyName),".",⚠),".",⚠),".",PropertyName),")")),ArgList("(",VariableName,")")),ArgList("(",VariableName,",",VariableName,")")),⚠),ExpressionStatement(CallExpression(CallExpression(VariableName,ArgList("(",Spread,MemberExpression(VariableName,".",PropertyName),")")),ArgList("(",VariableName,")")),⚠),LetStatement(let,Definition,"=",String("\"","\""),⚠),LetStatement(let,Definition,as,TypeName,"=",BinaryExpression(VariableName,"|>",VariableName),⚠),ExpressionStatement(BinaryExpression(BinaryExpression(String("\"",Interpolation("${",VariableName,"}"),Interpolation("${",VariableName,"}"),"\""),"+",String("\"","\"")),"+",String("\"",Escape,"\""))))
+0 75 comment
+76 79 keyword
+80 86 definition(variableName)
+87 88 operator
+89 90 number
+91 92 operator
+93 94 number
+94 95 separator
+96 99 keyword
+100 104 definition(variableName)
+105 106 operator
+107 113 variableName
+114 115 operator
+116 117 number
+118 121 keyword
+122 127 definition(variableName)
+128 129 operator
+130 131 paren
+131 135 local(variableName) definition(variableName)
+135 136 separator
+137 145 local(variableName) definition(variableName)
+145 146 paren
+147 149 operator
+150 155 function(variableName)
+155 156 paren
+156 157 punctuation
+157 159 special(string)
+159 167 special(string) variableName
+167 168 special(string) brace
+168 170 string
+170 172 special(string)
+172 176 special(string) variableName
+176 177 special(string) brace
+177 178 string
+178 180 escape
+180 181 punctuation
+181 182 paren
+183 188 function(variableName)
+188 189 paren
+189 195 variableName
+195 196 separator
+197 198 punctuation
+198 200 string
+200 201 punctuation
+201 202 paren
+202 203 separator
+204 209 function(variableName)
+209 210 paren
+210 211 punctuation
+211 212 string
+212 213 punctuation
+213 214 separator
+215 216 punctuation
+216 217 string
+217 218 punctuation
+218 219 paren
+221 268 comment
+269 272 keyword
+273 277 definition(variableName)
+278 280 keyword
+281 285 variableName
+286 287 content brace
+287 290 content
+290 293 content keyword
+293 294 content
+294 296 content definition(variableName)
+296 297 content
+297 298 content operator
+298 299 content
+299 303 content variableName
+303 306 content
+306 307 content annotation
+307 310 content
+310 312 content keyword
+312 313 content
+313 315 content variableName
+315 316 content
+316 317 content content brace
+317 318 content content
+318 319 content content annotation
+319 320 content content separator
+320 321 content content
+321 322 content content content brace
+322 323 content content content
+323 324 content content content annotation
+324 325 content content content
+325 326 content content content brace
+326 327 content content
+327 328 content content brace
+328 329 content
+329 333 content keyword
+333 334 content
+334 335 content content brace
+335 336 content content
+336 341 content content function(variableName)
+341 342 content content paren
+342 344 content content variableName
+344 345 content content paren
+345 346 content content
+346 347 content content brace
+347 348 content
+348 349 content brace
+351 354 keyword
+355 358 definition(variableName)
+359 360 operator
+361 362 paren
+362 363 local(variableName) definition(variableName)
+363 364 paren
+365 367 operator
+368 369 paren
+369 370 local(variableName) definition(variableName)
+370 371 paren
+372 374 operator
+375 376 variableName
+377 378 operator
+379 380 operator
+380 381 variableName
+382 383 operator
+384 385 paren
+385 386 variableName
+387 388 operator
+389 390 variableName
+390 391 paren
+392 397 function(variableName)
+397 398 paren
+398 401 operator
+401 405 variableName
+405 406 separator
+407 408 paren
+408 409 variableName
+409 410 paren
+410 411 separator
+412 416 bool
+416 417 separator
+418 423 bool
+423 424 paren
+425 426 punctuation
+426 433 string
+433 435 special(string)
+435 436 special(string) punctuation
+436 444 special(string) string
+444 446 special(string) special(string)
+446 450 special(string) special(string) variableName
+450 451 special(string) special(string)
+451 452 special(string) special(string) operator
+452 453 special(string) special(string)
+453 454 special(string) special(string) punctuation
+454 459 special(string) special(string) string
+459 461 special(string) special(string) special(string)
+461 467 special(string) special(string) special(string) variableName
+467 468 special(string) special(string) special(string) brace
+468 469 special(string) special(string) punctuation
+469 470 special(string) special(string) brace
+470 471 special(string) punctuation
+471 472 special(string) brace
+472 473 string
+473 475 escape
+475 482 string
+482 484 escape
+484 485 punctuation
+486 492 keyword
+493 499 variableName
+500 502 annotation
+503 504 content brace
+504 505 content
+505 506 content content brace
+506 507 content content
+507 508 content content content brace
+508 509 content content content
+509 513 content content content special(variableName)
+513 514 content content content
+514 515 content content content brace
+515 516 content content
+516 517 content content brace
+517 518 content
+518 519 content brace
+520 527 variableName
+527 528 derefOperator
+528 531 propertyName
+531 532 paren
+532 533 variableName
+533 534 derefOperator
+534 535 propertyName
+535 536 derefOperator
+536 537 derefOperator
+537 538 derefOperator
+538 539 propertyName
+539 540 paren
+541 542 paren
+542 543 variableName
+543 544 paren
+545 546 paren
+546 547 variableName
+547 548 separator
+549 550 variableName
+550 551 paren
+552 553 function(variableName)
+553 554 paren
+554 557 operator
+557 558 variableName
+558 559 derefOperator
+559 560 propertyName
+560 561 paren
+562 563 paren
+563 564 variableName
+564 565 paren
+567 570 keyword
+571 573 definition(variableName)
+574 575 operator
+576 577 punctuation
+577 578 string
+578 579 punctuation
+580 583 keyword
+584 585 definition(variableName)
+586 588 keyword
+589 594 typeName
+595 596 operator
+597 599 variableName
+600 602 operator
+603 604 variableName
+605 606 punctuation
+606 608 special(string)
+608 609 special(string) variableName
+609 610 special(string) brace
+610 611 string
+611 613 special(string)
+613 614 special(string) variableName
+614 615 special(string) brace
+615 616 punctuation
+617 618 operator
+619 620 punctuation
+620 621 punctuation
+622 623 operator
+624 625 punctuation
+625 627 escape
+627 628 punctuation

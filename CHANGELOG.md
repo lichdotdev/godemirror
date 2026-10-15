@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **CSS, Go, HTML, Java, JavaScript, TypeScript, Python and Rust are
+  highlighted by a port of CodeMirror's own Lezer parser.** A file of one of
+  them is parsed with its `@lezer/*` grammar and tagged by its `styleTags`, as
+  CodeMirror tags it: a call and a declaration, a type and a variable, are told
+  apart where chroma could not, and HTML's scripts, styles and `style`/`on*`
+  attributes are highlighted as JavaScript and CSS. Code a grammar cannot
+  parse is left as CodeMirror leaves it. Every other language is still read by
+  chroma.
+- **A token can carry several tags, and its style merges theirs.** Each tag
+  takes the spec of its most specific styled tag, and the specs apply in
+  their order in the `HighlightStyle`, a later one's color, bold, italic,
+  underline or line-through winning, as CSS cascades CodeMirror's classes. A
+  chroma token still has one tag, and draws as before.
+
 ## [0.3.0] - 2026-10-14
 
 ### Added

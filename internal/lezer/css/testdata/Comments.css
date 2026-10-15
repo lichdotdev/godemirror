@@ -1,0 +1,6 @@
+/* leading */ .a /* between */ { /* inside */ color /* x */ : red /* y */ ; }
+/**/
+/* multi
+   line
+   comment */
+.b{c:d}/* trailing */

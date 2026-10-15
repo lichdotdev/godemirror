@@ -1,7 +1,10 @@
 package godemirror
 
 import (
+	"slices"
 	"testing"
+
+	"github.com/alecthomas/chroma/v2/lexers"
 
 	"github.com/lichdotdev/godemirror/tags"
 )
@@ -25,11 +28,13 @@ func TestHighlightCutsLinesAndExpandsTabsToStops(t *testing.T) {
 	}
 }
 
-// The tags are the ones @lezer/go gives the same code, but for main: lezer
-// tags a declared function definition(function(variableName)), and chroma
-// cannot tell a declaration from a call.
-func TestHighlightTagsGoCode(t *testing.T) {
-	d, err := highlight("main.go", "func main() {\n\t// hi\n\treturn \"x\", 42, true, nil\n}\n")
+// chroma is the fallback for languages with no Lezer port; Go has one, but
+// its lexer is a known one to check tagmap against. The tags are the ones
+// @lezer/go gives the same code, but for main, return and 42: lezer tags a
+// declared function function(definition(variableName)), return a
+// controlKeyword and 42 a number, and chroma cannot tell those apart.
+func TestChromaTagsGoCode(t *testing.T) {
+	d, err := highlightChroma(lexers.Get("go"), normalize("func main() {\n\t// hi\n\treturn \"x\", 42, true, nil\n}\n"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -40,7 +45,7 @@ func TestHighlightTagsGoCode(t *testing.T) {
 		text := string(d.lines[line])
 		for i := range len(text) - len(word) + 1 {
 			if text[i:i+len(word)] == word {
-				return d.tags[line][i]
+				return onlyTag(t, d.tags[line][i])
 			}
 		}
 		t.Fatalf("%q not on line %d (%q)", word, line, text)
@@ -68,6 +73,76 @@ func TestHighlightTagsGoCode(t *testing.T) {
 	for _, c := range cases {
 		if got := tagAt(c.line, c.word); got != c.want {
 			t.Errorf("%q on line %d: tag %v, want %v", c.word, c.line, got, c.want)
+		}
+	}
+}
+
+// Java goes through the port of @lezer/java, which tells a call from a
+// declaration where chroma cannot. Lezer counts in UTF-16 units, so the
+// tags after a character outside the BMP (two units, two cells here) and a
+// tab must still land on their own cells.
+func TestHighlightTagsJavaAsLezerDoes(t *testing.T) {
+	d, err := highlight("A.java", "class A {\n\tvoid run() { log(\"😀\", 1); }\n}\n")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(d.lines) != 3 {
+		t.Fatalf("got %d lines, want 3", len(d.lines))
+	}
+	cases := []struct {
+		line int
+		word string
+		want *tags.Tag
+	}{
+		{0, "class", tags.DefinitionKeyword},
+		{0, "A", tags.Definition(tags.VariableName)},
+		{1, "void", tags.Keyword},
+		{1, "run", tags.Definition(tags.VariableName)},
+		{1, "log", tags.Function(tags.VariableName)},
+		{1, `"😀"`, tags.String},
+		{1, "1", tags.Integer},
+		{1, ")", tags.Paren},
+		{1, ";", tags.Separator},
+		{2, "}", tags.Brace},
+	}
+	for _, c := range cases {
+		cells, want := d.lines[c.line], textCells(c.word)
+		at := -1
+		for i := range len(cells) - len(want) + 1 {
+			if slices.Equal(cells[i:i+len(want)], want) {
+				at = i
+				break
+			}
+		}
+		if at < 0 {
+			t.Fatalf("%q not on line %d (%q)", c.word, c.line, string(cells))
+		}
+		for i := at; i < at+len(want); i++ {
+			if got := onlyTag(t, d.tags[c.line][i]); got != c.want {
+				t.Errorf("%q on line %d, cell %d: tag %v, want %v", c.word, c.line, i, got, c.want)
+			}
+		}
+	}
+}
+
+// Go goes through the port of @lezer/go, so its tags are the grammar's own,
+// where chroma's differ.
+func TestHighlightTagsGoAsLezerDoes(t *testing.T) {
+	d, err := highlight("main.go", "func main() {\n\treturn 42\n}\n")
+	if err != nil {
+		t.Fatal(err)
+	}
+	cases := []struct {
+		line, cell int
+		want       *tags.Tag
+	}{
+		{0, len("func "), tags.Function(tags.Definition(tags.VariableName))},
+		{1, tabSize, tags.ControlKeyword},
+		{1, tabSize + len("return "), tags.Number},
+	}
+	for _, c := range cases {
+		if got := onlyTag(t, d.tags[c.line][c.cell]); got != c.want {
+			t.Errorf("line %d, cell %d: tag %v, want %v", c.line, c.cell, got, c.want)
 		}
 	}
 }

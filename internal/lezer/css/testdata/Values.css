@@ -1,0 +1,30 @@
+:root {
+  --main-color: #06c;
+  --accent: rgb(255 0 0 / 50%);
+  --spacing: calc(1rem + 2px);
+  --empty:;
+  --json: { "a": [1, 2] };
+}
+.box {
+  width: calc(100% - (2 * var(--spacing)));
+  height: max(10vh, 200px);
+  margin: -1px auto 0 .5em;
+  transform: translate(-50%, -50%) rotate(45deg) scale(1.5e2);
+  transition: opacity .3s ease-in-out, transform 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  background: url(img/bg.png) no-repeat, url("data:image/png;base64,AAA=") , linear-gradient(to right, #fff 0%, #000 100%);
+  font: italic bold 12px/30px Georgia, "Times New Roman", serif;
+  color: var(--main-color, #333) !important;
+  grid-template-areas: "header header" "sidebar main";
+  grid-template-columns: [full-start] minmax(1em, 1fr) [main-start] minmax(0, 40em) [main-end];
+  content: counter(item) ". ";
+  z-index: +10;
+  line-height: 1.5;
+  aspect-ratio: 16 / 9;
+  width: if(media(width > 600px): 50%; else: 100%);
+  color: if(style(--theme: dark): white; supports(color: lch(0 0 0)): black;);
+  --x: 10px 20px;
+  filter: drop-shadow(0 0 2px var(--accent));
+  font-family: system-ui,-apple-system;
+  unicode-range: U+0025-00FF;
+  --odd: [ a ; b : c . d @x ];
+}

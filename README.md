@@ -30,10 +30,13 @@ code review, logs. It does not edit text.
 
 godemirror lets you:
 
-- **Show code that reads like code.** Monospace rows highlighted by
-  [chroma](https://github.com/alecthomas/chroma) from the file name, tagged
-  with CodeMirror's highlighting tags and colored by a `HighlightStyle`, as in
-  CodeMirror: `DarkTheme`, `LightTheme`, a ported CodeMirror theme (`OneDark`,
+- **Show code that reads like code.** Monospace rows highlighted from the file
+  name and colored by a `HighlightStyle`, as in CodeMirror. CSS, Go, HTML, Java,
+  JavaScript, TypeScript, Python and Rust are parsed by a Go port of
+  CodeMirror's own Lezer parser and grammars, so they are tagged exactly as
+  CodeMirror tags them; other languages are read by
+  [chroma](https://github.com/alecthomas/chroma) and tagged with the
+  CodeMirror tags their Lezer grammars give the same constructs. The themes: `DarkTheme`, `LightTheme`, a ported CodeMirror theme (`OneDark`,
   `Dracula`, `GitHubLight`, `GitHubDark`, `Nord`) or a theme of your own. Highlighting runs off the UI
   goroutine: a 13,000-line file shows at once and takes its colors when they are
   ready.
@@ -195,3 +198,7 @@ run the demo headless, and how to report a bug or propose a change.
 ## License
 
 [MIT](LICENSE) © 2026 omartelo
+
+`internal/lezer` ports [Lezer](https://lezer.codemirror.net) and its CSS, Go,
+HTML, Java, JavaScript, Python and Rust grammars, MIT licensed © 2018 Marijn Haverbeke and others: see
+[its license](internal/lezer/LICENSE).

@@ -1,0 +1,30 @@
+tree SingleExpression(BinaryExpression(CallExpression(CallExpression(VariableName,ArgList("(",VariableName,",",Spread,VariableName,")")),ArgList("(",VariableName,")")),"+",BinaryExpression(UnaryExpression("-",Number),"*",CallExpression(ParenthesizedExpression("(",ArrowFunction(ParamList("(",Definition,")"),"=>",VariableName),")"),ArgList("(",String("\"",Interpolation("${",VariableName,"}"),"\""),")")))),LineComment)
+0 1 function(variableName)
+1 2 paren
+2 3 variableName
+3 4 separator
+5 8 operator
+8 9 variableName
+9 10 paren
+10 11 paren
+11 12 variableName
+12 13 paren
+14 15 operator
+16 17 operator
+17 18 number
+19 20 operator
+21 22 paren
+22 23 paren
+23 24 local(variableName) definition(variableName)
+24 25 paren
+26 28 operator
+29 30 local(variableName)
+30 31 paren
+31 32 paren
+32 33 punctuation
+33 35 special(string)
+35 36 special(string) variableName
+36 37 special(string) brace
+37 38 punctuation
+38 39 paren
+40 51 comment

@@ -1,0 +1,7 @@
+Point
+Point(1)
+let q = Point.origin
+Foo + 1
+let p = Point(1, 2)
+Point(1)
+Foo(a)(b)

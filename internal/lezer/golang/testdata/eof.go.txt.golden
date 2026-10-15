@@ -1,0 +1,9 @@
+tree SourceFile(PackageClause(package,DefName),FunctionDecl(func,DefName,Parameters("(",")"),Block("{",ReturnStatement(return),⚠)),⚠)
+0 7 moduleKeyword
+8 9 definition(variableName)
+11 15 definitionKeyword
+16 17 function(definition(variableName))
+17 18 paren
+18 19 paren
+20 21 brace
+23 29 controlKeyword

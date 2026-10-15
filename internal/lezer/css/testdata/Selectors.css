@@ -1,0 +1,23 @@
+/* Selectors of every kind */
+* { margin: 0 }
+html, body { height: 100%; }
+div > p + ul ~ ol { color: red }
+ul li a:hover::before { content: "→"; }
+nav  .item.active  #main-nav { display: flex }
+svg|circle, *|rect, |line { fill: none }
+a[href], a[target="_blank"], a[href^='http' i], a[class~=btn s] { text-decoration: underline }
+input[type=checkbox]:checked + label::after { content: '\2713' }
+li:nth-child(2n + 1), li:nth-last-of-type(odd) { background: #eee }
+p:lang(fr), :dir(rtl), :host-context(.dark) { quotes: "«" "»" }
+:is(h1, h2, h3):not(.title) > span { font-weight: bold }
+:where(.a .b, .c) { all: unset }
+.card {
+  padding: 1em;
+  &:hover { box-shadow: 0 0 4px rgba(0, 0, 0, .3) }
+  & > .title { font-size: 1.2rem }
+  .child & { color: blue }
+  > .direct { margin: 0 }
+}
+#fff, #abcd, #a1b2c3, #abcdef12, #nothex, #12345 { color: inherit }
+.a\:b, .\31 23, .é-ü, ._x, .-y { display: none }
+a>>b { color: red }

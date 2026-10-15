@@ -1,0 +1,4 @@
+tree Script(AssignStatement(VariableName,AssignOp,Number))
+0 1 variableName
+2 3 definitionOperator
+4 5 number

@@ -2,28 +2,38 @@ package godemirror
 
 import (
 	"fmt"
+	"path/filepath"
 	"slices"
 	"strings"
+	"unicode/utf16"
+	"unicode/utf8"
 
 	"github.com/alecthomas/chroma/v2"
 	"github.com/alecthomas/chroma/v2/lexers"
 
 	"github.com/lichdotdev/godemirror/internal/glyphs"
-	"github.com/lichdotdev/godemirror/tags"
+	"github.com/lichdotdev/godemirror/internal/lezer"
+	"github.com/lichdotdev/godemirror/internal/lezer/css"
+	"github.com/lichdotdev/godemirror/internal/lezer/golang"
+	"github.com/lichdotdev/godemirror/internal/lezer/html"
+	"github.com/lichdotdev/godemirror/internal/lezer/java"
+	"github.com/lichdotdev/godemirror/internal/lezer/javascript"
+	"github.com/lichdotdev/godemirror/internal/lezer/python"
+	"github.com/lichdotdev/godemirror/internal/lezer/rust"
 )
 
 // document is text cut into lines of cells, tabs expanded to tabSize stops
-// and wide characters to two cells, with the highlighting tag of every cell. It keeps
+// and wide characters to two cells, with the highlighting tags of every cell. It keeps
 // each line's own runes too, and the cell each of them starts at, so what is
 // copied out is the text as it was.
 type document struct {
 	lines  [][]rune
-	tags   [][]*tags.Tag
+	tags   [][]*lezer.TagSet
 	source [][]rune
 	cellOf [][]int
 }
 
-func (d *document) add(text string, tag *tags.Tag) {
+func (d *document) add(text string, tags *lezer.TagSet) {
 	for _, r := range text {
 		last := len(d.lines) - 1
 		if r == '\n' {
@@ -44,7 +54,7 @@ func (d *document) add(text string, tag *tags.Tag) {
 			d.lines[last] = appendCells(d.lines[last], r)
 		}
 		for range len(d.lines[last]) - start {
-			d.tags[last] = append(d.tags[last], tag)
+			d.tags[last] = append(d.tags[last], tags)
 		}
 	}
 }
@@ -96,7 +106,7 @@ func normalize(text string) string {
 }
 
 func newDocument() *document {
-	return &document{lines: [][]rune{nil}, tags: [][]*tags.Tag{nil}, source: [][]rune{nil}, cellOf: [][]int{nil}}
+	return &document{lines: [][]rune{nil}, tags: [][]*lezer.TagSet{nil}, source: [][]rune{nil}, cellOf: [][]int{nil}}
 }
 
 // plain builds the document of text with every cell untagged. Its cells are
@@ -107,26 +117,98 @@ func plain(text string) *document {
 	return d
 }
 
-// highlight builds the document for a file, colored by the lexer its name
-// matches. A file no lexer claims is shown plain, as CodeMirror shows a file
-// with no language.
+// lezerParsers are the languages highlighted by a port of their Lezer
+// grammar, by file extension, as @codemirror/language-data matches them.
+var lezerParsers = map[string]func() *lezer.Parser{
+	".css":        css.Parser,
+	".go":         golang.Parser,
+	".html":       html.Parser,
+	".htm":        html.Parser,
+	".handlebars": html.Parser,
+	".hbs":        html.Parser,
+	".java":       java.Parser,
+	".js":         javascript.Parser,
+	".mjs":        javascript.Parser,
+	".cjs":        javascript.Parser,
+	".jsx":        javascript.JSX,
+	".ts":         javascript.TypeScript,
+	".mts":        javascript.TypeScript,
+	".cts":        javascript.TypeScript,
+	".tsx":        javascript.TSX,
+	".py":         python.Parser,
+	".pyw":        python.Parser,
+	".bzl":        python.Parser,
+	".build":      python.Parser,
+	".rs":         rust.Parser,
+}
+
+// highlight builds the document for a file, colored by the Lezer grammar
+// its extension matches or else by the chroma lexer its name matches. A
+// file neither claims is shown plain, as CodeMirror shows a file with no
+// language.
 func highlight(filename, text string) (*document, error) {
+	if parser, ok := lezerParsers[strings.ToLower(filepath.Ext(filename))]; ok {
+		return highlightLezer(parser(), normalize(text)), nil
+	}
 	lexer := lexers.Match(filename)
 	if lexer == nil {
 		return plain(text), nil
 	}
-	text = normalize(text)
-	it, err := chroma.Coalesce(lexer).Tokenise(nil, text)
+	d, err := highlightChroma(lexer, normalize(text))
 	if err != nil {
 		return nil, fmt.Errorf("highlight %s: %w", filename, err)
 	}
-	d := newDocument()
+	return d, nil
+}
+
+// highlightChroma builds the document of text with the tags tagmap.go gives
+// lexer's tokens.
+func highlightChroma(lexer chroma.Lexer, text string) (*document, error) {
+	it, err := chroma.Coalesce(lexer).Tokenise(nil, text)
+	if err != nil {
+		return nil, err
+	}
+	d, sets := newDocument(), lezer.NewTagSets()
 	for t := it(); t != chroma.EOF; t = it() {
-		d.addToken(t)
+		d.addToken(t, sets)
 	}
 	// Lexers that ensure a final newline hand one back the text never had.
 	lines := strings.Count(text, "\n") + 1
 	d.lines, d.tags = d.lines[:lines], d.tags[:lines]
 	d.source, d.cellOf = d.source[:lines], d.cellOf[:lines]
 	return d, nil
+}
+
+// highlightLezer builds the document of text with the tags CodeMirror gives
+// it through parser's grammar.
+func highlightLezer(parser *lezer.Parser, text string) *document {
+	units := utf16.Encode([]rune(text))
+	w := &unitWriter{d: newDocument(), text: text}
+	lezer.Highlight(parser.ParseUnits(units, nil), lezer.NewTagSets(), func(from, to int, tags *lezer.TagSet) {
+		w.writeTo(from, nil)
+		w.writeTo(to, tags)
+	})
+	w.writeTo(len(units), nil)
+	return w.d
+}
+
+// unitWriter adds text to a document by UTF-16 offsets, the positions a
+// Lezer tree counts in.
+type unitWriter struct {
+	d            *document
+	text         string
+	byteAt, unit int
+}
+
+// writeTo adds the text from where the last call stopped up to the given
+// UTF-16 offset, tagged tags. A character whose first unit is before the
+// offset goes whole.
+func (w *unitWriter) writeTo(unit int, tags *lezer.TagSet) {
+	start := w.byteAt
+	for w.unit < unit && w.byteAt < len(w.text) {
+		r, size := utf8.DecodeRuneInString(w.text[w.byteAt:])
+		w.byteAt += size
+		w.unit += utf16.RuneLen(r)
+	}
+	w.d.add(w.text[start:w.byteAt], tags)
 }

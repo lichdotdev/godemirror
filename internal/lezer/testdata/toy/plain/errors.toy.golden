@@ -1,0 +1,27 @@
+tree Program(LetStatement(let,Definition(⚠),"=",⚠,";"),LetStatement(let,Definition,"=",ArrowFunction(ParamList("(",Definition,",",Definition,⚠),⚠),⚠),ForStatement(for,⚠),ForStatement(for,Definition,⚠),Block("{",⚠(")"),"}"),ExpressionStatement(String("\"",Interpolation("${",BinaryExpression(Number,"+",⚠),⚠),⚠)))
+0 3 keyword
+4 5 operator
+6 7 separator
+8 11 keyword
+12 13 definition(variableName)
+14 15 operator
+16 17 paren
+17 18 local(variableName) definition(variableName)
+18 19 separator
+20 21 local(variableName) definition(variableName)
+22 25 keyword
+26 29 keyword
+30 32 definition(variableName)
+33 34 content brace
+34 35 content
+35 36 content paren
+36 37 content
+37 38 content brace
+39 40 punctuation
+40 53 string
+53 56 special(string)
+56 57 special(string) number
+57 58 special(string)
+58 59 special(string) operator
+59 60 special(string)
+60 114 string

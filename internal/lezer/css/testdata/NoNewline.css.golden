@@ -1,0 +1,7 @@
+tree StyleSheet(RuleSet(ClassSelector(".",ClassName),Block("{",Declaration(PropertyName,":",ValueName),"}")))
+1 2 className
+2 3 brace
+3 8 propertyName
+8 9 punctuation
+9 12 atom
+12 13 brace

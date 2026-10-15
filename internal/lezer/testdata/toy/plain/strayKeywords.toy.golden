@@ -1,0 +1,9 @@
+tree Program(⚠(else),⚠(else),⚠(else),IfStatement(if,⚠(else),⚠("+")),LetStatement(let,⚠),ExpressionStatement(Number))
+0 4 keyword
+5 9 keyword
+10 14 keyword
+15 17 keyword
+18 22 keyword
+23 24 operator
+24 27 keyword
+28 30 number

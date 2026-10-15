@@ -1,0 +1,302 @@
+let v0 = f(v0, ...rest) + "s${v0 * 2}"
+@
+print(v1 + 2);
+if v3 {
+  for x4 of xs { g(x4); @ }
+  let v5 = f(v4, ...rest) + "s${v3 * 2}"
+  if v6 {
+    for x7 of xs { g(x7); @ }
+    if v8 {
+      let v9 = f(v8, ...rest) + "s${v7 * 2}"
+      if v10 {
+        if v11 {
+          let v12 = f(v11, ...rest) + "s${v10 * 2}"
+          print(v12 + 13);
+        }
+        @
+        let h16 = (a, b) => (c) => a * b + c // 16
+        print(v16 + 17);
+        for x18 of xs { g(x18); @ }
+        let v19 = f(v18, ...rest) + "s${v17 * 2}"
+        print(v19 + 20);
+        if v21 {
+          print(v21 + 22);
+          @
+        }
+      }
+      let v26 = f(v25, ...rest) + "s${v24 * 2}"
+      print(v26 + 27);
+    }
+    for x29 of xs { g(x29); @ }
+    let h30 = (a, b) => (c) => a * b + c // 30
+    let v31 = f(v30, ...rest) + "s${v29 * 2}"
+    for x32 of xs { g(x32); @ }
+    if v33 {
+      if v34 {
+        @
+        print(v35 + 36);
+        let v37 = f(v36, ...rest) + "s${v35 * 2}"
+        let v38 = f(v37, ...rest) + "s${v36 * 2}"
+        for x39 of xs { g(x39); @ }
+        let v40 = f(v39, ...rest) + "s${v38 * 2}"
+        @
+        print(v41 + 42);
+        print(v42 + 43);
+        @
+        for x45 of xs { g(x45); @ }
+        for x46 of xs { g(x46); @ }
+        print(v46 + 47);
+        print(v47 + 48);
+        @
+        print(v49 + 50);
+      }
+      let v52 = f(v51, ...rest) + "s${v50 * 2}"
+      print(v52 + 53);
+    }
+    let v55 = f(v54, ...rest) + "s${v53 * 2}"
+    if v56 {
+      print(v56 + 57);
+      print(v57 + 58);
+      for x59 of xs { g(x59); @ }
+      print(v59 + 60);
+      let v61 = f(v60, ...rest) + "s${v59 * 2}"
+      print(v61 + 62);
+      for x63 of xs { g(x63); @ }
+      for x64 of xs { g(x64); @ }
+      let v65 = f(v64, ...rest) + "s${v63 * 2}"
+      print(v65 + 66);
+      print(v66 + 67);
+      let v68 = f(v67, ...rest) + "s${v66 * 2}"
+      print(v68 + 69);
+      if v70 {
+        print(v70 + 71);
+        let h72 = (a, b) => (c) => a * b + c // 72
+        print(v72 + 73);
+        print(v73 + 74);
+        @
+        let v76 = f(v75, ...rest) + "s${v74 * 2}"
+        print(v76 + 77);
+        if v78 {
+          let v79 = f(v78, ...rest) + "s${v77 * 2}"
+        }
+      }
+      if v82 {
+        print(v82 + 83);
+      }
+      @
+      let v86 = f(v85, ...rest) + "s${v84 * 2}"
+      print(v86 + 87);
+      if v88 {
+        let v89 = f(v88, ...rest) + "s${v87 * 2}"
+        for x90 of xs { g(x90); @ }
+        print(v90 + 91);
+        print(v91 + 92);
+        print(v92 + 93);
+        @
+        let v95 = f(v94, ...rest) + "s${v93 * 2}"
+        let v96 = f(v95, ...rest) + "s${v94 * 2}"
+        print(v96 + 97);
+        print(v97 + 98);
+      }
+    }
+    @
+    @
+    let v103 = f(v102, ...rest) + "s${v101 * 2}"
+    for x104 of xs { g(x104); @ }
+    @
+    if v106 {
+      let v107 = f(v106, ...rest) + "s${v105 * 2}"
+      let v108 = f(v107, ...rest) + "s${v106 * 2}"
+      for x109 of xs { g(x109); @ }
+      print(v109 + 110);
+      print(v110 + 111);
+      for x112 of xs { g(x112); @ }
+      let h113 = (a, b) => (c) => a * b + c // 113
+      print(v113 + 114);
+      if v115 {
+        print(v115 + 116);
+        print(v116 + 117);
+        print(v117 + 118);
+        print(v118 + 119);
+        let v120 = f(v119, ...rest) + "s${v118 * 2}"
+        let v121 = f(v120, ...rest) + "s${v119 * 2}"
+      }
+      let h123 = (a, b) => (c) => a * b + c // 123
+      if v124 {
+        if v125 {
+          @
+        }
+        let v128 = f(v127, ...rest) + "s${v126 * 2}"
+        if v129 {
+          if v130 {
+          }
+        }
+        let v133 = f(v132, ...rest) + "s${v131 * 2}"
+        if v134 {
+          print(v134 + 135);
+          let h136 = (a, b) => (c) => a * b + c // 136
+        }
+        @
+        let v139 = f(v138, ...rest) + "s${v137 * 2}"
+        let v140 = f(v139, ...rest) + "s${v138 * 2}"
+      }
+      print(v141 + 142);
+      print(v142 + 143);
+      let v144 = f(v143, ...rest) + "s${v142 * 2}"
+      let v145 = f(v144, ...rest) + "s${v143 * 2}"
+      if v146 {
+      }
+      let v148 = f(v147, ...rest) + "s${v146 * 2}"
+      @
+      print(v149 + 150);
+    }
+    if v152 {
+      print(v152 + 153);
+      for x154 of xs { g(x154); @ }
+    }
+    for x156 of xs { g(x156); @ }
+    if v157 {
+      for x158 of xs { g(x158); @ }
+      print(v158 + 159);
+      print(v159 + 160);
+      print(v160 + 161);
+      @
+      let v163 = f(v162, ...rest) + "s${v161 * 2}"
+    }
+    print(v164 + 165);
+    for x166 of xs { g(x166); @ }
+    print(v166 + 167);
+    let v168 = f(v167, ...rest) + "s${v166 * 2}"
+    @
+    print(v169 + 170);
+    print(v170 + 171);
+    print(v171 + 172);
+    print(v172 + 173);
+    print(v173 + 174);
+    print(v174 + 175);
+    @
+    for x177 of xs { g(x177); @ }
+    let v178 = f(v177, ...rest) + "s${v176 * 2}"
+    if v179 {
+      if v180 {
+        @
+        @
+        print(v182 + 183);
+        print(v183 + 184);
+        let v185 = f(v184, ...rest) + "s${v183 * 2}"
+        print(v185 + 186);
+        print(v186 + 187);
+        print(v187 + 188);
+        let v189 = f(v188, ...rest) + "s${v187 * 2}"
+        @
+        @
+      }
+      @
+      let h194 = (a, b) => (c) => a * b + c // 194
+      print(v194 + 195);
+      print(v195 + 196);
+      let v197 = f(v196, ...rest) + "s${v195 * 2}"
+      print(v197 + 198);
+      print(v198 + 199);
+      if v200 {
+        print(v200 + 201);
+        print(v201 + 202);
+        print(v202 + 203);
+        print(v203 + 204);
+        let v205 = f(v204, ...rest) + "s${v203 * 2}"
+      }
+      print(v206 + 207);
+      let v208 = f(v207, ...rest) + "s${v206 * 2}"
+      print(v208 + 209);
+      print(v209 + 210);
+      let v211 = f(v210, ...rest) + "s${v209 * 2}"
+      let v212 = f(v211, ...rest) + "s${v210 * 2}"
+      print(v212 + 213);
+      print(v213 + 214);
+    }
+  }
+}
+print(v217 + 218);
+print(v218 + 219);
+@
+print(v220 + 221);
+print(v221 + 222);
+print(v222 + 223);
+let v224 = f(v223, ...rest) + "s${v222 * 2}"
+for x225 of xs { g(x225); @ }
+@
+if v227 {
+  print(v227 + 228);
+  let h229 = (a, b) => (c) => a * b + c // 229
+  for x230 of xs { g(x230); @ }
+  print(v230 + 231);
+  let v232 = f(v231, ...rest) + "s${v230 * 2}"
+  print(v232 + 233);
+  print(v233 + 234);
+  @
+  @
+  @
+  @
+  for x239 of xs { g(x239); @ }
+  @
+  let v241 = f(v240, ...rest) + "s${v239 * 2}"
+}
+print(v242 + 243);
+let v244 = f(v243, ...rest) + "s${v242 * 2}"
+let v245 = f(v244, ...rest) + "s${v243 * 2}"
+for x246 of xs { g(x246); @ }
+print(v246 + 247);
+let v248 = f(v247, ...rest) + "s${v246 * 2}"
+print(v248 + 249);
+for x250 of xs { g(x250); @ }
+for x251 of xs { g(x251); @ }
+for x252 of xs { g(x252); @ }
+if v253 {
+  let v254 = f(v253, ...rest) + "s${v252 * 2}"
+}
+if v256 {
+  print(v256 + 257);
+}
+let v259 = f(v258, ...rest) + "s${v257 * 2}"
+print(v259 + 260);
+for x261 of xs { g(x261); @ }
+let v262 = f(v261, ...rest) + "s${v260 * 2}"
+for x263 of xs { g(x263); @ }
+for x264 of xs { g(x264); @ }
+print(v264 + 265);
+@
+for x267 of xs { g(x267); @ }
+@
+@
+print(v269 + 270);
+for x271 of xs { g(x271); @ }
+for x272 of xs { g(x272); @ }
+print(v272 + 273);
+print(v273 + 274);
+let v275 = f(v274, ...rest) + "s${v273 * 2}"
+let h276 = (a, b) => (c) => a * b + c // 276
+for x277 of xs { g(x277); @ }
+for x278 of xs { g(x278); @ }
+print(v278 + 279);
+let v280 = f(v279, ...rest) + "s${v278 * 2}"
+for x281 of xs { g(x281); @ }
+let v282 = f(v281, ...rest) + "s${v280 * 2}"
+print(v282 + 283);
+print(v283 + 284);
+print(v284 + 285);
+print(v285 + 286);
+@
+for x288 of xs { g(x288); @ }
+print(v288 + 289);
+print(v289 + 290);
+@
+@
+let v293 = f(v292, ...rest) + "s${v291 * 2}"
+if v294 {
+  @
+  if v296 {
+    print(v296 + 297);
+    print(v297 + 298);
+    print(v298 + 299);
+  }
+}

@@ -1,0 +1,20 @@
+tree SourceFile(PackageClause(package,DefName),FunctionDecl(func,DefName,Parameters("(",")"),Block("{",VarDecl(DefName,":=",Number),IncDecStatement(VariableName,IncDecOp),ReturnStatement(return),"}")),LineComment,VarDecl(var,VarSpec(DefName,"=",VariableName)))
+0 7 moduleKeyword
+8 12 definition(variableName)
+16 20 definitionKeyword
+21 25 function(definition(variableName))
+25 26 paren
+26 27 paren
+28 29 brace
+32 33 definition(variableName)
+34 36 definitionOperator
+37 38 number
+41 42 variableName
+42 44 updateOperator
+47 53 controlKeyword
+55 56 brace
+58 70 lineComment
+71 74 definitionKeyword
+75 76 definition(variableName)
+77 78 definitionOperator
+79 80 variableName

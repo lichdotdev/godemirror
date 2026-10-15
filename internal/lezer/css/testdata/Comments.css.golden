@@ -1,0 +1,22 @@
+tree StyleSheet(Comment,RuleSet(ClassSelector(".",ClassName),Comment,Block("{",Comment,Declaration(PropertyName,Comment,":",ValueName),Comment,";","}")),Comment,Comment,RuleSet(ClassSelector(".",ClassName),Block("{",Declaration(PropertyName,":",ValueName),"}")),Comment)
+0 13 blockComment
+15 16 className
+17 30 blockComment
+31 32 brace
+33 45 blockComment
+46 51 propertyName
+52 59 blockComment
+60 61 punctuation
+62 65 atom
+66 73 blockComment
+74 75 separator
+76 77 brace
+78 82 blockComment
+83 113 blockComment
+115 116 className
+116 117 brace
+117 118 propertyName
+118 119 punctuation
+119 120 atom
+120 121 brace
+121 135 blockComment

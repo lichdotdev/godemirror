@@ -20,17 +20,41 @@ file is the trap alone.
   U+FE0F (❤️) stays one cell. Color emoji fonts (Noto Color Emoji is CBDT) cannot be rasterized by `x/image`:
   fontconfig still picks them, so those emoji are blank, two cells wide, not boxes. A wide glyph is drawn from
   the left of its two cells, so a CJK font with a 1em advance leaves a sliver on its right.
-- **Highlighting is chroma, not lezer**: every token is tagged with the CodeMirror tag a lezer grammar gives the
-  same construct (`tagmap.go`), but chroma knows less than a parse tree. Every call is tagged
-  `Function(VariableName)` like the declaration, so a theme that colors only declarations colors calls too; Go type
-  names used as values, and a declared name, stay `VariableName`; operators are all `Operator`. A ported theme is
-  faithful tag for tag and still looks busier or flatter than in CodeMirror wherever chroma is coarser.
-- **A token has one tag and one style**: CodeMirror nests styles (a link inside a heading is both) and applies
-  `HighlightStyle.define`'s CSS; godemirror draws a token's single most specific style, and only its color, bold,
-  italic, underline and line-through. A spec's background, border or outline is dropped, so it is not in
-  `TagStyle`. Each cell holds its tag as a pointer: eight bytes a cell, about 8 MB for a 13k-line file.
+- **Eight languages are parsed by Lezer; everything else is chroma**: a file whose extension (any case)
+  `@codemirror/language-data` gives to CSS, Go, HTML, Java, JavaScript, JSX, TypeScript, TSX, Python or Rust goes
+  through `internal/lezer`, a port of `@lezer/lr`, `@lezer/common` and `@lezer/highlight` running the tables of
+  `@lezer/css` 1.3.9, `@lezer/go` 1.0.1, `@lezer/html` 1.3.13, `@lezer/java` 1.1.5, `@lezer/javascript` 1.5.6,
+  `@lezer/python` 1.1.19 or `@lezer/rust` 1.0.3, and is tagged exactly as CodeMirror tags it, errors included.
+  Those grammars' gaps show the same half-colored way they do in CodeMirror: Java's switch expressions and
+  record patterns; Go's `for range 3`, and a multi-line `/* */` that does not end a statement; TypeScript's
+  `declare module "x"`, `abstract new`, labeled tuples and `let v!:`. Python is matched by extension only, so a
+  file named `BUILD` or `BUCK` with none is chroma's. Every other language is tagged by chroma with the CodeMirror tag a lezer grammar gives the same construct (`tagmap.go`), but
+  chroma knows less than a parse tree. Every call is tagged `Function(VariableName)` like the declaration, so a
+  theme that colors only declarations colors calls too; Go type names used as values, and a declared name, stay
+  `VariableName`; operators are all `Operator`. A ported theme is faithful tag for tag and still looks busier or
+  flatter than in CodeMirror wherever chroma is coarser.
+- **The Lezer port parses a whole file from scratch**: there is no incremental reparse, so every content change
+  parses the file again (about 75 ms for 13,000 lines of Java, chroma's pass takes about 490 ms). Nested parsing
+  is `parseMixed` without fragments, `stopAt`, predicate overlays or `bracketed`, and with one nest per parser
+  (`Parser.WithNest`), which is all `@codemirror/lang-html`'s default nesting uses; its custom
+  `nestedLanguages` and `Element` tags are not ported. HTML keeps a quirk of `@lezer/html`'s `content.js`: it
+  tests `isError` on a node that has no such property, so an attribute's overlay always drops its last
+  character, unclosed quote or not. A grammar's JavaScript (external tokenizers, specializers, its context tracker) is ported by
+  hand and passed in `lezer.Externals`; `lezer.New` fails naming what is missing.
+- **A styleTags path sees the parents a tree cursor sees, quirk included**: inside a `TreeBuffer`,
+  `@lezer/common`'s `TreeCursor.matchContext` takes the last tree node the cursor stood on, often the previous
+  sibling, for the buffer's parent, so a path reaching above the buffer can fail where the tree has the right
+  parents. CodeMirror highlights with that cursor, so the port keeps it, and keeps the tree's exact layout
+  (buffers, balanced repetitions) because the quirk depends on it. Flattening the tree, or "fixing" the cursor,
+  changes what is highlighted.
+- **A token's style is its tags' specs merged, color and font only**: CodeMirror applies `HighlightStyle.define`'s
+  CSS; godemirror merges, in spec order, the specs a token's tags reach and draws only their color, bold, italic,
+  underline and line-through. A spec's background, border or outline is dropped, so it is not in `TagStyle`, and
+  a later spec cannot take back an earlier one's bold or italic, as CSS `font-weight: normal` would. Each cell
+  holds its tags as one pointer to an interned set: eight bytes a cell, about 8 MB for a 13k-line file.
 - **A new document shows plain before it shows colored**: `SetContent` draws the text at once and swaps the
-  colors in when the goroutine finishes, about half a second for a 13k-line file. `UpdateContent` does the
+  colors in when the goroutine finishes, about half a second for a 13k-line file read by chroma, a tenth of that
+  for one parsed by Lezer. `UpdateContent` does the
   opposite: the *old* content stays on screen until the new one is colored. For those milliseconds anything
   that reads the view (a click, `SelectedLines`, `Selection`, `LineText`) reads the old content, and line
   indices from the new `Content` do not apply yet: `Select` and `ScrollToLine` called then land on the old

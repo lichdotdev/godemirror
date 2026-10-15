@@ -1,0 +1,30 @@
+package broken
+
+import (
+	"fmt"
+
+func main() {
+	x := := 1
+	if x > {
+		fmt.Println("x"
+	}
+	for i := 0; i < ; i++ {
+	}
+	var y int = 
+	s := []int{1, 2,, 3}
+	type T struct { a int b string }
+	switch x {
+	case 1
+		break
+	}
+	go
+	defer
+	m := map[string]{}
+	ch <- <- 
+	"unterminated
+	'xx'
+	`raw
+}
+
+func (r *) M() {}
+func g[T]() {}

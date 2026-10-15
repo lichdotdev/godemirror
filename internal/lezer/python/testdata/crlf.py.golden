@@ -1,0 +1,15 @@
+tree Script(FunctionDefinition(def,VariableName,ParamList("(",")"),Body(":",ReturnStatement(return,Number))),ClassDefinition(class,VariableName,Body(":",FunctionDefinition(def,VariableName,ParamList("(",VariableName,")"),Body(":",PassStatement(pass))))))
+0 3 definitionKeyword
+4 5 function(definition(variableName))
+5 6 paren
+6 7 paren
+14 20 controlKeyword
+21 22 number
+26 31 definitionKeyword
+32 33 definition(className)
+37 40 definitionKeyword
+41 42 function(definition(variableName))
+42 43 paren
+43 47 variableName
+47 48 paren
+53 57 controlKeyword

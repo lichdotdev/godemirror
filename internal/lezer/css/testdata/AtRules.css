@@ -1,0 +1,38 @@
+@charset "utf-8";
+@import url("foo.css") screen and (orientation: landscape);
+@import 'bar.css' layer(base.reset) supports(display: grid) print;
+@import "baz.css" layer;
+@namespace svg url(http://www.w3.org/2000/svg);
+@namespace "http://www.w3.org/1999/xhtml";
+@media screen and (min-width: 768px), print and not (color) {
+  .a { color: red }
+}
+@media (400px <= width <= 700px) { body { line-height: 1.4 } }
+@media only screen and (-webkit-min-device-pixel-ratio: 2) {}
+@media not all and (monochrome) {}
+@supports (display: grid) and (not (display: inline-grid)) {
+  .grid { display: grid }
+}
+@supports selector(:has(> img)) { a { b: c } }
+@keyframes spin {
+  from { transform: rotate(0deg) }
+  50%, 75% { opacity: .5 }
+  to { transform: rotate(360deg) }
+}
+@keyframes "fade" { entry 0% { opacity: 0 } exit 100% { opacity: 1 } }
+@scope (.card) to (.content) { img { border: 1px solid } }
+@scope { :scope { color: red } }
+@font-feature-values Font One { @styleset { nice-style: 12; } }
+@font-face {
+  font-family: "Open Sans";
+  src: url(/fonts/OpenSans.woff2) format("woff2");
+}
+@page :first { margin: 1in; }
+@layer base, components;
+@layer base { html { color: black } }
+@container sidebar (min-width: 400px) { .card { display: grid } }
+@container style(--responsive: true) and (width > 10px) { .x { y: z } }
+@property --x { syntax: '<length>'; inherits: false; initial-value: 0px; }
+@-webkit-keyframes x { from {} }
+@unknown foo bar, baz;
+@media (hover: hover) { @media (pointer: fine) { a:hover { color: red } } }

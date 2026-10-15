@@ -1,0 +1,156 @@
+// Package shapes is a fixture covering most of Go's syntax.
+package shapes
+
+import "fmt"
+
+import (
+	"errors"
+	str "strings"
+	_ "embed"
+	. "math"
+)
+
+const Pi2 = Pi * 2
+
+const (
+	KindA Kind = iota
+	KindB
+	_
+	KindC = 1 << iota
+)
+
+var (
+	ErrEmpty       = errors.New("empty")
+	count    int64 = 0x1F_ff
+	ratio          = 1.5e-3 + 0x1p-2 + 0o17 + 0b1010 + 2i
+	raw            = `raw
+string\n`
+	r1, r2 = 'x', 'é'
+)
+
+type Kind int
+
+type Shape interface {
+	Area() float64
+	fmt.Stringer
+	~int | ~float64
+}
+
+type Number interface {
+	~int | ~int64 | float64
+}
+
+type Pair[K comparable, V any] struct {
+	Key   K `json:"key"`
+	Value V `json:"value,omitempty"`
+	*Embedded
+	fmt.Stringer
+	a, b int
+}
+
+type Alias = map[string][]*Pair[string, int]
+
+type Fn func(int, ...string) (bool, error)
+
+type Ch struct {
+	in  <-chan int
+	out chan<- int
+	bi  chan struct{}
+	arr [4]byte
+	dyn [...]int
+}
+
+func Sum[T Number](xs ...T) (total T) {
+	for _, x := range xs {
+		total += x
+	}
+	return
+}
+
+func (p *Pair[K, V]) String() string {
+	return fmt.Sprintf("%v=%v", p.Key, p.Value)
+}
+
+func (Kind) Method() {}
+
+func run(ch chan int, done <-chan struct{}) (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf("panic: %v", r)
+		}
+	}()
+	go func(n int) { ch <- n }(1)
+	i := 0
+	i++
+	i--
+	i <<= 2
+	i &^= 1
+	x := &i
+	*x = -*x + ^i
+	ok := !(i > 2 && i <= 5 || i != 3)
+	_ = ok
+outer:
+	for i := 0; i < 10; i++ {
+		switch {
+		case i%2 == 0:
+			continue outer
+		case i > 7:
+			break outer
+		default:
+			fallthrough
+		case i == 5:
+			goto end
+		}
+	}
+	for {
+		break
+	}
+	for range 3 {
+	}
+	for i < 3 {
+		i++
+	}
+	select {
+	case v, ok := <-ch:
+		_, _ = v, ok
+	case ch <- 2:
+	case <-done:
+		return nil
+	default:
+	}
+	switch v := any(i).(type) {
+	case int, int64:
+		fmt.Println(v)
+	case nil:
+	}
+	switch k := Kind(1); k {
+	case KindA:
+	}
+	if v, err := strconv(); err != nil {
+		return err
+	} else if v > 0 {
+		return nil
+	} else {
+		panic("unreachable")
+	}
+end:
+	s := []int{1, 2, 3}[1:2:3]
+	m := map[string]Pair[string, int]{"a": {Key: "a", Value: 1}}
+	p := Pair[string, int]{"b", 2, nil, nil, 0, 0}
+	_ = s[:]
+	_ = s[1:]
+	arr := [...]string{0: "a", 4: "e"}
+	_, _, _ = m, p, arr
+	f := func(a, b int) int { return a + b }; _ = f
+	y := make([]int, 0, 10) /* block
+	comment */
+	z := new(int) // line comment
+	_ = append(y, *z)
+	_ = str.ToUpper(raw)
+	var w struct{ A int }
+	_ = w.A
+	_ = Sum[int](1, 2)
+	return
+}
+
+func strconv() (int, error) { return 0, nil }

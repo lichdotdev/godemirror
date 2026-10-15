@@ -1,0 +1,22 @@
+tree Document(Element(OpenTag(StartTag,TagName,EndTag),Element(OpenTag(StartTag,TagName,EndTag),Element(OpenTag(StartTag,TagName,EndTag),Element(OpenTag(StartTag,TagName,EndTag),Text,Element(OpenTag(StartTag,TagName,EndTag),StyleSheet(RuleSet(TagSelector(TagName),Block("{",Declaration(PropertyName,":",ValueName),⚠)))))))))
+0 1 angleBracket
+1 5 tagName
+5 6 angleBracket
+6 7 angleBracket
+7 11 tagName
+11 12 angleBracket
+12 13 angleBracket
+13 16 tagName
+16 17 angleBracket
+17 18 angleBracket
+18 22 tagName
+22 23 angleBracket
+23 36 content
+36 37 angleBracket
+37 42 tagName
+42 43 angleBracket
+43 44 tagName
+45 46 brace
+47 52 propertyName
+52 53 punctuation
+54 57 atom

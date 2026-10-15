@@ -1,0 +1,9 @@
+tree Program(ExpressionStatement(CallExpression(MemberExpression(VariableName,".",⚠(else),PropertyName),ArgList("(",BinaryExpression(Number,"+",VariableName),⚠))))
+0 2 variableName
+2 3 derefOperator
+3 7 keyword
+8 9 propertyName
+9 10 paren
+10 11 number
+11 12 operator
+12 15 variableName

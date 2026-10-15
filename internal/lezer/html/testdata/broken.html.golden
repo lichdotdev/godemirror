@@ -1,0 +1,18 @@
+tree Document(Element(OpenTag(StartTag,TagName,Attribute(AttributeName,Is,AttributeValue),⚠),Text,MismatchedCloseTag(StartCloseTag,TagName,EndTag),Text,⚠),DoctypeDecl,Text,Element(SelfClosingTag(StartTag,TagName,Attribute(AttributeName,Is,AttributeValue(⚠)),⚠)))
+0 1 angleBracket
+1 4 tagName
+5 10 attributeName
+10 11 definitionOperator
+11 137 attributeValue
+137 141 content
+141 143 angleBracket
+143 159 tagName invalid
+159 160 angleBracket
+160 163 content
+163 179 documentMeta
+179 182 content
+182 183 angleBracket
+183 188 tagName
+189 194 attributeName
+194 195 definitionOperator
+195 210 attributeValue

@@ -1,0 +1,10 @@
+package unicode
+
+// Comentário com acentuação e emoji 🎉.
+var café = "日本語 🎉 string"
+var 名前 = '🎉'
+
+func π() float64 { return 3.14 }
+
+func f() { s := "a😀b"; _ = s; t := `😀
+` }

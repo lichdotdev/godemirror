@@ -1,0 +1,9 @@
+package crlf
+
+func main() {
+	x := 1
+	x++
+	return
+}
+// trailing
+var y = x

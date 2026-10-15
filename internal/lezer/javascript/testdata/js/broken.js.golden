@@ -1,0 +1,26 @@
+tree Script(FunctionDeclaration(function,VariableDefinition,ParamList("(",ObjectPattern("{",PatternProperty(VariableDefinition(⚠),Equals,⚠),⚠),⚠),";"),IfStatement(if,ParenthesizedExpression("(",VariableName,⚠),Block("{",ReturnStatement(return),"}")),VariableDeclaration(let,⚠(Equals)),ExpressionStatement(Number),ClassDeclaration(class,⚠),Block("{",ExpressionStatement(CallExpression(VariableName,ArgList("(",⚠))),"}"),ExpressionStatement(TemplateString(Interpolation(InterpolationStart,InterpolationEnd),⚠)))
+0 8 definitionKeyword
+9 15 function(definition(variableName))
+15 16 paren
+17 18 brace
+21 27 definition(variableName)
+29 30 definitionOperator
+31 32 separator
+35 37 controlKeyword
+38 39 paren
+39 40 variableName
+41 42 brace
+43 49 controlKeyword
+50 51 brace
+54 57 definitionKeyword
+58 59 definitionOperator
+60 61 number
+64 69 definitionKeyword
+70 71 brace
+72 78 function(variableName)
+78 79 paren
+80 81 brace
+84 98 special(string)
+98 100 special(brace)
+101 102 special(brace)
+102 151 special(string)

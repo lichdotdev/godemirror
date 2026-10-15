@@ -4,6 +4,7 @@ import (
 	"image/color"
 	"slices"
 
+	"github.com/lichdotdev/godemirror/internal/lezer"
 	"github.com/lichdotdev/godemirror/tags"
 )
 
@@ -18,24 +19,29 @@ type TagStyle struct {
 	Bold, Italic, Underline, Strikethrough bool
 }
 
-// HighlightStyle maps highlighting tags to styles, as CodeMirror's does. A
-// token takes the style of the most specific tag in its tag's Set that has
-// one, and a token no style reaches is drawn plain in Theme.Foreground. It is
-// immutable, so a Theme holding it compares equal exactly while it draws the
-// same.
+// HighlightStyle maps highlighting tags to styles, as CodeMirror's does. Each
+// of a token's tags takes the spec of the most specific tag in its Set that
+// has one. A token can have several tags (a grammar gives some nodes more
+// than one, and a node's tags can apply to everything inside it): it is drawn
+// with every spec its tags take, merged in spec order, a later spec's color,
+// bold, italic, underline or line-through winning over an earlier one's, as
+// CSS cascades the classes CodeMirror gives such a token. A token no style
+// reaches is drawn plain in Theme.Foreground. A HighlightStyle is immutable,
+// so a Theme holding it compares equal exactly while it draws the same.
 type HighlightStyle struct {
 	specs []TagStyle
-	byTag map[*tags.Tag]TagStyle
+	// specOf is the index in specs of each styled tag's spec.
+	specOf map[*tags.Tag]int
 }
 
 // NewHighlightStyle builds a HighlightStyle from specs, in CodeMirror's
 // order: when two specs name the same tag, the later one is the tag's style
 // and the earlier one no longer applies to it.
 func NewHighlightStyle(specs ...TagStyle) *HighlightStyle {
-	h := &HighlightStyle{specs: cloneSpecs(specs), byTag: map[*tags.Tag]TagStyle{}}
-	for _, s := range h.specs {
+	h := &HighlightStyle{specs: cloneSpecs(specs), specOf: map[*tags.Tag]int{}}
+	for i, s := range h.specs {
 		for _, t := range s.Tags {
-			h.byTag[t] = s
+			h.specOf[t] = i
 		}
 	}
 	return h
@@ -61,22 +67,50 @@ func cloneSpecs(specs []TagStyle) []TagStyle {
 	return out
 }
 
-// style is how a token tagged t is drawn, with fg for a style that sets no
-// color. A nil h or t is plain.
-func (h *HighlightStyle) style(t *tags.Tag, fg color.NRGBA) TagStyle {
-	plain := TagStyle{Color: fg}
-	if h == nil || t == nil {
-		return plain
-	}
-	for sub := range t.Set() {
-		s, ok := h.byTag[sub]
-		if !ok {
-			continue
+// style is how a token tagged with set is drawn, with fg for a style that
+// sets no color. A nil h or set is plain.
+func (h *HighlightStyle) style(set *lezer.TagSet, fg color.NRGBA) TagStyle {
+	merged := TagStyle{}
+	if h != nil && set != nil {
+		var found [maxSetTags]int
+		for _, i := range h.specsOf(set, found[:0]) {
+			merged = merged.over(h.specs[i])
 		}
-		if s.Color == (color.NRGBA{}) {
-			s.Color = fg
-		}
-		return s
 	}
-	return plain
+	if merged.Color == (color.NRGBA{}) {
+		merged.Color = fg
+	}
+	return merged
+}
+
+// maxSetTags is room for the tags of a typical set, so resolving one per
+// cell does not allocate; a bigger set still works.
+const maxSetTags = 8
+
+// specsOf appends to found the indices of the specs set's tags take, in
+// spec order.
+func (h *HighlightStyle) specsOf(set *lezer.TagSet, found []int) []int {
+	for _, t := range set.Tags {
+		for sub := range t.Set() {
+			if i, ok := h.specOf[sub]; ok {
+				found = append(found, i)
+				break
+			}
+		}
+	}
+	slices.Sort(found)
+	return slices.Compact(found)
+}
+
+// over is s with what later sets on top of it, as a later CSS rule
+// overrides the properties it sets.
+func (s TagStyle) over(later TagStyle) TagStyle {
+	if later.Color != (color.NRGBA{}) {
+		s.Color = later.Color
+	}
+	s.Bold = s.Bold || later.Bold
+	s.Italic = s.Italic || later.Italic
+	s.Underline = s.Underline || later.Underline
+	s.Strikethrough = s.Strikethrough || later.Strikethrough
+	return s
 }

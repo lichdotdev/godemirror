@@ -1,0 +1,29 @@
+// Statements end at a semicolon, a line break, a closing brace or the end.
+let answer = 6 * 7;
+let half = answer + 2
+let greet = (name, greeting) => print("${greeting}, ${name}!\n")
+greet(answer, "hi"); greet("x", "y")
+
+/* A block comment
+   over * several / lines */
+for item of list {
+  let of = item
+  @
+  if of { @; { @ } } else { print(of) }
+}
+
+let sum = (a) => (b) => a + -b * (a + b)
+print(...args, (x), true, false)
+"nested ${"strings ${with + "more ${levels}"}"} \"escaped\""
+assert answer
+@!
+{ { { deep } } }
+console.log(a.b...c)
+(x)
+(y, z)
+f(...a.b)
+(w)
+
+let as = "x"
+let y as Point = as |> f
+"${a}b${c}" + "" + "\\"

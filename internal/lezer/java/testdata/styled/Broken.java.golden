@@ -1,0 +1,141 @@
+tree Program(PackageDeclaration(package,Identifier,⚠),ImportDeclaration(import,ScopedIdentifier(ScopedIdentifier(Identifier,".",Identifier),".",Identifier),⚠),ClassDeclaration(Modifiers(public),class,Definition,ClassBody("{",MethodDeclaration(void,Definition,FormalParameters("(",⚠),Block("{",LocalVariableDeclaration(PrimitiveType,VariableDeclarator(Definition,AssignOp,BinaryExpression(IntegerLiteral,ArithOp,⚠)),";"),LocalVariableDeclaration(TypeName,VariableDeclarator(Definition,AssignOp,⚠,Identifier),";"),IfStatement(if,ParenthesizedExpression("(",BinaryExpression(Identifier,CompareOp,⚠),")"),Block("{",ReturnStatement(return,⚠),"}")),ExpressionStatement(MethodInvocation(MethodName(Identifier),ArgumentList("(",IntegerLiteral,",",⚠,",",IntegerLiteral,")")),";"),"}")),FieldDeclaration(PrimitiveType,VariableDeclarator(Definition,AssignOp,⚠),";"),ClassDeclaration(class,Definition,ClassBody("{",MethodDeclaration(void,Definition,FormalParameters("(",")"),Block("{","}")),MethodDeclaration(Modifiers(Annotation(Identifier,AnnotationArgumentList("(",⚠)),public),void,Definition,FormalParameters("(",")"),Block("{",LocalVariableDeclaration(GenericType(TypeName,TypeArguments(TypeName)),VariableDeclarator(Definition,AssignOp,ObjectCreationExpression(new,GenericType(TypeName,TypeArguments),ArgumentList("(",⚠))),";"),ExpressionStatement(MethodInvocation(Identifier,".",MethodName(Identifier),ArgumentList("(",StringLiteral,")")),";"),"}")),⚠,ConstructorDeclaration(Definition,⚠),⚠)),⚠)),ExpressionStatement(AssignmentExpression(UnaryExpression(BitOp,UnaryExpression(BitOp,UnaryExpression(BitOp,MethodReference(PrimitiveType,⚠)))),AssignOp,IntegerLiteral),⚠),ExpressionStatement(Identifier,";"),⚠("}"),⚠("}"),⚠("}"))
+0 7 moduleKeyword
+8 14 variableName
+16 22 moduleKeyword
+23 27 variableName
+27 28 derefOperator
+28 32 variableName
+32 33 derefOperator
+33 37 variableName
+39 45 modifier
+46 51 definitionKeyword
+52 58 definition(variableName)
+59 60 strong brace
+60 65 strong
+65 69 strong keyword
+69 70 strong
+70 82 strong function(definition(variableName))
+82 83 strong paren
+83 84 strong
+84 85 strong emphasis brace
+85 94 strong emphasis
+94 97 strong emphasis standard(typeName)
+97 98 strong emphasis
+98 99 strong emphasis definition(variableName)
+99 100 strong emphasis
+100 101 strong emphasis definitionOperator
+101 102 strong emphasis
+102 103 strong emphasis integer
+103 104 strong emphasis
+104 105 strong emphasis arithmeticOperator
+105 106 strong emphasis separator
+106 115 strong emphasis
+115 121 strong emphasis typeName
+121 122 strong emphasis
+122 123 strong emphasis definition(variableName)
+123 124 strong emphasis
+124 125 strong emphasis definitionOperator
+125 127 strong emphasis
+127 139 strong emphasis variableName
+139 140 strong emphasis separator
+140 149 strong emphasis
+149 151 strong emphasis controlKeyword
+151 152 strong emphasis
+152 153 strong emphasis paren
+153 154 strong emphasis variableName
+154 155 strong emphasis
+155 156 strong emphasis compareOperator
+156 157 strong emphasis
+157 158 strong emphasis paren
+158 159 strong emphasis
+159 160 strong emphasis emphasis brace
+160 173 strong emphasis emphasis
+173 179 strong emphasis emphasis controlKeyword
+179 188 strong emphasis emphasis
+188 189 strong emphasis emphasis brace
+189 198 strong emphasis
+198 201 strong emphasis function(variableName)
+201 202 strong emphasis paren
+202 203 strong emphasis integer
+203 204 strong emphasis separator
+204 205 strong emphasis
+205 206 strong emphasis separator
+206 207 strong emphasis
+207 208 strong emphasis integer
+208 209 strong emphasis paren
+209 210 strong emphasis separator
+210 215 strong emphasis
+215 216 strong emphasis brace
+216 222 strong
+222 225 strong standard(typeName)
+225 226 strong
+226 231 strong definition(variableName)
+231 232 strong
+232 233 strong definitionOperator
+233 234 strong
+234 235 strong separator
+235 240 strong
+240 245 strong definitionKeyword
+245 246 strong
+246 251 strong definition(variableName)
+251 252 strong
+252 253 strong strong brace
+253 254 strong strong
+254 258 strong strong keyword
+258 259 strong strong
+259 260 strong strong function(definition(variableName))
+260 261 strong strong paren
+261 262 strong strong paren
+262 263 strong strong
+263 264 strong strong emphasis brace
+264 265 strong strong emphasis
+265 266 strong strong emphasis brace
+266 272 strong strong
+272 289 strong strong meta
+289 295 strong strong modifier
+295 296 strong strong
+296 300 strong strong keyword
+300 301 strong strong
+301 306 strong strong function(definition(variableName))
+306 307 strong strong paren
+307 308 strong strong paren
+308 309 strong strong
+309 310 strong strong emphasis brace
+310 319 strong strong emphasis
+319 323 strong strong emphasis typeName
+323 324 strong strong emphasis
+324 330 strong strong emphasis typeName
+330 332 strong strong emphasis
+332 333 strong strong emphasis definition(variableName)
+333 334 strong strong emphasis
+334 335 strong strong emphasis definitionOperator
+335 336 strong strong emphasis
+336 339 strong strong emphasis keyword
+339 340 strong strong emphasis
+340 349 strong strong emphasis typeName
+349 351 strong strong emphasis
+351 352 strong strong emphasis paren
+352 353 strong strong emphasis separator
+353 362 strong strong emphasis
+362 363 strong strong emphasis variableName
+363 364 strong strong emphasis derefOperator
+364 367 strong strong emphasis function(variableName)
+367 368 strong strong emphasis paren
+368 372 strong strong emphasis string special(string)
+372 373 strong strong emphasis paren
+373 374 strong strong emphasis separator
+374 379 strong strong emphasis
+379 380 strong strong emphasis brace
+380 391 strong strong
+391 399 strong strong definition(variableName)
+399 400 bitwiseOperator
+400 401 bitwiseOperator
+401 402 bitwiseOperator
+408 411 standard(typeName)
+414 415 definitionOperator
+416 417 integer
+417 418 variableName
+418 419 separator
+420 421 brace
+422 423 brace
+424 425 brace

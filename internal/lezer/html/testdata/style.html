@@ -1,0 +1,15 @@
+<style>
+  body { color: #333; margin: 0 auto !important; }
+  @media (max-width: 600px) { .a > b::before { content: "x"; } }
+  a:hover { background: url(x.png) no-repeat; }
+</style>
+<style type="text/css">p{}</style>
+<style lang="scss">$x: 1; .a { .b { c: $x } }</style>
+<style media="print">h1 { font-size: 2em }</style>
+<div style="color: red; font-weight: bold">styled</div>
+<div style=color:blue>unquoted</div>
+<div style="">empty</div>
+<div style='margin: 0 "a"'>single</div>
+<button onclick="alert('hi'); return false;" onmouseover="x()">go</button>
+<a onClick="nope()" onfocus=go()>f</a>
+<div style="broken: ;; {">x</div>

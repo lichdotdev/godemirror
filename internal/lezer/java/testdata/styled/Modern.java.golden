@@ -1,0 +1,709 @@
+tree Program(PackageDeclaration(package,Identifier,";"),ImportDeclaration(import,ScopedIdentifier(ScopedIdentifier(Identifier,".",Identifier),".",Identifier),";"),ImportDeclaration(import,ScopedIdentifier(ScopedIdentifier(ScopedIdentifier(Identifier,".",Identifier),".",Identifier),".",Identifier),";"),InterfaceDeclaration(Modifiers(MarkerAnnotation(Identifier)),interface,Definition,InterfaceBody("{",MethodDeclaration(PrimitiveType,Definition,FormalParameters("(",")"),";"),"}")),InterfaceDeclaration(Modifiers(public,sealed),interface,Definition,Permits(permits,InterfaceTypeList(TypeName,",",TypeName,",",TypeName)),InterfaceBody("{","}")),RecordDeclaration(record,Definition,RecordHeader("(",RecordComponent(PrimitiveType,Definition),")"),SuperInterfaces(implements,InterfaceTypeList(TypeName)),RecordBody("{","}")),RecordDeclaration(record,Definition,RecordHeader("(",RecordComponent(TypeName,Definition),",",RecordComponent(TypeName,Definition),")"),SuperInterfaces(implements,InterfaceTypeList(TypeName)),RecordBody("{","}")),RecordDeclaration(record,Definition,RecordHeader("(",RecordComponent(TypeName,Definition),",",RecordComponent(TypeName,Definition),")"),SuperInterfaces(implements,InterfaceTypeList(TypeName)),RecordBody("{",CompactConstructorDeclaration(Definition,Block("{",IfStatement(if,ParenthesizedExpression("(",BinaryExpression(BinaryExpression(Identifier,CompareOp,null),LogicOp,BinaryExpression(Identifier,CompareOp,null)),")"),ThrowStatement(throw,ObjectCreationExpression(new,TypeName,ArgumentList("(",")")),";")),"}")),"}")),ClassDeclaration(Modifiers(Annotation(Identifier,AnnotationArgumentList("(",ElementValueArrayInitializer("{",StringLiteral,",",StringLiteral,"}"),")")),Annotation(Identifier,AnnotationArgumentList("(",ElementValuePair(Identifier,AssignOp,StringLiteral),",",ElementValuePair(Identifier,AssignOp,BooleanLiteral),")")),public),class,Definition,ClassBody("{",MethodDeclaration(Modifiers(static),PrimitiveType,Definition,FormalParameters("(",FormalParameter(TypeName,Definition),")"),Block("{",ReturnStatement(return,⚠),SwitchStatement(switch,ParenthesizedExpression("(",Identifier,")"),SwitchBlock("{",SwitchLabel(case,LambdaExpression(Definition(⚠),MethodInvocation(Identifier,".",MethodName(Identifier),ArgumentList("(",")")))),⚠,";",SwitchRule(SwitchLabel(case,MethodInvocation(MethodName(Identifier),ArgumentList("(",MethodReference(TypeName,⚠),",",MethodReference(TypeName,⚠),")"))),ExpressionStatement(BinaryExpression(MethodInvocation(MethodName(Identifier),ArgumentList("(",Identifier,")")),ArithOp,MethodInvocation(MethodName(Identifier),ArgumentList("(",Identifier,")"))),";")),SwitchLabel(case,MethodInvocation(MethodName(Identifier),⚠)),⚠,LocalVariableDeclaration(TypeName,VariableDeclarator(Definition),⚠),ExpressionStatement(BinaryExpression(InstanceofExpression(MethodInvocation(Identifier,".",MethodName(Identifier),ArgumentList("(",")")),instanceof,TypePattern(TypeName,Definition)),LogicOp,BinaryExpression(MethodInvocation(Identifier,".",MethodName(Identifier),ArgumentList("(",")")),CompareOp,IntegerLiteral,⚠)),⚠),ExpressionStatement(IntegerLiteral,";"),SwitchLabel(case,LambdaExpression(Definition(⚠),BinaryExpression(MethodInvocation(MethodName(Identifier),ArgumentList("(",MethodInvocation(Identifier,".",MethodName(Identifier),ArgumentList("(",")")),")")),ArithOp,MethodInvocation(MethodName(Identifier),ArgumentList("(",MethodInvocation(Identifier,".",MethodName(Identifier),ArgumentList("(",")")),")"))))),⚠,";","}")),";","}")),MethodDeclaration(Modifiers(static),TypeName,Definition,FormalParameters("(",FormalParameter(PrimitiveType,Definition),")"),Block("{",LocalVariableDeclaration(TypeName,VariableDeclarator(Definition,AssignOp,⚠(switch),ParenthesizedExpression("(",Identifier,")")),⚠),Block("{",⚠(case),ExpressionStatement(IntegerLiteral,⚠(",")),ExpressionStatement(IntegerLiteral,⚠),ExpressionStatement(StringLiteral,";"),⚠(case),ExpressionStatement(IntegerLiteral,⚠(",")),ExpressionStatement(IntegerLiteral,⚠(",")),ExpressionStatement(IntegerLiteral,⚠(",")),ExpressionStatement(IntegerLiteral,⚠(",")),ExpressionStatement(IntegerLiteral,⚠),Block("{",LocalVariableDeclaration(var,VariableDeclarator(Definition,AssignOp,BinaryExpression(StringLiteral,ArithOp,StringLiteral)),";"),LocalVariableDeclaration(TypeName,VariableDeclarator(Definition),";"),"}"),AnnotationTypeDeclaration(Modifiers(default,⚠),⚠),ThrowStatement(throw,ObjectCreationExpression(new,TypeName,ArgumentList("(",BinaryExpression(StringLiteral,ArithOp,Identifier),")")),";"),"}"),";",ReturnStatement(return,Identifier,";"),"}")),FieldDeclaration(Modifiers(static,final),TypeName,VariableDeclarator(Definition,AssignOp,TextBlock),";"),MethodDeclaration(Modifiers(public,static),void,Definition,FormalParameters("(",SpreadParameter(TypeName,VariableDeclarator(Definition)),")"),Throws(throws,TypeName),Block("{",LocalVariableDeclaration(GenericType(TypeName,TypeArguments(TypeName)),VariableDeclarator(Definition,AssignOp,MethodInvocation(Identifier,".",MethodName(Identifier),ArgumentList("(",StringLiteral,",",StringLiteral,",",StringLiteral,")"))),";"),LocalVariableDeclaration(var,VariableDeclarator(Definition,AssignOp,MethodInvocation(MethodInvocation(MethodInvocation(MethodInvocation(Identifier,".",MethodName(Identifier),ArgumentList("(",")")),".",MethodName(Identifier),ArgumentList("(",LambdaExpression(Definition,BinaryExpression(MethodInvocation(Identifier,".",MethodName(Identifier),ArgumentList("(",")")),CompareOp,IntegerLiteral)),")")),".",MethodName(Identifier),ArgumentList("(",MethodReference(TypeName,Identifier),")")),".",MethodName(Identifier),ArgumentList("(",MethodInvocation(Identifier,".",MethodName(Identifier),ArgumentList("(",StringLiteral,",",StringLiteral,",",StringLiteral,")")),")"))),";"),LocalVariableDeclaration(TypeName,VariableDeclarator(Definition,AssignOp,LambdaExpression(FormalParameters("(",")"),MethodInvocation(FieldAccess(Identifier,".",Identifier),".",MethodName(Identifier),ArgumentList("(",Identifier,")")))),";"),ExpressionStatement(MethodInvocation(Identifier,".",MethodName(Identifier),ArgumentList("(",")")),";"),LocalVariableDeclaration(TypeName,VariableDeclarator(Definition,AssignOp,LambdaExpression(FormalParameters("(",")"),FieldAccess(Identifier,".",Identifier))),";"),LocalVariableDeclaration(PrimitiveType,VariableDeclarator(Definition,AssignOp,CharacterLiteral),",",VariableDeclarator(Definition,AssignOp,CharacterLiteral),",",VariableDeclarator(Definition,AssignOp,CharacterLiteral),";"),LabeledStatement(Label,":",EnhancedForStatement(for,ForSpec("(",TypeName,Definition,":",Identifier,")"),Block("{",IfStatement(if,ParenthesizedExpression("(",MethodInvocation(Identifier,".",MethodName(Identifier),ArgumentList("(",")")),")"),ContinueStatement(continue,Label,";"),else,BreakStatement(break,Label,";")),"}"))),LocalVariableDeclaration(TypeName,VariableDeclarator(Definition,AssignOp,Identifier),";"),IfStatement(if,ParenthesizedExpression("(",BinaryExpression(InstanceofExpression(Identifier,instanceof,TypePattern(GenericType(TypeName,TypeArguments(Wildcard)),Definition)),LogicOp,UnaryExpression(LogicOp,MethodInvocation(Identifier,".",MethodName(Identifier),ArgumentList("(",")")))),")"),Block("{",ExpressionStatement(MethodInvocation(FieldAccess(Identifier,".",Identifier),".",MethodName(Identifier),ArgumentList("(",StringLiteral,",",MethodInvocation(Identifier,".",MethodName(Identifier),ArgumentList("(",")")),")")),";"),"}")),TryWithResourcesStatement(try,ResourceSpecification("(",Resource(TypeName,Definition,AssignOp,ObjectCreationExpression(new,ScopedTypeName(ScopedTypeName(TypeName,".",TypeName),".",TypeName),ArgumentList("(",StringLiteral,")"))),")"),Block("{",ExpressionStatement(MethodInvocation(Identifier,".",MethodName(Identifier),ArgumentList("(",")")),";"),"}"),CatchClause(catch,CatchFormalParameter("(",CatchType(ScopedTypeName(ScopedTypeName(TypeName,".",TypeName),".",TypeName),TypeName),Definition,")"),Block("{",AssertStatement(assert,BinaryExpression(Identifier,CompareOp,null),":",StringLiteral,";"),"}")),FinallyClause(finally,Block("{",ExpressionStatement(MethodInvocation(Identifier,".",MethodName(Identifier),ArgumentList("(",")")),";"),"}"))),LocalVariableDeclaration(ArrayType(PrimitiveType,Dimension("[","]")),VariableDeclarator(Definition,AssignOp,ArrayInitializer("{",IntegerLiteral,",",IntegerLiteral,",",IntegerLiteral,"}")),";"),ExpressionStatement(AssignmentExpression(ArrayAccess(Identifier,"[",IntegerLiteral,"]"),AssignOp,UpdateExpression(ArrayAccess(Identifier,"[",IntegerLiteral,"]"),UpdateOp)),";"),LocalVariableDeclaration(PrimitiveType,VariableDeclarator(Definition,AssignOp,BinaryExpression(BooleanLiteral,BitOp,BooleanLiteral)),";"),DoStatement(do,Block("{",ExpressionStatement(AssignmentExpression(Identifier,AssignOp,UnaryExpression(LogicOp,Identifier)),";"),"}"),while,ParenthesizedExpression("(",Identifier,")"),";"),ExpressionStatement(MethodInvocation(ObjectCreationExpression(new,TypeName,ArgumentList("(",LambdaExpression(FormalParameters("(",")"),Block("{","}")),")")),".",MethodName(Identifier),ArgumentList("(",")")),";"),LocalVariableDeclaration(TypeName,VariableDeclarator(Definition,AssignOp,StringLiteral),";"),"}")),"}")))
+0 7 moduleKeyword
+8 12 variableName
+12 13 separator
+15 21 moduleKeyword
+22 26 variableName
+26 27 derefOperator
+27 31 variableName
+31 32 derefOperator
+32 36 variableName
+36 37 separator
+38 44 moduleKeyword
+45 49 variableName
+49 50 derefOperator
+50 54 variableName
+54 55 derefOperator
+55 61 variableName
+61 62 derefOperator
+62 72 variableName
+72 73 separator
+76 95 variableName
+96 105 definitionKeyword
+106 111 definition(variableName)
+112 113 brace
+114 120 standard(typeName)
+121 125 definition(variableName)
+125 126 paren
+126 127 paren
+127 128 separator
+129 130 brace
+132 138 modifier
+146 155 definitionKeyword
+156 160 definition(variableName)
+169 172 typeName
+172 173 separator
+174 177 typeName
+177 178 separator
+179 182 typeName
+183 184 brace
+184 185 brace
+194 197 definition(variableName)
+197 198 paren
+198 201 standard(typeName)
+202 207 definition(variableName)
+207 208 paren
+209 219 definitionKeyword
+220 224 typeName
+225 226 brace
+226 227 brace
+235 238 definition(variableName)
+238 239 paren
+239 243 typeName
+244 248 definition(variableName)
+248 249 separator
+250 254 typeName
+255 260 definition(variableName)
+260 261 paren
+262 272 definitionKeyword
+273 277 typeName
+278 279 brace
+279 280 brace
+288 291 definition(variableName)
+291 292 paren
+292 296 typeName
+297 301 definition(variableName)
+301 302 separator
+303 307 typeName
+308 313 definition(variableName)
+313 314 paren
+315 325 definitionKeyword
+326 330 typeName
+331 332 brace
+337 340 definition(variableName)
+341 342 emphasis brace
+342 351 emphasis
+351 353 emphasis controlKeyword
+353 354 emphasis
+354 355 emphasis paren
+355 359 emphasis variableName
+359 360 emphasis
+360 362 emphasis compareOperator
+362 363 emphasis
+363 367 emphasis null
+367 368 emphasis
+368 370 emphasis logicOperator
+370 371 emphasis
+371 376 emphasis variableName
+376 377 emphasis
+377 379 emphasis compareOperator
+379 380 emphasis
+380 384 emphasis null
+384 385 emphasis paren
+385 386 emphasis
+386 391 emphasis controlKeyword
+391 392 emphasis
+392 395 emphasis keyword
+395 396 emphasis
+396 416 emphasis typeName
+416 417 emphasis paren
+417 418 emphasis paren
+418 419 emphasis separator
+419 424 emphasis
+424 425 emphasis brace
+426 427 brace
+429 473 meta
+474 517 meta
+518 524 modifier
+525 530 definitionKeyword
+531 537 definition(variableName)
+538 539 strong brace
+539 544 strong
+544 550 strong modifier
+550 551 strong
+551 554 strong standard(typeName)
+554 555 strong
+555 559 strong definition(variableName)
+559 560 strong paren
+560 564 strong typeName
+564 565 strong
+565 566 strong definition(variableName)
+566 567 strong paren
+567 568 strong
+568 569 strong emphasis brace
+569 578 strong emphasis
+578 584 strong emphasis controlKeyword
+584 585 strong emphasis
+585 591 strong emphasis controlKeyword
+591 592 strong emphasis
+592 593 strong emphasis paren
+593 594 strong emphasis variableName
+594 595 strong emphasis paren
+595 596 strong emphasis
+596 597 strong emphasis processingInstruction brace
+597 610 strong emphasis processingInstruction
+610 614 strong emphasis processingInstruction controlKeyword
+614 615 strong emphasis processingInstruction
+615 633 strong emphasis processingInstruction special(variableName)
+633 634 strong emphasis processingInstruction separator
+634 647 strong emphasis processingInstruction
+647 651 strong emphasis processingInstruction controlKeyword
+651 652 strong emphasis processingInstruction
+652 655 strong emphasis processingInstruction function(variableName)
+655 656 strong emphasis processingInstruction paren
+656 660 strong emphasis processingInstruction typeName
+660 662 strong emphasis processingInstruction
+662 663 strong emphasis processingInstruction separator
+663 664 strong emphasis processingInstruction
+664 668 strong emphasis processingInstruction typeName
+668 670 strong emphasis processingInstruction
+670 671 strong emphasis processingInstruction paren
+671 675 strong emphasis processingInstruction
+675 679 strong emphasis processingInstruction function(variableName)
+679 680 strong emphasis processingInstruction paren
+680 681 strong emphasis processingInstruction local(variableName) constant(name)
+681 682 strong emphasis processingInstruction paren
+682 683 strong emphasis processingInstruction
+683 684 strong emphasis processingInstruction arithmeticOperator
+684 685 strong emphasis processingInstruction
+685 689 strong emphasis processingInstruction function(variableName)
+689 690 strong emphasis processingInstruction paren
+690 691 strong emphasis processingInstruction local(variableName) constant(name)
+691 692 strong emphasis processingInstruction paren
+692 693 strong emphasis processingInstruction separator
+693 706 strong emphasis processingInstruction
+706 710 strong emphasis processingInstruction controlKeyword
+710 711 strong emphasis processingInstruction
+711 715 strong emphasis processingInstruction function(variableName)
+715 716 strong emphasis processingInstruction typeName
+716 717 strong emphasis processingInstruction
+717 721 strong emphasis processingInstruction definition(variableName)
+721 722 strong emphasis processingInstruction
+722 723 strong emphasis processingInstruction variableName
+723 724 strong emphasis processingInstruction derefOperator
+724 728 strong emphasis processingInstruction function(variableName)
+728 729 strong emphasis processingInstruction paren
+729 730 strong emphasis processingInstruction paren
+730 731 strong emphasis processingInstruction
+731 741 strong emphasis processingInstruction operatorKeyword
+741 742 strong emphasis processingInstruction
+742 745 strong emphasis processingInstruction typeName
+745 746 strong emphasis processingInstruction
+746 747 strong emphasis processingInstruction definition(variableName)
+747 748 strong emphasis processingInstruction
+748 750 strong emphasis processingInstruction logicOperator
+750 751 strong emphasis processingInstruction
+751 752 strong emphasis processingInstruction variableName
+752 753 strong emphasis processingInstruction derefOperator
+753 758 strong emphasis processingInstruction function(variableName)
+758 759 strong emphasis processingInstruction paren
+759 760 strong emphasis processingInstruction paren
+760 761 strong emphasis processingInstruction
+761 763 strong emphasis processingInstruction compareOperator
+763 764 strong emphasis processingInstruction
+764 765 strong emphasis processingInstruction integer
+765 769 strong emphasis processingInstruction
+769 770 strong emphasis processingInstruction integer
+770 771 strong emphasis processingInstruction separator
+771 784 strong emphasis processingInstruction
+784 788 strong emphasis processingInstruction controlKeyword
+788 789 strong emphasis processingInstruction
+789 830 strong emphasis processingInstruction special(variableName)
+830 831 strong emphasis processingInstruction separator
+831 840 strong emphasis processingInstruction
+840 841 strong emphasis processingInstruction brace
+841 842 strong emphasis separator
+842 847 strong emphasis
+847 848 strong emphasis brace
+848 854 strong
+854 860 strong modifier
+860 861 strong
+861 867 strong typeName
+867 868 strong
+868 871 strong definition(variableName)
+871 872 strong paren
+872 875 strong standard(typeName)
+875 876 strong
+876 877 strong definition(variableName)
+877 878 strong paren
+878 879 strong
+879 880 strong emphasis brace
+880 889 strong emphasis
+889 895 strong emphasis typeName
+895 896 strong emphasis
+896 900 strong emphasis definition(variableName)
+900 901 strong emphasis
+901 902 strong emphasis definitionOperator
+902 903 strong emphasis
+903 909 strong emphasis controlKeyword
+909 910 strong emphasis
+910 911 strong emphasis paren
+911 912 strong emphasis variableName
+912 913 strong emphasis paren
+913 914 strong emphasis
+914 915 strong emphasis emphasis brace
+915 928 strong emphasis emphasis
+928 932 strong emphasis emphasis controlKeyword
+932 933 strong emphasis emphasis
+933 934 strong emphasis emphasis integer
+934 935 strong emphasis emphasis separator
+935 936 strong emphasis emphasis
+936 937 strong emphasis emphasis integer
+937 941 strong emphasis emphasis
+941 950 strong emphasis emphasis string special(string)
+950 951 strong emphasis emphasis separator
+951 964 strong emphasis emphasis
+964 968 strong emphasis emphasis controlKeyword
+968 969 strong emphasis emphasis
+969 970 strong emphasis emphasis integer
+970 971 strong emphasis emphasis separator
+971 972 strong emphasis emphasis
+972 973 strong emphasis emphasis integer
+973 974 strong emphasis emphasis separator
+974 975 strong emphasis emphasis
+975 976 strong emphasis emphasis integer
+976 977 strong emphasis emphasis separator
+977 978 strong emphasis emphasis
+978 979 strong emphasis emphasis integer
+979 980 strong emphasis emphasis separator
+980 981 strong emphasis emphasis
+981 982 strong emphasis emphasis integer
+982 986 strong emphasis emphasis
+986 987 strong emphasis emphasis emphasis brace
+987 1004 strong emphasis emphasis emphasis
+1004 1007 strong emphasis emphasis emphasis definitionKeyword
+1007 1008 strong emphasis emphasis emphasis
+1008 1009 strong emphasis emphasis emphasis definition(variableName)
+1009 1010 strong emphasis emphasis emphasis
+1010 1011 strong emphasis emphasis emphasis definitionOperator
+1011 1012 strong emphasis emphasis emphasis
+1012 1018 strong emphasis emphasis emphasis string special(string)
+1018 1019 strong emphasis emphasis emphasis
+1019 1020 strong emphasis emphasis emphasis arithmeticOperator
+1020 1021 strong emphasis emphasis emphasis
+1021 1026 strong emphasis emphasis emphasis string special(string)
+1026 1027 strong emphasis emphasis emphasis separator
+1027 1044 strong emphasis emphasis emphasis
+1044 1049 strong emphasis emphasis emphasis typeName
+1049 1050 strong emphasis emphasis emphasis
+1050 1051 strong emphasis emphasis emphasis definition(variableName)
+1051 1052 strong emphasis emphasis emphasis separator
+1052 1065 strong emphasis emphasis emphasis
+1065 1066 strong emphasis emphasis emphasis brace
+1066 1079 strong emphasis emphasis
+1079 1086 strong emphasis emphasis controlKeyword
+1086 1090 strong emphasis emphasis
+1090 1095 strong emphasis emphasis controlKeyword
+1095 1096 strong emphasis emphasis
+1096 1099 strong emphasis emphasis keyword
+1099 1100 strong emphasis emphasis
+1100 1121 strong emphasis emphasis typeName
+1121 1122 strong emphasis emphasis paren
+1122 1132 strong emphasis emphasis string special(string)
+1132 1133 strong emphasis emphasis
+1133 1134 strong emphasis emphasis arithmeticOperator
+1134 1135 strong emphasis emphasis
+1135 1136 strong emphasis emphasis variableName
+1136 1137 strong emphasis emphasis paren
+1137 1138 strong emphasis emphasis separator
+1138 1147 strong emphasis emphasis
+1147 1148 strong emphasis emphasis brace
+1148 1149 strong emphasis separator
+1149 1158 strong emphasis
+1158 1164 strong emphasis controlKeyword
+1164 1165 strong emphasis
+1165 1169 strong emphasis variableName
+1169 1170 strong emphasis separator
+1170 1175 strong emphasis
+1175 1176 strong emphasis brace
+1176 1182 strong
+1182 1188 strong modifier
+1188 1189 strong
+1189 1194 strong modifier
+1194 1195 strong
+1195 1201 strong typeName
+1201 1202 strong
+1202 1207 strong definition(variableName)
+1207 1208 strong
+1208 1209 strong definitionOperator
+1209 1210 strong
+1210 1336 strong string
+1336 1337 strong separator
+1337 1343 strong
+1343 1349 strong modifier
+1349 1350 strong
+1350 1356 strong modifier
+1356 1357 strong
+1357 1361 strong keyword
+1361 1362 strong
+1362 1366 strong function(definition(variableName))
+1366 1367 strong paren
+1367 1373 strong typeName
+1373 1377 strong
+1377 1381 strong definition(variableName)
+1381 1382 strong paren
+1382 1383 strong
+1383 1389 strong modifier
+1389 1390 strong
+1390 1399 strong typeName
+1399 1400 strong
+1400 1401 strong emphasis brace
+1401 1410 strong emphasis
+1410 1414 strong emphasis typeName
+1414 1415 strong emphasis
+1415 1421 strong emphasis typeName
+1421 1423 strong emphasis
+1423 1428 strong emphasis definition(variableName)
+1428 1429 strong emphasis
+1429 1430 strong emphasis definitionOperator
+1430 1431 strong emphasis
+1431 1435 strong emphasis variableName
+1435 1436 strong emphasis derefOperator
+1436 1438 strong emphasis function(variableName)
+1438 1439 strong emphasis paren
+1439 1446 strong emphasis string special(string)
+1446 1447 strong emphasis separator
+1447 1448 strong emphasis
+1448 1454 strong emphasis string special(string)
+1454 1455 strong emphasis separator
+1455 1456 strong emphasis
+1456 1463 strong emphasis string special(string)
+1463 1464 strong emphasis paren
+1464 1465 strong emphasis separator
+1465 1474 strong emphasis
+1474 1477 strong emphasis definitionKeyword
+1477 1478 strong emphasis
+1478 1483 strong emphasis definition(variableName)
+1483 1484 strong emphasis
+1484 1485 strong emphasis definitionOperator
+1485 1486 strong emphasis
+1486 1491 strong emphasis variableName
+1491 1492 strong emphasis derefOperator
+1492 1498 strong emphasis function(variableName)
+1498 1499 strong emphasis paren
+1499 1500 strong emphasis paren
+1500 1513 strong emphasis
+1513 1514 strong emphasis derefOperator
+1514 1520 strong emphasis function(variableName)
+1520 1521 strong emphasis paren
+1521 1540 strong emphasis special(variableName)
+1540 1541 strong emphasis paren
+1541 1554 strong emphasis
+1554 1555 strong emphasis derefOperator
+1555 1558 strong emphasis function(variableName)
+1558 1559 strong emphasis paren
+1559 1565 strong emphasis typeName
+1565 1567 strong emphasis
+1567 1578 strong emphasis variableName
+1578 1579 strong emphasis paren
+1579 1592 strong emphasis
+1592 1593 strong emphasis derefOperator
+1593 1600 strong emphasis function(variableName)
+1600 1601 strong emphasis paren
+1601 1611 strong emphasis variableName
+1611 1612 strong emphasis derefOperator
+1612 1619 strong emphasis function(variableName)
+1619 1620 strong emphasis paren
+1620 1624 strong emphasis string special(string)
+1624 1625 strong emphasis separator
+1625 1626 strong emphasis
+1626 1629 strong emphasis string special(string)
+1629 1630 strong emphasis separator
+1630 1631 strong emphasis
+1631 1634 strong emphasis string special(string)
+1634 1635 strong emphasis paren
+1635 1636 strong emphasis paren
+1636 1637 strong emphasis separator
+1637 1646 strong emphasis
+1646 1654 strong emphasis typeName
+1654 1655 strong emphasis
+1655 1656 strong emphasis definition(variableName)
+1656 1657 strong emphasis
+1657 1658 strong emphasis definitionOperator
+1658 1659 strong emphasis
+1659 1690 strong emphasis special(variableName)
+1690 1691 strong emphasis separator
+1691 1700 strong emphasis
+1700 1701 strong emphasis variableName
+1701 1702 strong emphasis derefOperator
+1702 1705 strong emphasis function(variableName)
+1705 1706 strong emphasis paren
+1706 1707 strong emphasis paren
+1707 1708 strong emphasis separator
+1708 1717 strong emphasis
+1717 1722 strong emphasis typeName
+1722 1723 strong emphasis
+1723 1727 strong emphasis definition(variableName)
+1727 1728 strong emphasis
+1728 1729 strong emphasis definitionOperator
+1729 1730 strong emphasis
+1730 1743 strong emphasis special(variableName)
+1743 1744 strong emphasis separator
+1744 1753 strong emphasis
+1753 1757 strong emphasis standard(typeName)
+1757 1758 strong emphasis
+1758 1759 strong emphasis definition(variableName)
+1759 1760 strong emphasis
+1760 1761 strong emphasis definitionOperator
+1761 1762 strong emphasis
+1762 1766 strong emphasis character
+1766 1767 strong emphasis separator
+1767 1768 strong emphasis
+1768 1769 strong emphasis definition(variableName)
+1769 1770 strong emphasis
+1770 1771 strong emphasis definitionOperator
+1771 1772 strong emphasis
+1772 1776 strong emphasis character
+1776 1777 strong emphasis separator
+1777 1778 strong emphasis
+1778 1779 strong emphasis definition(variableName)
+1779 1780 strong emphasis
+1780 1781 strong emphasis definitionOperator
+1781 1782 strong emphasis
+1782 1785 strong emphasis character
+1785 1786 strong emphasis separator
+1786 1795 strong emphasis
+1795 1800 strong emphasis labelName
+1800 1810 strong emphasis
+1810 1813 strong emphasis controlKeyword
+1813 1814 strong emphasis
+1814 1815 strong emphasis paren
+1815 1821 strong emphasis typeName
+1821 1822 strong emphasis
+1822 1823 strong emphasis definition(variableName)
+1823 1826 strong emphasis
+1826 1831 strong emphasis variableName
+1831 1832 strong emphasis paren
+1832 1833 strong emphasis
+1833 1834 strong emphasis emphasis brace
+1834 1847 strong emphasis emphasis
+1847 1849 strong emphasis emphasis controlKeyword
+1849 1850 strong emphasis emphasis
+1850 1851 strong emphasis emphasis paren
+1851 1852 strong emphasis emphasis variableName
+1852 1853 strong emphasis emphasis derefOperator
+1853 1860 strong emphasis emphasis function(variableName)
+1860 1861 strong emphasis emphasis paren
+1861 1862 strong emphasis emphasis paren
+1862 1863 strong emphasis emphasis paren
+1863 1864 strong emphasis emphasis
+1864 1872 strong emphasis emphasis controlKeyword
+1872 1873 strong emphasis emphasis
+1873 1878 strong emphasis emphasis labelName
+1878 1879 strong emphasis emphasis separator
+1879 1892 strong emphasis emphasis
+1892 1896 strong emphasis emphasis controlKeyword
+1896 1897 strong emphasis emphasis
+1897 1902 strong emphasis emphasis controlKeyword
+1902 1903 strong emphasis emphasis
+1903 1908 strong emphasis emphasis labelName
+1908 1909 strong emphasis emphasis separator
+1909 1918 strong emphasis emphasis
+1918 1919 strong emphasis emphasis brace
+1919 1928 strong emphasis
+1928 1934 strong emphasis typeName
+1934 1935 strong emphasis
+1935 1936 strong emphasis definition(variableName)
+1936 1937 strong emphasis
+1937 1938 strong emphasis definitionOperator
+1938 1939 strong emphasis
+1939 1944 strong emphasis variableName
+1944 1945 strong emphasis separator
+1945 1954 strong emphasis
+1954 1956 strong emphasis controlKeyword
+1956 1957 strong emphasis
+1957 1958 strong emphasis paren
+1958 1959 strong emphasis variableName
+1959 1960 strong emphasis
+1960 1970 strong emphasis operatorKeyword
+1970 1971 strong emphasis
+1971 1975 strong emphasis typeName
+1975 1979 strong emphasis
+1979 1983 strong emphasis definition(variableName)
+1983 1984 strong emphasis
+1984 1986 strong emphasis logicOperator
+1986 1987 strong emphasis
+1987 1988 strong emphasis logicOperator
+1988 1992 strong emphasis variableName
+1992 1993 strong emphasis derefOperator
+1993 2000 strong emphasis function(variableName)
+2000 2001 strong emphasis paren
+2001 2002 strong emphasis paren
+2002 2003 strong emphasis paren
+2003 2004 strong emphasis
+2004 2005 strong emphasis emphasis brace
+2005 2018 strong emphasis emphasis
+2018 2024 strong emphasis emphasis variableName
+2024 2025 strong emphasis emphasis derefOperator
+2025 2028 strong emphasis emphasis variableName
+2028 2029 strong emphasis emphasis derefOperator
+2029 2035 strong emphasis emphasis function(variableName)
+2035 2036 strong emphasis emphasis paren
+2036 2048 strong emphasis emphasis string special(string)
+2048 2049 strong emphasis emphasis separator
+2049 2050 strong emphasis emphasis
+2050 2054 strong emphasis emphasis variableName
+2054 2055 strong emphasis emphasis derefOperator
+2055 2059 strong emphasis emphasis function(variableName)
+2059 2060 strong emphasis emphasis paren
+2060 2061 strong emphasis emphasis paren
+2061 2062 strong emphasis emphasis paren
+2062 2063 strong emphasis emphasis separator
+2063 2072 strong emphasis emphasis
+2072 2073 strong emphasis emphasis brace
+2073 2082 strong emphasis
+2082 2085 strong emphasis controlKeyword
+2085 2086 strong emphasis
+2086 2087 strong emphasis paren
+2087 2090 strong emphasis typeName
+2090 2091 strong emphasis
+2091 2093 strong emphasis definition(variableName)
+2093 2094 strong emphasis
+2094 2095 strong emphasis definitionOperator
+2095 2096 strong emphasis
+2096 2099 strong emphasis keyword
+2099 2100 strong emphasis
+2100 2104 strong emphasis typeName
+2104 2105 strong emphasis derefOperator
+2105 2107 strong emphasis typeName
+2107 2108 strong emphasis derefOperator
+2108 2120 strong emphasis typeName
+2120 2121 strong emphasis paren
+2121 2124 strong emphasis string special(string)
+2124 2125 strong emphasis paren
+2125 2126 strong emphasis paren
+2126 2127 strong emphasis
+2127 2128 strong emphasis emphasis brace
+2128 2141 strong emphasis emphasis
+2141 2143 strong emphasis emphasis variableName
+2143 2144 strong emphasis emphasis derefOperator
+2144 2148 strong emphasis emphasis function(variableName)
+2148 2149 strong emphasis emphasis paren
+2149 2150 strong emphasis emphasis paren
+2150 2151 strong emphasis emphasis separator
+2151 2160 strong emphasis emphasis
+2160 2161 strong emphasis emphasis brace
+2161 2162 strong emphasis
+2162 2167 strong emphasis controlKeyword
+2167 2168 strong emphasis
+2168 2169 strong emphasis paren
+2169 2173 strong emphasis typeName
+2173 2174 strong emphasis derefOperator
+2174 2176 strong emphasis typeName
+2176 2177 strong emphasis derefOperator
+2177 2188 strong emphasis typeName
+2188 2191 strong emphasis
+2191 2207 strong emphasis typeName
+2207 2208 strong emphasis
+2208 2210 strong emphasis definition(variableName)
+2210 2211 strong emphasis paren
+2211 2212 strong emphasis
+2212 2213 strong emphasis emphasis brace
+2213 2226 strong emphasis emphasis
+2226 2232 strong emphasis emphasis keyword
+2232 2233 strong emphasis emphasis
+2233 2235 strong emphasis emphasis variableName
+2235 2236 strong emphasis emphasis
+2236 2238 strong emphasis emphasis compareOperator
+2238 2239 strong emphasis emphasis
+2239 2243 strong emphasis emphasis null
+2243 2246 strong emphasis emphasis
+2246 2253 strong emphasis emphasis string special(string)
+2253 2254 strong emphasis emphasis separator
+2254 2263 strong emphasis emphasis
+2263 2264 strong emphasis emphasis brace
+2264 2265 strong emphasis
+2265 2272 strong emphasis controlKeyword
+2272 2273 strong emphasis
+2273 2274 strong emphasis emphasis brace
+2274 2287 strong emphasis emphasis
+2287 2293 strong emphasis emphasis variableName
+2293 2294 strong emphasis emphasis derefOperator
+2294 2296 strong emphasis emphasis function(variableName)
+2296 2297 strong emphasis emphasis paren
+2297 2298 strong emphasis emphasis paren
+2298 2299 strong emphasis emphasis separator
+2299 2308 strong emphasis emphasis
+2308 2309 strong emphasis emphasis brace
+2309 2318 strong emphasis
+2318 2321 strong emphasis standard(typeName)
+2321 2322 strong emphasis squareBracket
+2322 2323 strong emphasis squareBracket
+2323 2324 strong emphasis
+2324 2327 strong emphasis definition(variableName)
+2327 2328 strong emphasis
+2328 2329 strong emphasis definitionOperator
+2329 2330 strong emphasis
+2330 2331 strong emphasis brace
+2331 2332 strong emphasis integer
+2332 2333 strong emphasis separator
+2333 2334 strong emphasis
+2334 2335 strong emphasis integer
+2335 2336 strong emphasis separator
+2336 2337 strong emphasis
+2337 2338 strong emphasis integer
+2338 2339 strong emphasis brace
+2339 2340 strong emphasis separator
+2340 2349 strong emphasis
+2349 2352 strong emphasis variableName
+2352 2353 strong emphasis squareBracket
+2353 2354 strong emphasis integer
+2354 2355 strong emphasis squareBracket
+2355 2356 strong emphasis
+2356 2358 strong emphasis definitionOperator
+2358 2359 strong emphasis
+2359 2362 strong emphasis variableName
+2362 2363 strong emphasis squareBracket
+2363 2364 strong emphasis integer
+2364 2365 strong emphasis squareBracket
+2365 2367 strong emphasis updateOperator
+2367 2368 strong emphasis separator
+2368 2377 strong emphasis
+2377 2384 strong emphasis standard(typeName)
+2384 2385 strong emphasis
+2385 2386 strong emphasis definition(variableName)
+2386 2387 strong emphasis
+2387 2388 strong emphasis definitionOperator
+2388 2389 strong emphasis
+2389 2393 strong emphasis bool
+2393 2394 strong emphasis
+2394 2395 strong emphasis bitwiseOperator
+2395 2396 strong emphasis
+2396 2401 strong emphasis bool
+2401 2402 strong emphasis separator
+2402 2411 strong emphasis
+2411 2413 strong emphasis controlKeyword
+2413 2414 strong emphasis
+2414 2415 strong emphasis emphasis brace
+2415 2416 strong emphasis emphasis
+2416 2417 strong emphasis emphasis variableName
+2417 2418 strong emphasis emphasis
+2418 2419 strong emphasis emphasis definitionOperator
+2419 2420 strong emphasis emphasis
+2420 2421 strong emphasis emphasis logicOperator
+2421 2422 strong emphasis emphasis variableName
+2422 2423 strong emphasis emphasis separator
+2423 2424 strong emphasis emphasis
+2424 2425 strong emphasis emphasis brace
+2425 2426 strong emphasis
+2426 2431 strong emphasis controlKeyword
+2431 2432 strong emphasis
+2432 2433 strong emphasis paren
+2433 2434 strong emphasis variableName
+2434 2435 strong emphasis paren
+2435 2436 strong emphasis separator
+2436 2445 strong emphasis
+2445 2448 strong emphasis keyword
+2448 2449 strong emphasis
+2449 2455 strong emphasis typeName
+2455 2456 strong emphasis paren
+2456 2464 strong emphasis special(variableName)
+2464 2465 strong emphasis paren
+2465 2466 strong emphasis derefOperator
+2466 2471 strong emphasis function(variableName)
+2471 2472 strong emphasis paren
+2472 2473 strong emphasis paren
+2473 2474 strong emphasis separator
+2474 2483 strong emphasis
+2483 2489 strong emphasis typeName
+2489 2490 strong emphasis
+2490 2494 strong emphasis definition(variableName)
+2494 2495 strong emphasis
+2495 2496 strong emphasis definitionOperator
+2496 2497 strong emphasis
+2497 2517 strong emphasis string special(string)
+2517 2518 strong emphasis separator
+2518 2523 strong emphasis
+2523 2524 strong emphasis brace
+2524 2525 strong
+2525 2526 strong brace

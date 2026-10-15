@@ -1,0 +1,7 @@
+tree Program(LineComment,BlockComment,BlockComment,ExpressionStatement(MethodInvocation(MethodName(Identifier(BlockComment)),⚠),⚠))
+0 8 lineComment
+9 27 blockComment
+28 90 blockComment
+91 96 function(variableName)
+96 377 blockComment
+377 378 function(variableName)

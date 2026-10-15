@@ -29,7 +29,7 @@ import (
 	"gioui.org/unit"
 
 	"github.com/lichdotdev/godemirror/internal/glyphs"
-	"github.com/lichdotdev/godemirror/tags"
+	"github.com/lichdotdev/godemirror/internal/lezer"
 )
 
 // highlightPoll is how soon a frame looks again for highlighting still being
@@ -346,7 +346,7 @@ func (v *View) row(line, segment, firstCol, cols int) *rowImage {
 // tags; nil tags draws them in the gutter's color. A wide character is
 // drawn from its first cell across both, and from the cell before the image
 // when the image starts at its second half.
-func (v *View) compose(cells []rune, cellTags []*tags.Tag) *rowImage {
+func (v *View) compose(cells []rune, cellTags []*lezer.TagSet) *rowImage {
 	if len(cells) == 0 {
 		return &rowImage{}
 	}
@@ -356,7 +356,7 @@ func (v *View) compose(cells []rune, cellTags []*tags.Tag) *rowImage {
 	return &rowImage{op: o, size: dst.Bounds().Size()}
 }
 
-func (v *View) rasterize(cells []rune, cellTags []*tags.Tag) *image.RGBA {
+func (v *View) rasterize(cells []rune, cellTags []*lezer.TagSet) *image.RGBA {
 	cw, ch := v.r.CellW(), v.r.CellH()
 	dst := image.NewRGBA(image.Rect(0, 0, len(cells)*cw, ch))
 	for i, c := range cells {
