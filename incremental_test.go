@@ -3,6 +3,7 @@ package godemirror
 import (
 	"fmt"
 	"image"
+	"image/color"
 	"math/rand/v2"
 	"slices"
 	"strings"
@@ -174,10 +175,31 @@ func TestUpdateContentRecolorsAnEditedLine(t *testing.T) {
 		if commented && onlyTag(t, h.v.doc.tags[line][intCell]) != tags.LineComment {
 			t.Fatalf("the commented line's %q is tagged %v", "int", tagNames(h.v.doc.tags[line][intCell]))
 		}
-		if litIn(img, keyword, comment) != commented {
+		if inkedIn(img, keyword, comment) != commented {
 			t.Fatalf("commented %v: the line's start drawn in the comment color is %v", commented, !commented)
 		}
 	}
+}
+
+// inkedIn reports whether a glyph in band of img, a row image composed over
+// transparency, is drawn in c. It reads the ink's color from pixels the
+// glyph mostly covers, not from a fully covered one: at small sizes a thin
+// font's strokes may cover no pixel whole.
+func inkedIn(img *image.RGBA, band image.Rectangle, c color.NRGBA) bool {
+	const mostlyCovered, tolerance = 0x80, 3
+	near := func(premultiplied, alpha, want uint8) bool {
+		got := int(premultiplied) * 0xff / int(alpha)
+		return got >= int(want)-tolerance && got <= int(want)+tolerance
+	}
+	for y := band.Min.Y; y < band.Max.Y; y++ {
+		for x := band.Min.X; x < band.Max.X; x++ {
+			p := img.RGBAAt(x, y)
+			if p.A >= mostlyCovered && near(p.R, p.A, c.R) && near(p.G, p.A, c.G) && near(p.B, p.A, c.B) {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 // TestABurstOfUpdatesEndsOnTheLastContent sends many updates before any is
