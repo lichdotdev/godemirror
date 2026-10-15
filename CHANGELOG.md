@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-10-14
+
 ### Added
 
 - **CodeMirror's highlighting tags.** The new `tags` package is
@@ -25,7 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- **Themes style tags, not classes.** `Theme.Syntax`, `TokenStyle` and
+- **Breaking: themes style tags, not classes.** `Theme.Syntax`, `TokenStyle` and
   `TokenClass` are gone. A theme of your own sets `Theme.Foreground` (what
   `Syntax[Plain].Color` was) and `Theme.Highlight`, a `*HighlightStyle` built
   from `TagStyle` specs naming `tags`. `DarkTheme` and `LightTheme` keep their
@@ -99,5 +101,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   wrapping never splits one, and a gutter label's width counts them too.
   `Pos.Col` and `Span` still count runes.
 
-[Unreleased]: https://github.com/lichdotdev/godemirror/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/lichdotdev/godemirror/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/lichdotdev/godemirror/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/lichdotdev/godemirror/releases/tag/v0.1.0
