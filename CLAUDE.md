@@ -41,6 +41,13 @@ lives in the code, its godoc, `README.md` and `docs/`; never restate any of it h
   content it was drawn from.
 - **Colors are what CSS would show.** Gio blends alpha in linear light, so a translucent color is mixed over
   the theme background in sRGB (`over`) before it is painted.
+- **A ported theme is its source, spec for spec.** Its godoc names the package and the exact version it came
+  from, and lists what godemirror does not draw. A color the source leaves unset takes CodeMirror's base theme
+  value, never one we pick; only what CodeMirror has no setting for (the split divider, the diff colors) is ours.
+- **`tags` mirrors `@lezer/highlight`.** A change to it comes with a test checking `Set` order against the real
+  Lezer output.
+- **A chroma token takes the tag the language's lezer grammar gives the same construct** (`tagmap.go`). Where
+  chroma cannot tell two constructs apart, that goes into `docs/ceilings.md`.
 - Bug fixes start with a test that reproduces the bug, and the test is seen failing without the fix.
 
 ## Local Gate (before every commit / PR)
