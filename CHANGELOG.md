@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **A line-through sits across the text in every font.** With fonts whose
+  x-height `x/image` reports negative (DejaVu Sans Mono), a `Strikethrough`
+  token was ruled below the baseline instead of across its letters.
+
 ## [0.2.0] - 2026-10-14
 
 ### Added

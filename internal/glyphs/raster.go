@@ -313,8 +313,22 @@ func (r *Rasterizer) rules(m font.Metrics) (underline, strikethrough Rule) {
 		below = max(int(float64(-post.UnderlinePosition)*scale+0.5), 1)
 	}
 	underline = Rule{Y: min(r.ascent+below, r.cellH-thickness), Thickness: thickness}
-	strikethrough = Rule{Y: r.ascent - m.XHeight.Round()/2 - thickness/2, Thickness: thickness}
+	strikethrough = Rule{Y: strikethroughY(r.ascent, m.XHeight, thickness), Thickness: thickness}
 	return underline, strikethrough
+}
+
+// strikethroughY centers a line of thickness on the middle of the x-height.
+// x/image gives some fonts' x-height negative (DejaVu Sans Mono's, measured
+// from its glyph bounds), others' positive, so only its size is used.
+func strikethroughY(ascent int, xHeight fixed.Int26_6, thickness int) int {
+	return ascent - abs(xHeight.Round())/2 - thickness/2
+}
+
+func abs(n int) int {
+	if n < 0 {
+		return -n
+	}
+	return n
 }
 
 // Underline is where an underline is drawn at the current size.
