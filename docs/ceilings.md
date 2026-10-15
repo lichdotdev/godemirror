@@ -46,11 +46,22 @@ file is the trap alone.
   delimiter closes it, so an indented one under `<<-` does not. A token starting past the 10,000th UTF-16 unit
   of a line ends that line's highlighting, as CodeMirror's `MaxLineLength` does. Only what decides a style is
   ported: no indentation (clike's contexts), no `blankLine`, `copyState` or a mode's own `tokenTable`, which
-  neither mode has, so a third mode may need them. Like the Lezer port, every change tokenizes the whole file
-  again.
-- **The Lezer port parses a whole file from scratch**: there is no incremental reparse, so every content change
-  parses the file again (about 75 ms for 13,000 lines of Java, chroma's pass takes about 490 ms). Nested parsing
-  is `parseMixed` without fragments, `stopAt`, predicate overlays or `bracketed`, and with one nest per parser
+  neither mode has, so a third mode may need them. Unlike the Lezer port, every change tokenizes the whole
+  file again.
+- **A content change is reparsed incrementally, but the document is still rebuilt whole**: a view keeps the
+  last Lezer tree and text it highlighted, and when new content in the same language comes (`SetContent` or
+  `UpdateContent`, any file name), it takes the change to be the one stretch between the two texts' common prefix
+  and suffix and reuses the rest of the tree, as CodeMirror reparses after an edit (`TreeFragment`, `@lezer/lr`'s
+  node reuse, `parseMixed`'s reuse of nested trees). A one-character edit to 13,000 lines of Java reparses in
+  about 1.2 ms instead of 50 ms, but the cells and tags of every line are still built again, so the update takes
+  about 28 ms instead of 78 (chroma's pass takes about 490 ms). Lezer reuses nothing in a text under 4,096 UTF-16
+  units. The incremental tree is Lezer's, not always a fresh parse's: in broken code (an unclosed string, a stray
+  token) error recovery can go another way, and a node reused under a nested parse keeps the tree nested in it,
+  so the colors of a broken stretch can depend on the updates that led to it, exactly as in CodeMirror; valid
+  code highlights as a fresh parse does. A reparse shares nodes with the tree before it and a nested parse writes
+  its tree onto them, so a tree goes to exactly one reparse and to nothing else: a view highlights one content
+  at a time, in order, and a content replaced before its turn is skipped. Nested parsing is `parseMixed` without
+  `stopAt`, predicate overlays or `bracketed`, and with one nest per parser
   (`Parser.WithNest`), which is all `@codemirror/lang-html`'s default nesting uses; its custom
   `nestedLanguages` and `Element` tags are not ported. HTML keeps a quirk of `@lezer/html`'s `content.js`: it
   tests `isError` on a node that has no such property, so an attribute's overlay always drops its last

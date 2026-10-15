@@ -1,11 +1,13 @@
 // Ported from @lezer/common 1.5.3 (src/tree.ts: buildTree, balanceRange),
 // MIT licensed, Copyright (C) 2018 by Marijn Haverbeke and others. See
-// LICENSE. Node props (contextHash, lookAhead) only serve incremental
-// parsing, which has no port, and are left out.
+// LICENSE.
 
 package lezer
 
-import "math"
+import (
+	"fmt"
+	"math"
+)
 
 // Limits of buildTree, by their names in @lezer/common.
 const (
@@ -32,12 +34,17 @@ type treeBuilder struct {
 	types         []NodeType
 	minRepeatType int
 	sizes         map[*Tree]int
+	reused        []*Tree
+	// The context hash and lookahead last read, going back through the
+	// buffer: what the nodes before them get as props.
+	contextHash, lookAhead int
 }
 
 // buildTree builds the tree a parse's buffer describes under a top node
-// of type top, as Tree.build does.
-func buildTree(p *Parser, buf []int, top, start, length int) *Tree {
-	b := &treeBuilder{cursor: bufferCursor{buf, len(buf)}, types: p.types, minRepeatType: p.minRepeatTerm, sizes: map[*Tree]int{}}
+// of type top, as Tree.build does. reused holds the nodes the buffer's
+// reuse records point at.
+func buildTree(p *Parser, buf []int, reused []*Tree, top, start, length int) *Tree {
+	b := &treeBuilder{cursor: bufferCursor{buf, len(buf)}, types: p.types, minRepeatType: p.minRepeatTerm, sizes: map[*Tree]int{}, reused: reused}
 	var children []treeChild
 	var positions []int
 	for b.cursor.pos > 0 {
@@ -57,9 +64,20 @@ func reverse(children []treeChild, positions []int) {
 func (b *treeBuilder) takeNode(parentStart, minPos int, children *[]treeChild, positions *[]int, inRepeat, depth int) {
 	c := &b.cursor
 	id, start, end, size := c.id(), c.start(), c.end(), c.size()
+	lookAheadAtStart, contextAtStart := b.lookAhead, b.contextHash
 	if size < 0 {
-		// A context hash or lookahead record; reused nodes never occur.
 		c.next()
+		switch size {
+		case recordReuse:
+			*children = append(*children, treeChild{tree: b.reused[id]})
+			*positions = append(*positions, start-parentStart)
+		case recordContextChange:
+			b.contextHash = id
+		case recordLookAhead:
+			b.lookAhead = id
+		default:
+			panic(fmt.Sprintf("lezer: unrecognized record size %d", size))
+		}
 		return
 	}
 	if end-start <= maxBufferSize {
@@ -74,13 +92,14 @@ func (b *treeBuilder) takeNode(parentStart, minPos int, children *[]treeChild, p
 			return
 		}
 	}
-	*children = append(*children, treeChild{tree: b.takeTree(id, start, end, size, depth)})
+	*children = append(*children, treeChild{tree: b.takeTree(id, start, end, size, depth, lookAheadAtStart, contextAtStart)})
 	*positions = append(*positions, start-parentStart)
 }
 
 // takeTree makes the node at the cursor a Tree, its children taken from the
-// records it covers, a repeat node's long runs balanced.
-func (b *treeBuilder) takeTree(id, start, end, size, depth int) *Tree {
+// records it covers, a repeat node's long runs balanced. lookAhead and
+// contextHash are the records in force where the node ends.
+func (b *treeBuilder) takeTree(id, start, end, size, depth, lookAhead, contextHash int) *Tree {
 	c := &b.cursor
 	endPos := c.pos - size
 	c.next()
@@ -95,7 +114,7 @@ func (b *treeBuilder) takeTree(id, start, end, size, depth int) *Tree {
 		switch {
 		case localInRepeat >= 0 && c.id() == localInRepeat && c.size() >= 0:
 			if c.end() <= lastEnd-maxBufferSize {
-				b.makeRepeatLeaf(&children, &positions, start, lastGroup, c.end(), lastEnd, localInRepeat)
+				b.makeRepeatLeaf(&children, &positions, start, lastGroup, c.end(), lastEnd, localInRepeat, lookAhead, contextHash)
 				lastGroup, lastEnd = len(children), c.end()
 			}
 			c.next()
@@ -106,14 +125,15 @@ func (b *treeBuilder) takeTree(id, start, end, size, depth int) *Tree {
 		}
 	}
 	if localInRepeat >= 0 && lastGroup > 0 && lastGroup < len(children) {
-		b.makeRepeatLeaf(&children, &positions, start, lastGroup, start, lastEnd, localInRepeat)
+		b.makeRepeatLeaf(&children, &positions, start, lastGroup, start, lastEnd, localInRepeat, lookAhead, contextHash)
 	}
 	reverse(children, positions)
 	typ := &b.types[id]
 	if localInRepeat > -1 && lastGroup > 0 {
-		return b.balanceRange(typ, children, positions, 0, len(children), 0, end-start, makeBalanced(typ), makeBalanced(typ))
+		mk := makeBalanced(typ, contextHash)
+		return b.balanceRange(typ, children, positions, 0, len(children), 0, end-start, mk, mk)
 	}
-	return &Tree{typ: typ, children: children, positions: positions, length: end - start}
+	return makeTree(typ, children, positions, end-start, lookAhead-end, contextHash)
 }
 
 // takeFlatNode collects the leaves under a tree too deep to recurse into
@@ -153,7 +173,7 @@ func (b *treeBuilder) takeFlatNode(parentStart, minPos int, children *[]treeChil
 
 // makeRepeatLeaf groups the children from index i on under one node of the
 // repeat type.
-func (b *treeBuilder) makeRepeatLeaf(children *[]treeChild, positions *[]int, base, i, from, to, typ int) {
+func (b *treeBuilder) makeRepeatLeaf(children *[]treeChild, positions *[]int, base, i, from, to, typ, lookAhead, contextHash int) {
 	var local []treeChild
 	var localPositions []int
 	for len(*children) > i {
@@ -162,7 +182,7 @@ func (b *treeBuilder) makeRepeatLeaf(children *[]treeChild, positions *[]int, ba
 		localPositions = append(localPositions, (*positions)[last]+base-from)
 		*children, *positions = (*children)[:last], (*positions)[:last]
 	}
-	*children = append(*children, treeChild{tree: &Tree{typ: &b.types[typ], children: local, positions: localPositions, length: to - from}})
+	*children = append(*children, treeChild{tree: makeTree(&b.types[typ], local, localPositions, to-from, lookAhead-to, contextHash)})
 	*positions = append(*positions, from-base)
 }
 
@@ -221,7 +241,14 @@ func (b *treeBuilder) copyToBuffer(bufferStart int, buffer []uint16, index int) 
 	c := &b.cursor
 	id, start, end, size := c.id(), c.start(), c.end(), c.size()
 	c.next()
-	if size < 0 || id >= b.minRepeatType {
+	switch {
+	case size == recordContextChange:
+		b.contextHash = id
+		return index
+	case size == recordLookAhead:
+		b.lookAhead = id
+		return index
+	case size < 0 || id >= b.minRepeatType:
 		return index
 	}
 	startIndex := index
@@ -235,12 +262,29 @@ func (b *treeBuilder) copyToBuffer(bufferStart int, buffer []uint16, index int) 
 	return index
 }
 
-func makeBalanced(typ *NodeType) func([]treeChild, []int, int) *Tree {
+// makeTree is a Tree with the contextHash and lookAhead props, the
+// lookahead kept only past lookAheadMargin, as Tree.build's makeTree does.
+func makeTree(typ *NodeType, children []treeChild, positions []int, length, lookAhead, contextHash int) *Tree {
+	t := &Tree{typ: typ, children: children, positions: positions, length: length, contextHash: contextHash}
+	if lookAhead > lookAheadMargin {
+		t.lookAhead = lookAhead
+	}
+	return t
+}
+
+func makeBalanced(typ *NodeType, contextHash int) func([]treeChild, []int, int) *Tree {
 	return func(children []treeChild, positions []int, length int) *Tree {
-		if last := len(children) - 1; last == 0 && children[0].tree != nil && children[0].tree.typ == typ && children[0].tree.length == length {
-			return children[0].tree
+		lookAhead, lastI := 0, len(children)-1
+		if lastI >= 0 && children[lastI].tree != nil {
+			last := children[lastI].tree
+			if lastI == 0 && last.typ == typ && last.length == length {
+				return last
+			}
+			if last.lookAhead != 0 {
+				lookAhead = positions[lastI] + last.length + last.lookAhead
+			}
 		}
-		return &Tree{typ: typ, children: children, positions: positions, length: length}
+		return makeTree(typ, children, positions, length, lookAhead, contextHash)
 	}
 }
 

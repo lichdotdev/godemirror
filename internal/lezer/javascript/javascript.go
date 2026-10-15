@@ -15,6 +15,10 @@ package javascript
 //go:generate node ../gen/golden.mjs --dialect=jsx $LEZER_NODE_MODULES @lezer/javascript testdata/jsx
 //go:generate node ../gen/golden.mjs --dialect=ts $LEZER_NODE_MODULES @lezer/javascript testdata/ts
 //go:generate node ../gen/golden.mjs "--dialect=jsx ts" $LEZER_NODE_MODULES @lezer/javascript testdata/tsx
+//go:generate node ../gen/incremental.mjs $LEZER_NODE_MODULES @lezer/javascript testdata/js/incremental
+//go:generate node ../gen/incremental.mjs --dialect=jsx $LEZER_NODE_MODULES @lezer/javascript testdata/jsx/incremental
+//go:generate node ../gen/incremental.mjs --dialect=ts $LEZER_NODE_MODULES @lezer/javascript testdata/ts/incremental
+//go:generate node ../gen/incremental.mjs "--dialect=jsx ts" $LEZER_NODE_MODULES @lezer/javascript testdata/tsx/incremental
 
 import (
 	"sync"

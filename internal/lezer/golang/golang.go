@@ -9,6 +9,7 @@ package golang
 
 //go:generate sh -c "node ../gen/gen.mjs \"$LEZER_NODE_MODULES\" @lezer/go golang | gofmt > spec_generated.go"
 //go:generate node ../gen/golden.mjs $LEZER_NODE_MODULES @lezer/go testdata
+//go:generate node ../gen/incremental.mjs $LEZER_NODE_MODULES @lezer/go testdata/incremental
 
 import (
 	"sync"

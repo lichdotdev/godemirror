@@ -5,6 +5,7 @@
 package lezer
 
 import (
+	"fmt"
 	"regexp"
 	"strconv"
 	"strings"
@@ -23,6 +24,10 @@ type Tree struct {
 	// mounted is a tree another parser made of this node's text, as
 	// mountNested stores it: NodeProp.mounted.
 	mounted *mountedTree
+	// contextHash and lookAhead are NodeProp.contextHash and
+	// NodeProp.lookAhead, 0 when unset: what an incremental parse checks
+	// before reusing the node.
+	contextHash, lookAhead int
 }
 
 // treeChild is a Tree or a TreeBuffer.
@@ -49,6 +54,9 @@ type treeBuffer struct {
 // defaultBufferLength is @lezer/common's DefaultBufferLength, the most
 // text a TreeBuffer covers.
 const defaultBufferLength = 1024
+
+// Type is the tree's node type.
+func (t *Tree) Type() *NodeType { return t.typ }
 
 // Length is the length of the text the tree covers.
 func (t *Tree) Length() int { return t.length }
@@ -82,6 +90,48 @@ func (t *Tree) String() string {
 		}
 	}
 	return nodeString(t.typ, parts)
+}
+
+// Layout describes how the tree is stored, which a node an incremental
+// parse reuses keeps from the tree it came from, as gen/incremental.mjs
+// writes it for @lezer/common's trees: every Tree as its type id and
+// length, its contextHash (#) and lookAhead (~), a mounted tree in braces
+// after its overlay ranges, and its children in brackets, each after its
+// position, a TreeBuffer as B<length>/<buffer size>.
+func (t *Tree) Layout() string {
+	var b strings.Builder
+	t.writeLayout(&b)
+	return b.String()
+}
+
+func (t *Tree) writeLayout(b *strings.Builder) {
+	fmt.Fprintf(b, "%d:%d", t.typ.ID, t.length)
+	if t.contextHash != 0 {
+		fmt.Fprintf(b, "#%d", t.contextHash)
+	}
+	if t.lookAhead != 0 {
+		fmt.Fprintf(b, "~%d", t.lookAhead)
+	}
+	if m := t.mounted; m != nil {
+		ranges := make([]string, len(m.overlay))
+		for i, r := range m.overlay {
+			ranges[i] = fmt.Sprintf("%d-%d", r.From, r.To)
+		}
+		b.WriteString("{" + strings.Join(ranges, ",") + "|")
+		m.tree.writeLayout(b)
+		b.WriteString("}")
+	}
+	b.WriteString("[")
+	for i, c := range t.children {
+		fmt.Fprintf(b, "%d=", t.positions[i])
+		if c.tree != nil {
+			c.tree.writeLayout(b)
+		} else {
+			fmt.Fprintf(b, "B%d/%d", c.buffer.length, len(c.buffer.buffer))
+		}
+		b.WriteString(";")
+	}
+	b.WriteString("]")
 }
 
 // String prints the buffer's top-level nodes, comma-separated.

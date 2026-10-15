@@ -8,6 +8,7 @@ package rust
 
 //go:generate sh -c "node ../gen/gen.mjs \"$LEZER_NODE_MODULES\" @lezer/rust rust | gofmt > spec_generated.go"
 //go:generate node ../gen/golden.mjs $LEZER_NODE_MODULES @lezer/rust testdata
+//go:generate node ../gen/incremental.mjs $LEZER_NODE_MODULES @lezer/rust testdata/incremental
 
 import (
 	"sync"

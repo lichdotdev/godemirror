@@ -8,12 +8,14 @@ package lezer
 // read, such as the indentation in Python's grammar, the way @lezer/lr's
 // ContextTracker does. Values are compared with ==, so they must be
 // comparable; like @lezer/lr's they should be immutable, replaced rather
-// than changed. Shift and Reduce default to keeping the value. Unless
+// than changed. Shift, Reduce and Reuse (for a node an incremental parse
+// takes from an earlier tree) default to keeping the value. Unless
 // NonStrict, Hash tells values apart for the token cache and the tree.
 type ContextTracker struct {
 	Start     any
 	Shift     func(context any, term int, s *Stack, in *InputStream) any
 	Reduce    func(context any, term int, s *Stack, in *InputStream) any
+	Reuse     func(context any, node *Tree, s *Stack, in *InputStream) any
 	Hash      func(context any) int
 	NonStrict bool
 }
@@ -30,9 +32,10 @@ func (s *Stack) reduceContext(term, start int) {
 	}
 }
 
-// Buffer records that are not nodes: a context hash change and a
-// lookahead distance.
+// Buffer records that are not nodes: a node reused from an earlier tree,
+// a context hash change and a lookahead distance.
 const (
+	recordReuse         = -1
 	recordContextChange = -3
 	recordLookAhead     = -4
 )

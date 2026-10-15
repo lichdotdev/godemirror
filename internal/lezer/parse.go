@@ -8,8 +8,8 @@ import (
 	"unicode/utf16"
 )
 
-// parse is one run of a Parser over an input. It parses from scratch: the
-// incremental reuse of an earlier tree's fragments has no port.
+// parse is one run of a Parser over an input, reusing the nodes of an
+// earlier tree's fragments where it can.
 type parse struct {
 	parser                *Parser
 	ranges                []Range
@@ -22,16 +22,23 @@ type parse struct {
 	tokens                *tokenCache
 	topTerm               int
 	stacks                []*Stack
+	fragments             *fragmentCursor
+	reused                []*Tree
 }
 
 // Parse parses text whole and returns its tree. Positions in the tree are
 // UTF-16 code units, as in JavaScript.
 func (p *Parser) Parse(text string) *Tree {
-	return p.ParseUnits(utf16.Encode([]rune(text)), nil)
+	return p.ParseUnits(utf16.Encode([]rune(text)), nil, nil)
 }
 
-// ParseUnits parses the ranges of input, nil ranges meaning all of it.
-func (p *Parser) ParseUnits(input []uint16, ranges []Range) *Tree {
+// ParseUnits parses the ranges of input, nil ranges meaning all of it,
+// reusing what it can of fragments, the pieces of earlier trees
+// ApplyChanges left: an incremental parse, as Parser.parse with fragments.
+// A reused node is shared with the tree it came from, and a nested parse
+// may store its tree on it, so no earlier tree may be read while this
+// runs.
+func (p *Parser) ParseUnits(input []uint16, ranges []Range, fragments []TreeFragment) *Tree {
 	if len(ranges) == 0 {
 		ranges = []Range{{0, len(input)}}
 	}
@@ -40,10 +47,13 @@ func (p *Parser) ParseUnits(input []uint16, ranges []Range) *Tree {
 	ps.tokens = newTokenCache(p, ps.stream)
 	ps.stacks = []*Stack{startStack(ps, p.top.State, ranges[0].From)}
 	ps.minStackPos = ranges[0].From
+	if len(fragments) > 0 && ps.stream.end-ranges[0].From > defaultBufferLength*4 {
+		ps.fragments = newFragmentCursor(fragments, p.minRepeatTerm)
+	}
 	for {
 		if t := ps.advance(); t != nil {
 			if p.nest != nil {
-				mountNested(t, p.nest, input, ranges)
+				mountNested(t, p.nest, input, ranges, fragments)
 			}
 			return t
 		}
@@ -172,6 +182,9 @@ outer:
 // otherwise; with nil split, only the first action is taken.
 func (ps *parse) advanceStack(stack *Stack, stacks, split *[]*Stack) bool {
 	p := ps.parser
+	if ps.fragments != nil && ps.reuseAt(stack) {
+		return true
+	}
 	if defaultReduce := p.stateSlot(stack.state, slotDefaultReduce); defaultReduce > 0 {
 		stack.reduce(defaultReduce)
 		return true
@@ -284,7 +297,7 @@ func findFinished(stacks []*Stack) *Stack {
 
 func (ps *parse) stackToTree(s *Stack) *Tree {
 	s.close()
-	return buildTree(ps.parser, s.fullBuffer(), ps.topTerm, ps.ranges[0].From, s.pos-ps.ranges[0].From)
+	return buildTree(ps.parser, s.fullBuffer(), ps.reused, ps.topTerm, ps.ranges[0].From, s.pos-ps.ranges[0].From)
 }
 
 // fullBuffer is the stack's buffer with the parts it shares with the

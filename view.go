@@ -18,6 +18,7 @@ package godemirror
 import (
 	"image"
 	"image/draw"
+	"sync/atomic"
 	"time"
 
 	"gioui.org/io/event"
@@ -63,6 +64,11 @@ type View struct {
 	// successor.
 	content Content
 	pending *pending
+	// lastParse receives the Lezer parse of the last content asked for,
+	// once its highlighting is done, for the next one to reparse after;
+	// highlightRuns counts the highlightings asked for.
+	lastParse     chan *lezerParse
+	highlightRuns atomic.Int64
 
 	// wraps and starts are wrapLine and rowStarts for wrapCols columns;
 	// wrapCols is 0 when unwrapped and -1 when they must be rebuilt.

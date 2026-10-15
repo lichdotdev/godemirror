@@ -16,6 +16,9 @@ package lezer_test
 //go:generate node gen/golden.mjs $LEZER_NODE_MODULES lezer-testgrammar testdata/toy/plain
 //go:generate node gen/golden.mjs --dialect=strict $LEZER_NODE_MODULES lezer-testgrammar testdata/toy/strict
 //go:generate node gen/golden.mjs --top=SingleExpression $LEZER_NODE_MODULES lezer-testgrammar testdata/toy/expression
+//go:generate node gen/incremental.mjs $LEZER_NODE_MODULES lezer-testgrammar testdata/toy/plain/incremental
+//go:generate node gen/incremental.mjs --dialect=strict $LEZER_NODE_MODULES lezer-testgrammar testdata/toy/strict/incremental
+//go:generate node gen/incremental.mjs --top=SingleExpression $LEZER_NODE_MODULES lezer-testgrammar testdata/toy/expression/incremental
 
 import (
 	"os"
@@ -204,5 +207,43 @@ func TestParserIsSafeToShare(t *testing.T) {
 		if tree != want {
 			t.Fatalf("goroutine %d got another tree", i)
 		}
+	}
+}
+
+// toyConfigs are the configurations of the testdata/toy directories.
+var toyConfigs = map[string]lezer.Config{
+	"plain":      {},
+	"strict":     {Dialect: "strict"},
+	"expression": {Top: "SingleExpression"},
+}
+
+// TestToyIncrementalMatchesLezer runs the edit sessions under each
+// configuration's incremental directory, parsing each edit incrementally,
+// and requires the trees, their layout and the spans the real Lezer gave.
+// The toy grammar's context tracker is strict, so reuse checks context
+// hashes here.
+func TestToyIncrementalMatchesLezer(t *testing.T) {
+	for dir, config := range toyConfigs {
+		t.Run(dir, func(t *testing.T) {
+			p, err := toyParser(t).Configure(config)
+			if err != nil {
+				t.Fatal(err)
+			}
+			lezertest.MatchIncremental(t, p, filepath.Join("testdata", "toy", dir, "incremental"))
+		})
+	}
+}
+
+// TestToyIncrementalCorpus does the same with the randomized corpus
+// lezertest.CorpusEnv names, when it is set.
+func TestToyIncrementalCorpus(t *testing.T) {
+	for dir, config := range toyConfigs {
+		t.Run(dir, func(t *testing.T) {
+			p, err := toyParser(t).Configure(config)
+			if err != nil {
+				t.Fatal(err)
+			}
+			lezertest.MatchCorpus(t, p, "toy-"+dir)
+		})
 	}
 }

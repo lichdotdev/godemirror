@@ -8,6 +8,7 @@ package css
 
 //go:generate sh -c "node ../gen/gen.mjs \"$LEZER_NODE_MODULES\" @lezer/css css | gofmt > spec_generated.go"
 //go:generate node ../gen/golden.mjs $LEZER_NODE_MODULES @lezer/css testdata
+//go:generate node ../gen/incremental.mjs $LEZER_NODE_MODULES @lezer/css testdata/incremental
 
 import (
 	"sync"

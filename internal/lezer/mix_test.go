@@ -5,6 +5,7 @@ package lezer_test
 // and @lezer/highlight give the fixtures; javaNest below is the same nest.
 
 //go:generate node gen/golden.mjs --wrap=testdata/mixnest.mjs $LEZER_NODE_MODULES @lezer/java testdata/mix
+//go:generate node gen/incremental.mjs --wrap=testdata/mixnest.mjs $LEZER_NODE_MODULES @lezer/java testdata/mix/incremental
 
 import (
 	"strings"
@@ -67,7 +68,7 @@ func TestMixedMatchesLezer(t *testing.T) {
 func TestMixedParseOfRanges(t *testing.T) {
 	text := `class A { /* int a; @@@ int b; */ String s = "!int@@@ c;"; }`
 	ranges := []lezer.Range{{From: 0, To: 20}, {From: 23, To: 50}, {From: 53, To: 60}}
-	tree := java.Parser().WithNest(javaNest).ParseUnits(utf16.Encode([]rune(text)), ranges)
+	tree := java.Parser().WithNest(javaNest).ParseUnits(utf16.Encode([]rune(text)), ranges, nil)
 	want := []string{
 		`tree Program(ClassDeclaration(class,Definition,ClassBody("{",BlockComment,FieldDeclaration(TypeName,VariableDeclarator(Definition,AssignOp,Program(ExpressionStatement(StringLiteral,⚠))),";"),"}")))`,
 		"0 5 definitionKeyword", "6 7 definition(variableName)", "8 9 brace", "10 12 blockComment",
@@ -77,4 +78,17 @@ func TestMixedParseOfRanges(t *testing.T) {
 		"57 58 separator", "59 60 brace",
 	}
 	lezertest.CompareLines(t, lezertest.Describe(tree), want)
+}
+
+// TestMixedIncrementalMatchesLezer runs the edit sessions under
+// testdata/mix/incremental, where nested parses, overlays included, reuse
+// the trees mounted in the fragments.
+func TestMixedIncrementalMatchesLezer(t *testing.T) {
+	lezertest.MatchIncremental(t, java.Parser().WithNest(javaNest), "testdata/mix/incremental")
+}
+
+// TestMixedIncrementalCorpus does the same with the randomized corpus
+// lezertest.CorpusEnv names, when it is set.
+func TestMixedIncrementalCorpus(t *testing.T) {
+	lezertest.MatchCorpus(t, java.Parser().WithNest(javaNest), "mix")
 }

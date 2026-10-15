@@ -10,6 +10,7 @@ package html
 
 //go:generate sh -c "node ../gen/gen.mjs \"$LEZER_NODE_MODULES\" @lezer/html html | gofmt > spec_generated.go"
 //go:generate node ../gen/golden.mjs --wrap=nesting.mjs $LEZER_NODE_MODULES @lezer/html testdata
+//go:generate node ../gen/incremental.mjs --wrap=nesting.mjs $LEZER_NODE_MODULES @lezer/html testdata/incremental
 
 import (
 	"sync"

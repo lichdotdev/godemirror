@@ -118,6 +118,14 @@ var elementTracker = &lezer.ContextTracker{
 		}
 		return context
 	},
+	Reuse: func(context any, node *lezer.Tree, _ *lezer.Stack, in *lezer.InputStream) any {
+		if id := node.Type().ID; id != nodeStartTag && id != nodeOpenTag {
+			return context
+		}
+		name, _ := tagNameAfter(in, 1)
+		parent, _ := context.(*elementContext)
+		return &elementContext{name: name, parent: parent}
+	},
 	NonStrict: true,
 }
 

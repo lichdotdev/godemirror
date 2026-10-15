@@ -72,6 +72,14 @@ func (c *scanCursor) nextSibling() bool {
 	return c.yield(c.buffer.parent.nextChildAll(c.buffer.index + 1))
 }
 
+// treeOrNil is the cursor's Tree, nil inside a buffer: TreeCursor.tree.
+func (c *scanCursor) treeOrNil() *Tree {
+	if c.buffer != nil {
+		return nil
+	}
+	return c.tree.tree
+}
+
 // node is the cursor's node as a Node.
 func (c *scanCursor) node() *Node {
 	if c.buffer == nil {

@@ -171,21 +171,33 @@ func streamModeFor(filename string) (func() stream.Mode, bool) {
 // matches. A file none claims is shown plain, as CodeMirror shows a file
 // with no language.
 func highlight(filename, text string) (*document, error) {
+	d, _, err := highlightAfter(filename, text, nil)
+	return d, err
+}
+
+// highlightAfter is highlight for a document that follows prev, the parse
+// of the document before it (nil for none): a file Lezer parses with the
+// same grammar is reparsed incrementally, as CodeMirror reparses after an
+// edit. It also returns the parse the next document can follow, nil for a
+// file Lezer does not parse. prev's tree shares nodes with the new one and
+// must not be used again.
+func highlightAfter(filename, text string, prev *lezerParse) (*document, *lezerParse, error) {
 	if parser, ok := lezerParsers[strings.ToLower(filepath.Ext(filename))]; ok {
-		return highlightLezer(parser(), normalize(text)), nil
+		d, parsed := highlightLezer(parser(), normalize(text), prev)
+		return d, parsed, nil
 	}
 	if mode, ok := streamModeFor(filename); ok {
-		return highlightStream(mode(), normalize(text)), nil
+		return highlightStream(mode(), normalize(text)), nil, nil
 	}
 	lexer := lexers.Match(filename)
 	if lexer == nil {
-		return plain(text), nil
+		return plain(text), nil, nil
 	}
 	d, err := highlightChroma(lexer, normalize(text))
 	if err != nil {
-		return nil, fmt.Errorf("highlight %s: %w", filename, err)
+		return nil, nil, fmt.Errorf("highlight %s: %w", filename, err)
 	}
-	return d, nil
+	return d, nil, nil
 }
 
 // highlightChroma builds the document of text with the tags tagmap.go gives
@@ -207,16 +219,52 @@ func highlightChroma(lexer chroma.Lexer, text string) (*document, error) {
 }
 
 // highlightLezer builds the document of text with the tags CodeMirror gives
-// it through parser's grammar.
-func highlightLezer(parser *lezer.Parser, text string) *document {
+// it through parser's grammar, reparsing incrementally after prev.
+func highlightLezer(parser *lezer.Parser, text string, prev *lezerParse) (*document, *lezerParse) {
 	units := utf16.Encode([]rune(text))
+	parsed := &lezerParse{parser: parser, units: units, tree: reparse(parser, units, prev)}
 	w := &unitWriter{d: newDocument(), text: text}
-	lezer.Highlight(parser.ParseUnits(units, nil), lezer.NewTagSets(), func(from, to int, tags *lezer.TagSet) {
+	lezer.Highlight(parsed.tree, lezer.NewTagSets(), func(from, to int, tags *lezer.TagSet) {
 		w.writeTo(from, nil)
 		w.writeTo(to, tags)
 	})
 	w.writeTo(len(units), nil)
-	return w.d
+	return w.d, parsed
+}
+
+// lezerParse is a Lezer parse of a document's text, in UTF-16 code units.
+type lezerParse struct {
+	parser *lezer.Parser
+	units  []uint16
+	tree   *lezer.Tree
+}
+
+// reparse parses units with parser, reusing what it can of prev's tree when
+// prev was parsed by the same grammar. The change between the two texts is
+// taken to be the one stretch between their common prefix and suffix.
+func reparse(parser *lezer.Parser, units []uint16, prev *lezerParse) *lezer.Tree {
+	if prev == nil || prev.parser != parser {
+		return parser.ParseUnits(units, nil, nil)
+	}
+	if slices.Equal(prev.units, units) {
+		return prev.tree
+	}
+	fragments := lezer.ApplyChanges(lezer.AddTree(prev.tree, nil, false), []lezer.ChangedRange{changedRange(prev.units, units)})
+	return parser.ParseUnits(units, nil, fragments)
+}
+
+// changedRange is the stretch of old that differs from new, between their
+// longest common prefix and the longest common suffix after it.
+func changedRange(old, new []uint16) lezer.ChangedRange {
+	prefix := 0
+	for prefix < min(len(old), len(new)) && old[prefix] == new[prefix] {
+		prefix++
+	}
+	suffix := 0
+	for suffix < min(len(old), len(new))-prefix && old[len(old)-1-suffix] == new[len(new)-1-suffix] {
+		suffix++
+	}
+	return lezer.ChangedRange{FromA: prefix, ToA: len(old) - suffix, FromB: prefix, ToB: len(new) - suffix}
 }
 
 // highlightStream builds the document of text with the tags CodeMirror

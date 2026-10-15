@@ -1,9 +1,8 @@
 // Ported from @lezer/common 1.5.3 (src/mix.ts: parseMixed, MixedParse's
 // startInner, checkCover, sliceBuf, materialize, punchRanges), MIT
 // licensed, Copyright (C) 2018 by Marijn Haverbeke and others. See LICENSE.
-// The parse is whole: the reuse of an earlier tree's fragments, stopAt and
-// overlays built up node by node by a predicate have no port, and nor has
-// NestedParse.bracketed, which only the enter methods read.
+// stopAt and overlays built up node by node by a predicate have no port,
+// and nor has NestedParse.bracketed, which only the enter methods read.
 
 package lezer
 
@@ -55,13 +54,15 @@ func (p *Parser) WithNest(nest Nest) *Parser {
 type mountedTree struct {
 	tree    *Tree
 	overlay []Range
+	parser  *Parser
 }
 
 type innerParse struct {
-	parser  *Parser
-	ranges  []Range
-	overlay []Range
-	target  *Tree
+	parser    *Parser
+	ranges    []Range
+	overlay   []Range
+	target    *Tree
+	fragments []TreeFragment
 }
 
 // coveredRanges are the ranges an overlay parse took, which nodes inside
@@ -74,14 +75,20 @@ type coveredRanges struct {
 
 // mountNested scans base, the tree parsing ranges of input made, for the
 // nodes nest has another parser read, parses them and mounts the results.
-func mountNested(base *Tree, nest Nest, input []uint16, ranges []Range) {
+// A node the parse reused from fragments keeps the trees mounted on it,
+// and a new nested parse reuses what it can of the trees mounted where it
+// is in the fragments.
+func mountNested(base *Tree, nest Nest, input []uint16, ranges []Range, fragments []TreeFragment) {
 	var inner []innerParse
+	fc := newMixFragmentCursor(fragments)
 	c := &scanCursor{}
 	c.yieldNode(&treeNode{tree: base, from: ranges[0].From})
 	var covered *coveredRanges
 	for {
 		enter := true
-		if cover := coverOf(covered, c.from, c.to); cover != coverNone {
+		if fc.hasNode(c.from, c.to, c.treeOrNil()) {
+			enter = false
+		} else if cover := coverOf(covered, c.from, c.to); cover != coverNone {
 			enter = cover != coverFull
 		} else if n := nestAt(c, nest, input); n != nil {
 			if c.buffer != nil {
@@ -91,6 +98,9 @@ func mountNested(base *Tree, nest Nest, input []uint16, ranges []Range) {
 				}
 			}
 			parse := newInnerParse(n, ranges, c.from, c.to, c.tree.tree)
+			if len(parse.ranges) > 0 {
+				parse.fragments = enterFragments(fc.findMounts(c.from, n.Parser), parse.ranges)
+			}
 			if len(parse.ranges) > 0 || n.Overlay == nil {
 				inner = append(inner, parse)
 			}
@@ -149,11 +159,11 @@ func newInnerParse(n *NestedParse, outer []Range, from, to int, target *Tree) in
 func (p innerParse) run(input []uint16) {
 	var tree *Tree
 	if len(p.ranges) > 0 {
-		tree = p.parser.ParseUnits(input, p.ranges)
+		tree = p.parser.ParseUnits(input, p.ranges, p.fragments)
 	} else {
 		tree = p.parser.Parse("")
 	}
-	p.target.mounted = &mountedTree{tree: tree, overlay: p.overlay}
+	p.target.mounted = &mountedTree{tree: tree, overlay: p.overlay, parser: p.parser}
 }
 
 // leave moves the cursor to the next node after the current one and its

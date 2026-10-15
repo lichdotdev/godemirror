@@ -69,10 +69,28 @@ func (v *View) LineCount() int { return len(v.doc.lines) }
 // on screen, which UpdateContent replaces only once highlighted.
 func (v *View) LineText(i int) string { return string(v.doc.source[i]) }
 
+// highlight works out c's highlighting off the UI goroutine. Each run waits
+// for the run before it and reparses after its parse, so runs go one at a
+// time, in the order they were asked for, and a parse's tree, which the
+// next parse shares nodes with and may change, is only ever used by one. A
+// run asked for again before it starts hands the parse before it on
+// untouched, since nothing will show its result.
 func (v *View) highlight(c Content, replacement *Content) *pending {
 	p := &pending{done: make(chan highlighted, 1), content: replacement}
+	prev, next := v.lastParse, make(chan *lezerParse, 1)
+	v.lastParse = next
+	run := v.highlightRuns.Add(1)
 	go func() {
-		doc, err := highlight(c.Filename, c.Text)
+		var after *lezerParse
+		if prev != nil {
+			after = <-prev
+		}
+		if v.highlightRuns.Load() != run {
+			next <- after
+			return
+		}
+		doc, parsed, err := highlightAfter(c.Filename, c.Text, after)
+		next <- parsed
 		p.done <- highlighted{doc, err}
 	}()
 	return p

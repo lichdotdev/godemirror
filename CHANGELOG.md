@@ -21,6 +21,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   CodeMirror runs through its `StreamLanguage`: `.kt`, `.kts`, `.sh`, `.ksh`,
   `.bash` and a file named `PKGBUILD`. Every other language is still read by
   chroma.
+- **New content in a Lezer language is reparsed incrementally.** `SetContent`
+  and `UpdateContent` reuse the tree of the content before, as CodeMirror
+  reparses after an edit, nested scripts and styles included: a one-character
+  edit to 13,000 lines of Java reparses in about 1.2 ms instead of 50 ms, and
+  the whole update takes about 28 ms instead of 78; in a 13,000-line HTML page,
+  0.4 ms instead of 71, and 30 ms instead of 102. Highlighting now runs one
+  content at a time, in order, skipping one replaced before its turn.
 - **A token can carry several tags, and its style merges theirs.** Each tag
   takes the spec of its most specific styled tag, and the specs apply in
   their order in the `HighlightStyle`, a later one's color, bold, italic,
