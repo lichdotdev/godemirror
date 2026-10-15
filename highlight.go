@@ -120,29 +120,37 @@ func plain(text string) *document {
 	return d
 }
 
-// lezerParsers are the languages highlighted by a port of their Lezer
-// grammar, by file extension, as @codemirror/language-data matches them.
-var lezerParsers = map[string]func() *lezer.Parser{
-	".css":        css.Parser,
-	".go":         golang.Parser,
-	".html":       html.Parser,
-	".htm":        html.Parser,
-	".handlebars": html.Parser,
-	".hbs":        html.Parser,
-	".java":       java.Parser,
-	".js":         javascript.Parser,
-	".mjs":        javascript.Parser,
-	".cjs":        javascript.Parser,
-	".jsx":        javascript.JSX,
-	".ts":         javascript.TypeScript,
-	".mts":        javascript.TypeScript,
-	".cts":        javascript.TypeScript,
-	".tsx":        javascript.TSX,
-	".py":         python.Parser,
-	".pyw":        python.Parser,
-	".bzl":        python.Parser,
-	".build":      python.Parser,
-	".rs":         rust.Parser,
+// lezerLanguage is a language highlighted by a port of its Lezer grammar:
+// the name of its @lezer package, which StyleTags names it by, and its
+// parser.
+type lezerLanguage struct {
+	name   string
+	parser func() *lezer.Parser
+}
+
+// lezerLanguages are the Lezer languages by file extension, as
+// @codemirror/language-data matches them.
+var lezerLanguages = map[string]lezerLanguage{
+	".css":        {"css", css.Parser},
+	".go":         {"go", golang.Parser},
+	".html":       {"html", html.Parser},
+	".htm":        {"html", html.Parser},
+	".handlebars": {"html", html.Parser},
+	".hbs":        {"html", html.Parser},
+	".java":       {"java", java.Parser},
+	".js":         {"javascript", javascript.Parser},
+	".mjs":        {"javascript", javascript.Parser},
+	".cjs":        {"javascript", javascript.Parser},
+	".jsx":        {"javascript", javascript.JSX},
+	".ts":         {"javascript", javascript.TypeScript},
+	".mts":        {"javascript", javascript.TypeScript},
+	".cts":        {"javascript", javascript.TypeScript},
+	".tsx":        {"javascript", javascript.TSX},
+	".py":         {"python", python.Parser},
+	".pyw":        {"python", python.Parser},
+	".bzl":        {"python", python.Parser},
+	".build":      {"python", python.Parser},
+	".rs":         {"rust", rust.Parser},
 }
 
 // streamModes are the languages highlighted by a port of their
@@ -170,8 +178,8 @@ func streamModeFor(filename string) (func() stream.Mode, bool) {
 // or the stream mode it matches, or else by the chroma lexer its name
 // matches. A file none claims is shown plain, as CodeMirror shows a file
 // with no language.
-func highlight(filename, text string) (*document, error) {
-	d, _, err := highlightAfter(filename, text, nil)
+func highlight(filename, text string, styles []StyleTags) (*document, error) {
+	d, _, err := highlightAfter(filename, text, styles, nil)
 	return d, err
 }
 
@@ -180,10 +188,14 @@ func highlight(filename, text string) (*document, error) {
 // same grammar is reparsed incrementally, as CodeMirror reparses after an
 // edit. It also returns the parse the next document can follow, nil for a
 // file Lezer does not parse. prev's tree shares nodes with the new one and
-// must not be used again.
-func highlightAfter(filename, text string, prev *lezerParse) (*document, *lezerParse, error) {
-	if parser, ok := lezerParsers[strings.ToLower(filepath.Ext(filename))]; ok {
-		d, parsed := highlightLezer(parser(), normalize(text), prev)
+// must not be used again. styles add rules to the Lezer grammars they name.
+func highlightAfter(filename, text string, styles []StyleTags, prev *lezerParse) (*document, *lezerParse, error) {
+	parser, err := lezerParser(filename, styles)
+	if err != nil {
+		return nil, nil, fmt.Errorf("highlight %s: %w", filename, err)
+	}
+	if parser != nil {
+		d, parsed := highlightLezer(parser, normalize(text), prev)
 		return d, parsed, nil
 	}
 	if mode, ok := streamModeFor(filename); ok {

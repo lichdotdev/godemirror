@@ -45,7 +45,7 @@ func bigJava(b *testing.B) string {
 func BenchmarkHighlightJavaLezer(b *testing.B) {
 	text := bigJava(b)
 	for b.Loop() {
-		if _, err := highlight("Big.java", text); err != nil {
+		if _, err := highlight("Big.java", text, nil); err != nil {
 			b.Fatal(err)
 		}
 	}
@@ -110,7 +110,7 @@ func oneCharEdit(text string) string {
 // parse before the edit and from scratch.
 func benchmarkReparse(b *testing.B, filename, text string) {
 	text, edited := normalize(text), normalize(oneCharEdit(text))
-	parser := lezerParsers[filepath.Ext(filename)]()
+	parser := lezerLanguages[filepath.Ext(filename)].parser()
 	prev := &lezerParse{parser: parser, units: utf16.Encode([]rune(text))}
 	prev.tree = parser.ParseUnits(prev.units, nil, nil)
 	units := utf16.Encode([]rune(edited))

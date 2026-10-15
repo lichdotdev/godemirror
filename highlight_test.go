@@ -10,7 +10,7 @@ import (
 )
 
 func TestHighlightCutsLinesAndExpandsTabsToStops(t *testing.T) {
-	d, err := highlight("notes.unknown-ext", "a\tb\n\tc\r\n\n")
+	d, err := highlight("notes.unknown-ext", "a\tb\n\tc\r\n\n", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -82,7 +82,7 @@ func TestChromaTagsGoCode(t *testing.T) {
 // tags after a character outside the BMP (two units, two cells here) and a
 // tab must still land on their own cells.
 func TestHighlightTagsJavaAsLezerDoes(t *testing.T) {
-	d, err := highlight("A.java", "class A {\n\tvoid run() { log(\"😀\", 1); }\n}\n")
+	d, err := highlight("A.java", "class A {\n\tvoid run() { log(\"😀\", 1); }\n}\n", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -128,7 +128,7 @@ func TestHighlightTagsJavaAsLezerDoes(t *testing.T) {
 // Go goes through the port of @lezer/go, so its tags are the grammar's own,
 // where chroma's differ.
 func TestHighlightTagsGoAsLezerDoes(t *testing.T) {
-	d, err := highlight("main.go", "func main() {\n\treturn 42\n}\n")
+	d, err := highlight("main.go", "func main() {\n\treturn 42\n}\n", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -193,7 +193,7 @@ func TestHighlightTagsKotlinAndShellAsTheirLegacyModesDo(t *testing.T) {
 		{"PKGBUILD", shellCode, 1, "--all", tags.AttributeName},
 	}
 	for _, c := range cases {
-		d, err := highlight(c.filename, c.text)
+		d, err := highlight(c.filename, c.text, nil)
 		if err != nil {
 			t.Fatal(err)
 		}

@@ -5,6 +5,7 @@ import (
 
 	"github.com/lichdotdev/godemirror/internal/lezer"
 	"github.com/lichdotdev/godemirror/internal/lezer/lezertest"
+	"github.com/lichdotdev/godemirror/tags"
 )
 
 // TestMatchesLezer parses and highlights every fixture and requires the tree
@@ -25,6 +26,26 @@ func TestExtraStylesMatchLezer(t *testing.T) {
 		t.Fatal(err)
 	}
 	lezertest.MatchGoldens(t, p, "testdata/styled")
+}
+
+// TestStyleTagsMatchLezer adds teststyles.mjs's rules to the parser at run
+// time, through lezer.StyleTags and WithStyleTags, as parser.configure({props:
+// [styleTags(...)]}) adds them in node, and requires the same goldens.
+func TestStyleTagsMatchLezer(t *testing.T) {
+	byName, err := lezer.StyleTags([]lezer.StyleSpec{
+		{Selector: "Block/...", Tags: []*tags.Tag{tags.Emphasis}},
+		{Selector: "ClassBody/...", Tags: []*tags.Tag{tags.Strong}},
+		{Selector: "LambdaExpression!", Tags: []*tags.Tag{tags.Special(tags.VariableName)}},
+		{Selector: "Annotation!", Tags: []*tags.Tag{tags.Meta}},
+		{Selector: "StringLiteral", Tags: []*tags.Tag{tags.String, tags.Special(tags.String)}},
+		{Selector: "ClassBody/MethodDeclaration/Definition", Tags: []*tags.Tag{tags.Function(tags.Definition(tags.VariableName))}},
+		{Selector: "*/ArgumentList/Identifier", Tags: []*tags.Tag{tags.Local(tags.VariableName), tags.Constant(tags.Name)}},
+		{Selector: "SwitchBlock/...", Tags: []*tags.Tag{tags.ProcessingInstruction}},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	lezertest.MatchGoldens(t, Parser().WithStyleTags(byName), "testdata/styled")
 }
 
 // TestIncrementalMatchesLezer runs the edit sessions under

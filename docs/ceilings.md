@@ -33,6 +33,12 @@ file is the trap alone.
   theme that colors only declarations colors calls too; Go type names used as values, and a declared name, stay
   `VariableName`; operators are all `Operator`. A ported theme is faithful tag for tag and still looks busier or
   flatter than in CodeMirror wherever chroma is coarser.
+- **`StyleTags` reach one grammar, by the paths styleTags has**: a rule names a node by its parents, never by its
+  place among its siblings, so what the tree tells apart only by position stays out of reach: Java's `a.b` is an
+  `Identifier` under `FieldAccess` twice, and `RicherJavaTags` leaves both `variableName`. Rules for `"javascript"`
+  or `"css"` do not reach the scripts and styles inside an HTML file, which `@codemirror/lang-html` parses with
+  its own copies of those grammars, as configuring them does not in CodeMirror either. Each set of rules keeps
+  its own parser, so content whose `StyleTags` change is parsed from scratch once, not incrementally.
 - **Kotlin and shell are CodeMirror 5 modes, and tag as coarsely as they do**: `.kt`, `.kts`, `.sh`, `.ksh`,
   `.bash` (any case) and a file named exactly `PKGBUILD` go through `internal/stream`, a port of
   `@codemirror/language` 6.13.1's `StreamLanguage` and legacy token table and of `@codemirror/legacy-modes` 6.5.5's

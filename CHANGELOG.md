@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **`StyleTags` add styleTags rules to a Lezer grammar**, as a CodeMirror
+  caller does with `language.configure({props: [styleTags({...})]})`: set them
+  on `Content.StyleTags` or `DiffOptions.StyleTags`, naming the grammar
+  (`"java"`, `"javascript"`, ...) and the paths and tags of each `StyleRule`.
+  They combine with the grammar's own rules as Lezer combines them. Rules for
+  a language that has no Lezer grammar, or a path that does not parse, make
+  `Layout` return an error.
+- **`RicherJavaTags`**, opt-in rules that tag Java finer than `@lezer/java`
+  does: enum constants as `constant(variableName)`, annotations as
+  `annotation`, fields as `definition(propertyName)`, and package and import
+  paths as `namespace`.
+
 ## [0.4.0] - 2026-10-15
 
 ### Changed

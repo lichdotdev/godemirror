@@ -37,6 +37,10 @@ type DiffOptions struct {
 	// chunk, with the theme's ChangeColors.Changed. Lines with no word in
 	// common are left whole.
 	HighlightChanges bool
+
+	// StyleTags add rules to the Lezer grammars they name, on both sides,
+	// as Content.StyleTags does for a View.
+	StyleTags []StyleTags
 }
 
 // DiffView shows the difference between two versions of a file, unified in
@@ -268,7 +272,7 @@ func (d *DiffView) contents() (u, l, r Content) {
 // content is s for v, with the blocks anchored on the sides it shows.
 func (d *DiffView) content(s side, v *View, shows func(Side) bool) Content {
 	d.onScreen[v].next = s.rows
-	c := Content{Filename: d.filename, Text: s.text, Labels: s.labels, Blocks: d.blocksOf(s, shows)}
+	c := Content{Filename: d.filename, Text: s.text, Labels: s.labels, Blocks: d.blocksOf(s, shows), StyleTags: d.opts.StyleTags}
 	if n := len(s.rows); n > 0 && s.rows[n-1].text == "" {
 		// A final line end starts no line of its own in a View, so an empty
 		// last row (a separator, a filler) needs one more.

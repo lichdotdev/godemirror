@@ -37,7 +37,9 @@ godemirror lets you:
   a port of the `@codemirror/legacy-modes` modes CodeMirror reads them with, so
   they are tagged exactly as CodeMirror tags them; other languages are read by
   [chroma](https://github.com/alecthomas/chroma) and tagged with the
-  CodeMirror tags their Lezer grammars give the same constructs. The themes: `DarkTheme`, `LightTheme`, a ported CodeMirror theme (`OneDark`,
+  CodeMirror tags their Lezer grammars give the same constructs. `StyleTags`
+  make a Lezer grammar's tags finer, as CodeMirror's `styleTags` does
+  (`RicherJavaTags` for Java). The themes: `DarkTheme`, `LightTheme`, a ported CodeMirror theme (`OneDark`,
   `Dracula`, `GitHubLight`, `GitHubDark`, `Nord`) or a theme of your own. Highlighting runs off the UI
   goroutine: a 13,000-line file shows at once and takes its colors when they are
   ready.

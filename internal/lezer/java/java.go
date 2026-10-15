@@ -9,6 +9,7 @@ package java
 //go:generate sh -c "node ../gen/gen.mjs \"$LEZER_NODE_MODULES\" @lezer/java java teststyles.mjs | gofmt > teststyles_test.go"
 //go:generate node ../gen/golden.mjs $LEZER_NODE_MODULES @lezer/java testdata
 //go:generate node ../gen/golden.mjs $LEZER_NODE_MODULES @lezer/java testdata/styled teststyles.mjs
+//go:generate node ../gen/golden.mjs $LEZER_NODE_MODULES @lezer/java testdata/richer richer.mjs
 //go:generate node ../gen/incremental.mjs $LEZER_NODE_MODULES @lezer/java testdata/incremental
 
 import (

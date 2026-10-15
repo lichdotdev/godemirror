@@ -24,6 +24,10 @@ type Content struct {
 	// Widgets are drawn on lines, and Blocks between them, in slice order.
 	Widgets []LineWidget
 	Blocks  []BlockWidget
+	// StyleTags add rules to the Lezer grammars they name, for finer tags
+	// than CodeMirror's own. A StyleTags naming no Lezer grammar, or a
+	// rule whose path does not parse, makes Layout return an error.
+	StyleTags []StyleTags
 }
 
 // pending is highlighting being worked out off the UI goroutine: for what is
@@ -89,7 +93,7 @@ func (v *View) highlight(c Content, replacement *Content) *pending {
 			next <- after
 			return
 		}
-		doc, parsed, err := highlightAfter(c.Filename, c.Text, after)
+		doc, parsed, err := highlightAfter(c.Filename, c.Text, c.StyleTags, after)
 		next <- parsed
 		p.done <- highlighted{doc, err}
 	}()

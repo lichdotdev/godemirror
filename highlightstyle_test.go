@@ -127,7 +127,7 @@ func styledHarness(t *testing.T, text string, specs ...TagStyle) *harness {
 	t.Helper()
 	h := newHarness(t, "")
 	h.v.Theme.Highlight = NewHighlightStyle(specs...)
-	d, err := highlight("a.go", text)
+	d, err := highlight("a.go", text, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

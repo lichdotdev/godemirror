@@ -54,7 +54,7 @@ func TestIncrementalHighlightingIsAFreshOnes(t *testing.T) {
 			if hasSyntaxError(t, filename, text) {
 				t.Fatal("the sample has a syntax error")
 			}
-			_, parsed, err := highlightAfter(filename, text, nil)
+			_, parsed, err := highlightAfter(filename, text, nil, nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -65,7 +65,7 @@ func TestIncrementalHighlightingIsAFreshOnes(t *testing.T) {
 				}
 				edits++
 				var got *document
-				got, parsed, err = highlightAfter(filename, next, parsed)
+				got, parsed, err = highlightAfter(filename, next, nil, parsed)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -78,7 +78,7 @@ func TestIncrementalHighlightingIsAFreshOnes(t *testing.T) {
 
 func hasSyntaxError(t *testing.T, filename, text string) bool {
 	t.Helper()
-	_, parsed, err := highlightAfter(filename, text, nil)
+	_, parsed, err := highlightAfter(filename, text, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -87,7 +87,7 @@ func hasSyntaxError(t *testing.T, filename, text string) bool {
 
 func requireSameTags(t *testing.T, got *document, text, filename string) {
 	t.Helper()
-	want, err := highlight(filename, text)
+	want, err := highlight(filename, text, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
