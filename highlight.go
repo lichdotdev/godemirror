@@ -20,6 +20,9 @@ import (
 	"github.com/lichdotdev/godemirror/internal/lezer/javascript"
 	"github.com/lichdotdev/godemirror/internal/lezer/python"
 	"github.com/lichdotdev/godemirror/internal/lezer/rust"
+	"github.com/lichdotdev/godemirror/internal/stream"
+	"github.com/lichdotdev/godemirror/internal/stream/kotlin"
+	"github.com/lichdotdev/godemirror/internal/stream/shell"
 )
 
 // document is text cut into lines of cells, tabs expanded to tabSize stops
@@ -142,13 +145,37 @@ var lezerParsers = map[string]func() *lezer.Parser{
 	".rs":         rust.Parser,
 }
 
+// streamModes are the languages highlighted by a port of their
+// @codemirror/legacy-modes mode, by file extension, as
+// @codemirror/language-data matches them.
+var streamModes = map[string]func() stream.Mode{
+	".kt":   kotlin.New,
+	".kts":  kotlin.New,
+	".sh":   shell.New,
+	".ksh":  shell.New,
+	".bash": shell.New,
+}
+
+// streamModeFor is the mode for filename: by its name for the one name
+// @codemirror/language-data matches whole, by its extension otherwise.
+func streamModeFor(filename string) (func() stream.Mode, bool) {
+	if filepath.Base(filename) == "PKGBUILD" {
+		return shell.New, true
+	}
+	mode, ok := streamModes[strings.ToLower(filepath.Ext(filename))]
+	return mode, ok
+}
+
 // highlight builds the document for a file, colored by the Lezer grammar
-// its extension matches or else by the chroma lexer its name matches. A
-// file neither claims is shown plain, as CodeMirror shows a file with no
-// language.
+// or the stream mode it matches, or else by the chroma lexer its name
+// matches. A file none claims is shown plain, as CodeMirror shows a file
+// with no language.
 func highlight(filename, text string) (*document, error) {
 	if parser, ok := lezerParsers[strings.ToLower(filepath.Ext(filename))]; ok {
 		return highlightLezer(parser(), normalize(text)), nil
+	}
+	if mode, ok := streamModeFor(filename); ok {
+		return highlightStream(mode(), normalize(text)), nil
 	}
 	lexer := lexers.Match(filename)
 	if lexer == nil {
@@ -192,8 +219,21 @@ func highlightLezer(parser *lezer.Parser, text string) *document {
 	return w.d
 }
 
+// highlightStream builds the document of text with the tags CodeMirror
+// gives it through mode.
+func highlightStream(mode stream.Mode, text string) *document {
+	units := utf16.Encode([]rune(text))
+	w := &unitWriter{d: newDocument(), text: text}
+	stream.Highlight(units, mode, lezer.NewTagSets(), func(from, to int, tags *lezer.TagSet) {
+		w.writeTo(from, nil)
+		w.writeTo(to, tags)
+	})
+	w.writeTo(len(units), nil)
+	return w.d
+}
+
 // unitWriter adds text to a document by UTF-16 offsets, the positions a
-// Lezer tree counts in.
+// Lezer tree and a stream mode count in.
 type unitWriter struct {
 	d            *document
 	text         string

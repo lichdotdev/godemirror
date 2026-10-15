@@ -15,7 +15,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   CodeMirror tags it: a call and a declaration, a type and a variable, are told
   apart where chroma could not, and HTML's scripts, styles and `style`/`on*`
   attributes are highlighted as JavaScript and CSS. Code a grammar cannot
-  parse is left as CodeMirror leaves it. Every other language is still read by
+  parse is left as CodeMirror leaves it.
+- **Kotlin and shell scripts are highlighted as CodeMirror highlights them**,
+  by a port of the `@codemirror/legacy-modes` modes (`kotlin`, `shell`) that
+  CodeMirror runs through its `StreamLanguage`: `.kt`, `.kts`, `.sh`, `.ksh`,
+  `.bash` and a file named `PKGBUILD`. Every other language is still read by
   chroma.
 - **A token can carry several tags, and its style merges theirs.** Each tag
   takes the spec of its most specific styled tag, and the specs apply in

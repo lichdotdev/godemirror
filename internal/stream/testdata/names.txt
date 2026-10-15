@@ -1,0 +1,50 @@
+variable
+variable-2
+string-2
+def
+tag
+attribute
+type
+builtin
+qualifier
+error
+header
+property
+keyword
+string.special
+variableName.definition
+variableName.definition.local
+keyword string
+keyword string.special
+definition.variableName
+special.string
+string.comment
+string.unknown
+unknown
+unknown.special
+keyword  string
+.keyword
+keyword.
+quote
+meta
+comment
+atom
+number
+operator
+string
+link
+variableName
+typeName.standard
+special(string)
+keyword unknown
+keyword
+keyword
+variable
+variableName
+variable
+keyword/keyword
+variable/variableName
+variable/variable/def
+keyword/string/keyword
+unknown/unknown
+//keyword//

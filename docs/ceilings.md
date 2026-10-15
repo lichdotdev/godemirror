@@ -20,7 +20,7 @@ file is the trap alone.
   U+FE0F (❤️) stays one cell. Color emoji fonts (Noto Color Emoji is CBDT) cannot be rasterized by `x/image`:
   fontconfig still picks them, so those emoji are blank, two cells wide, not boxes. A wide glyph is drawn from
   the left of its two cells, so a CJK font with a 1em advance leaves a sliver on its right.
-- **Eight languages are parsed by Lezer; everything else is chroma**: a file whose extension (any case)
+- **Eight languages are parsed by Lezer, two by stream modes; everything else is chroma**: a file whose extension (any case)
   `@codemirror/language-data` gives to CSS, Go, HTML, Java, JavaScript, JSX, TypeScript, TSX, Python or Rust goes
   through `internal/lezer`, a port of `@lezer/lr`, `@lezer/common` and `@lezer/highlight` running the tables of
   `@lezer/css` 1.3.9, `@lezer/go` 1.0.1, `@lezer/html` 1.3.13, `@lezer/java` 1.1.5, `@lezer/javascript` 1.5.6,
@@ -28,11 +28,26 @@ file is the trap alone.
   Those grammars' gaps show the same half-colored way they do in CodeMirror: Java's switch expressions and
   record patterns; Go's `for range 3`, and a multi-line `/* */` that does not end a statement; TypeScript's
   `declare module "x"`, `abstract new`, labeled tuples and `let v!:`. Python is matched by extension only, so a
-  file named `BUILD` or `BUCK` with none is chroma's. Every other language is tagged by chroma with the CodeMirror tag a lezer grammar gives the same construct (`tagmap.go`), but
+  file named `BUILD` or `BUCK` with none is chroma's. Kotlin and shell are the stream modes of the next bullet. Every other language is tagged by chroma with the CodeMirror tag a lezer grammar gives the same construct (`tagmap.go`), but
   chroma knows less than a parse tree. Every call is tagged `Function(VariableName)` like the declaration, so a
   theme that colors only declarations colors calls too; Go type names used as values, and a declared name, stay
   `VariableName`; operators are all `Operator`. A ported theme is faithful tag for tag and still looks busier or
   flatter than in CodeMirror wherever chroma is coarser.
+- **Kotlin and shell are CodeMirror 5 modes, and tag as coarsely as they do**: `.kt`, `.kts`, `.sh`, `.ksh`,
+  `.bash` (any case) and a file named exactly `PKGBUILD` go through `internal/stream`, a port of
+  `@codemirror/language` 6.13.1's `StreamLanguage` and legacy token table and of `@codemirror/legacy-modes` 6.5.5's
+  `kotlin` and `shell`, tagged exactly as CodeMirror tags them. Those modes know little: Kotlin's only tags are
+  keywords, a fixed list of `java.lang` and Kotlin types, `true false null this`, strings, numbers, comments,
+  annotations (`meta`) and operators, every other name is `variableName` (calls included), but the one after
+  `class`, `fun`, `val` and the like is `definition(variableName)`, and so is a name right after that one
+  (`fun foo bar`); `!in`, `!is` and `as?` never come out as keywords. Shell tags every `$x`, `${...}` and
+  `x=` as `definition(variableName)`, knows 67 commands (`variableName.standard`) and nothing of
+  the others, and colors the rest of a heredoc's opening line as the heredoc; only a line that is exactly the
+  delimiter closes it, so an indented one under `<<-` does not. A token starting past the 10,000th UTF-16 unit
+  of a line ends that line's highlighting, as CodeMirror's `MaxLineLength` does. Only what decides a style is
+  ported: no indentation (clike's contexts), no `blankLine`, `copyState` or a mode's own `tokenTable`, which
+  neither mode has, so a third mode may need them. Like the Lezer port, every change tokenizes the whole file
+  again.
 - **The Lezer port parses a whole file from scratch**: there is no incremental reparse, so every content change
   parses the file again (about 75 ms for 13,000 lines of Java, chroma's pass takes about 490 ms). Nested parsing
   is `parseMixed` without fragments, `stopAt`, predicate overlays or `bracketed`, and with one nest per parser

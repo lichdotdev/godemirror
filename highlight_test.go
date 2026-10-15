@@ -167,3 +167,51 @@ func TestSourceTextGivesTabsBack(t *testing.T) {
 		}
 	}
 }
+
+// Kotlin and shell go through the ports of their @codemirror/legacy-modes
+// modes, for every extension and name @codemirror/language-data gives
+// them. The 😀 before each checked word is two UTF-16 units and two cells,
+// so a tag that lands on its own cells proves the offsets were converted.
+func TestHighlightTagsKotlinAndShellAsTheirLegacyModesDo(t *testing.T) {
+	kotlinCode := "val 😀 = \"s\"\n\tfun name() = 1 // c\n"
+	shellCode := "#!/bin/sh\n😀=$HOME; echo 'x' --all\n"
+	cases := []struct {
+		filename, text string
+		line           int
+		word           string
+		want           *tags.Tag
+	}{
+		{"A.kt", kotlinCode, 0, "val", tags.Keyword},
+		{"A.KT", kotlinCode, 0, `"s"`, tags.String},
+		{"build.gradle.kts", kotlinCode, 1, "name", tags.Definition(tags.VariableName)},
+		{"A.kt", kotlinCode, 1, "1", tags.Number},
+		{"A.kt", kotlinCode, 1, "// c", tags.Comment},
+		{"run.sh", shellCode, 0, "#!/bin/sh", tags.Meta},
+		{"run.bash", shellCode, 1, "$HOME", tags.Definition(tags.VariableName)},
+		{"run.ksh", shellCode, 1, "echo", tags.Standard(tags.VariableName)},
+		{"pkg/PKGBUILD", shellCode, 1, "'x'", tags.String},
+		{"PKGBUILD", shellCode, 1, "--all", tags.AttributeName},
+	}
+	for _, c := range cases {
+		d, err := highlight(c.filename, c.text)
+		if err != nil {
+			t.Fatal(err)
+		}
+		cells, want := d.lines[c.line], textCells(c.word)
+		at := -1
+		for i := range len(cells) - len(want) + 1 {
+			if slices.Equal(cells[i:i+len(want)], want) {
+				at = i
+				break
+			}
+		}
+		if at < 0 {
+			t.Fatalf("%s: %q not on line %d (%q)", c.filename, c.word, c.line, string(cells))
+		}
+		for i := at; i < at+len(want); i++ {
+			if got := onlyTag(t, d.tags[c.line][i]); got != c.want {
+				t.Errorf("%s: %q on line %d, cell %d: tag %v, want %v", c.filename, c.word, c.line, i, got, c.want)
+			}
+		}
+	}
+}
