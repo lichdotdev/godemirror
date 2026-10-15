@@ -217,6 +217,7 @@ func TestResizedRowsShowWhatAFreshViewShows(t *testing.T) {
 
 func TestNarrowingTheViewKeepsItsRowImages(t *testing.T) {
 	h := newHarness(t, strings.Repeat(strings.Repeat("x", 300)+"\nshort\n", 5))
+	waitForHighlight(h)
 	before := maps.Clone(h.v.rows)
 	h.size.X -= 2 * h.v.r.CellW()
 	h.frame()
