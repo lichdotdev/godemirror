@@ -35,7 +35,11 @@ file is the trap alone.
   flatter than in CodeMirror wherever chroma is coarser.
 - **`StyleTags` reach one grammar, by the paths styleTags has**: a rule names a node by its parents, never by its
   place among its siblings, so what the tree tells apart only by position stays out of reach: Java's `a.b` is an
-  `Identifier` under `FieldAccess` twice, and `RicherJavaTags` leaves both `variableName`. Rules for `"javascript"`
+  `Identifier` under `FieldAccess` twice, and `RicherJavaTags` leaves both `variableName`; Python's default value
+  `x=DEFAULT` is a `VariableName` under `ParamList` beside the parameter, so `RicherPythonTags` tags `DEFAULT` a
+  parameter too. A path never reads a node's text, so a builtin the grammar parses as a plain name (Go's `len`
+  and `int`, Python's `len`, JavaScript's `console`, Rust's `i32`) cannot be told from a user's, and no scope is
+  tracked, so only a parameter's declaration is tagged, never its uses. Rules for `"javascript"`
   or `"css"` do not reach the scripts and styles inside an HTML file, which `@codemirror/lang-html` parses with
   its own copies of those grammars, as configuring them does not in CodeMirror either. Each set of rules keeps
   its own parser, so content whose `StyleTags` change is parsed from scratch once, not incrementally.

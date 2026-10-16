@@ -25,6 +25,32 @@ func TestRicherJavaTagsMatchLezer(t *testing.T) {
 	lezertest.MatchGoldens(t, p, "internal/lezer/java/testdata/richer")
 }
 
+// TestRicherTagsMatchLezer requires of each Richer set the trees and spans
+// the real Lezer grammar gives configured with the same styleTags, its
+// grammar's richer.mjs, as golden.mjs wrote them down.
+func TestRicherTagsMatchLezer(t *testing.T) {
+	cases := []struct {
+		file  string
+		style StyleTags
+		dir   string
+	}{
+		{"richer.go", RicherGoTags(), "internal/lezer/golang/testdata/richer"},
+		{"richer.js", RicherJavaScriptTags(), "internal/lezer/javascript/testdata/richer/js"},
+		{"richer.ts", RicherJavaScriptTags(), "internal/lezer/javascript/testdata/richer/ts"},
+		{"richer.py", RicherPythonTags(), "internal/lezer/python/testdata/richer"},
+		{"richer.rs", RicherRustTags(), "internal/lezer/rust/testdata/richer"},
+	}
+	for _, c := range cases {
+		t.Run(c.file, func(t *testing.T) {
+			p, err := lezerParser(c.file, []StyleTags{c.style})
+			if err != nil {
+				t.Fatal(err)
+			}
+			lezertest.MatchGoldens(t, p, c.dir)
+		})
+	}
+}
+
 const enumSource = "enum Kind {\n\tOUTFLOW(\"B\"), INFLOW;\n\tprivate final String value;\n}\n"
 
 // tagAt is the one tag of the cell where word starts on line.
@@ -95,4 +121,36 @@ func layoutUntilHighlighted(v *View) error {
 		}
 	}
 	return nil
+}
+
+// A parameter declaration under the Richer sets is
+// definition(local(variableName)), a use stays variableName, and Go's
+// make, a keyword @lezer/go leaves untagged, is a standard function.
+func TestRicherTagsTellParametersAndBuiltins(t *testing.T) {
+	param := tags.Definition(tags.Local(tags.VariableName))
+	cases := []struct {
+		file, text string
+		style      StyleTags
+		line       int
+		word       string
+		want       *tags.Tag
+	}{
+		{"p.go", "package p\n\nfunc f(alpha int) int { return alpha }\n", RicherGoTags(), 2, "alpha", param},
+		{"p.go", "package p\n\nvar s = make([]int, 0)\n", RicherGoTags(), 2, "make", tags.Function(tags.Standard(tags.VariableName))},
+		{"A.java", "class A {\n\tvoid f(int alpha) {}\n}\n", RicherJavaTags(), 1, "alpha", param},
+		{"A.java", "class A {\n\tRunnable r = alpha -> {};\n}\n", RicherJavaTags(), 1, "alpha", param},
+		{"p.js", "function f(alpha) { return alpha }\n", RicherJavaScriptTags(), 0, "alpha", param},
+		{"p.ts", "const f = (alpha: number) => 0\n", RicherJavaScriptTags(), 0, "alpha", param},
+		{"p.py", "def f(alpha):\n    return alpha\n", RicherPythonTags(), 0, "alpha", param},
+		{"p.py", "def f(alpha):\n    return alpha\n", RicherPythonTags(), 1, "alpha", tags.VariableName},
+		{"p.rs", "fn f(alpha: i32) -> i32 { alpha }\n", RicherRustTags(), 0, "alpha", param},
+	}
+	for _, c := range cases {
+		h := newHarness(t, "")
+		h.v.SetContent(Content{Filename: c.file, Text: c.text, StyleTags: []StyleTags{c.style}})
+		waitForHighlight(h)
+		if got := tagAt(t, h.v, c.line, c.word); got != c.want {
+			t.Errorf("%s: %q on line %d is %v, want %v", c.file, c.word, c.line, got, c.want)
+		}
+	}
 }

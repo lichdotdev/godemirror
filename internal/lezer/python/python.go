@@ -9,6 +9,7 @@ package python
 
 //go:generate sh -c "node ../gen/gen.mjs \"$LEZER_NODE_MODULES\" @lezer/python python | gofmt > spec_generated.go"
 //go:generate node ../gen/golden.mjs $LEZER_NODE_MODULES @lezer/python testdata
+//go:generate node ../gen/golden.mjs $LEZER_NODE_MODULES @lezer/python testdata/richer richer.mjs
 //go:generate node ../gen/incremental.mjs $LEZER_NODE_MODULES @lezer/python testdata/incremental
 
 import (

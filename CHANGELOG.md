@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **`RicherGoTags`, `RicherJavaScriptTags` (JavaScript and TypeScript),
+  `RicherPythonTags` and `RicherRustTags`**, opt-in rules like
+  `RicherJavaTags`: a parameter's declaration is
+  `definition(local(variableName))`, which a theme coloring
+  `definition(variableName)` still colors; Go's `make` is
+  `function(standard(variableName))` where `@lezer/go` left it untagged.
+
+### Changed
+
+- **`RicherJavaTags` also tags a method's, constructor's or lambda's
+  parameter** `definition(local(variableName))`, as the new Richer sets do.
+
 ## [0.5.0] - 2026-10-15
 
 ### Added

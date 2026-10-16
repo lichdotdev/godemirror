@@ -1,0 +1,13 @@
+package richer
+
+func (r *Ring) Push(v int, rest ...int) (n int, err error) {
+	buf := make([]int, 0, len(rest))
+	p := new(Ring)
+	each := func(x int) { buf = append(buf, x) }
+	each(v)
+	return r.size + len(buf), p.err
+}
+
+type Pusher interface {
+	Push(v int, rest ...int) (int, error)
+}

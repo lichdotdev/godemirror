@@ -10,5 +10,7 @@ export default ({ styleTags, tags: t }) => [
     "FieldDeclaration/VariableDeclarator/Definition": t.definition(t.propertyName),
     "PackageDeclaration/Identifier ImportDeclaration/Identifier": t.namespace,
     "PackageDeclaration/ScopedIdentifier! ImportDeclaration/ScopedIdentifier!": t.namespace,
+    "FormalParameter/Definition SpreadParameter/VariableDeclarator/Definition InferredParameters/Definition LambdaExpression/Definition":
+      t.definition(t.local(t.variableName)),
   }),
 ];

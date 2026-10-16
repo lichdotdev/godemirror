@@ -103,10 +103,10 @@ tree Program(PackageDeclaration(package,ScopedIdentifier(ScopedIdentifier(Identi
 565 573 definition(variableName)
 573 574 paren
 574 580 typeName
-581 586 definition(variableName)
+581 586 local(definition(variableName))
 586 587 separator
 588 591 standard(typeName)
-592 598 definition(variableName)
+592 598 local(definition(variableName))
 598 599 paren
 600 601 brace
 610 614 self
