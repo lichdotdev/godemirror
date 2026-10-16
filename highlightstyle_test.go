@@ -222,3 +222,29 @@ func TestChangingSpecsLeavesTheStyleAsItIs(t *testing.T) {
 		t.Errorf("keyword = %v, want red", got.Color)
 	}
 }
+
+// The zinc palettes draw a parameter's declaration italic in the text color
+// and a builtin type, value or class in the type color; a called builtin
+// keeps the function color.
+func TestZincThemesStyleParametersAndBuiltins(t *testing.T) {
+	for name, c := range map[string]struct {
+		theme              Theme
+		typeName, function color.NRGBA
+	}{
+		"DarkTheme":  {DarkTheme, rgb(0x71d0d5), rgb(0x82b1ed)},
+		"LightTheme": {LightTheme, rgb(0x006e74), rgb(0x17559b)},
+	} {
+		h, text := c.theme.Highlight, c.theme.Foreground
+		if got := h.style(tagged(tags.Definition(tags.Local(tags.VariableName))), text); got.Color != text || !got.Italic || got.Bold {
+			t.Errorf("%s: parameter %+v, want italic in the text color", name, got)
+		}
+		for _, tag := range []*tags.Tag{tags.Standard(tags.TypeName), tags.Standard(tags.VariableName), tags.Standard(tags.ClassName)} {
+			if got := h.style(tagged(tag), text); got.Color != c.typeName || got.Italic || got.Bold {
+				t.Errorf("%s: %v %+v, want the type color", name, tag, got)
+			}
+		}
+		if got := h.style(tagged(tags.Function(tags.Standard(tags.VariableName))), text); got.Color != c.function || got.Italic || got.Bold {
+			t.Errorf("%s: called builtin %+v, want the function color", name, got)
+		}
+	}
+}

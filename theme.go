@@ -160,16 +160,19 @@ type zincColors struct {
 
 // zincHighlight lays c over the tags in the groups of CodeMirror's
 // classHighlighter, with processing instructions under the comment color so
-// a preprocessor directive reads as it does in most editors.
+// a preprocessor directive reads as it does in most editors. A builtin value
+// takes the type color, as standard(typeName) and standard(className) do by
+// falling back, and a parameter's declaration is italic.
 func zincHighlight(c zincColors) *HighlightStyle {
 	return NewHighlightStyle(
 		TagStyle{Tags: []*tags.Tag{tags.Keyword}, Color: c.keyword},
 		TagStyle{Tags: []*tags.Tag{tags.String, tags.Regexp, tags.Escape, tags.Special(tags.String)}, Color: c.str},
 		TagStyle{Tags: []*tags.Tag{tags.Comment, tags.ProcessingInstruction}, Color: c.comment, Italic: true},
 		TagStyle{Tags: []*tags.Tag{tags.Literal, tags.Number, tags.Bool, tags.Null, tags.Atom}, Color: c.literal},
-		TagStyle{Tags: []*tags.Tag{tags.TypeName, tags.ClassName, tags.Namespace}, Color: c.typeName},
+		TagStyle{Tags: []*tags.Tag{tags.TypeName, tags.ClassName, tags.Namespace, tags.Standard(tags.VariableName)}, Color: c.typeName},
 		TagStyle{Tags: []*tags.Tag{tags.PropertyName, tags.TagName}, Color: c.property},
 		TagStyle{Tags: []*tags.Tag{tags.Function(tags.VariableName)}, Color: c.definition},
+		TagStyle{Tags: []*tags.Tag{tags.Definition(tags.Local(tags.VariableName))}, Italic: true},
 		TagStyle{Tags: []*tags.Tag{tags.Punctuation, tags.Operator, tags.OperatorKeyword}, Color: c.punctuation},
 		TagStyle{Tags: []*tags.Tag{tags.Invalid}, Color: c.invalid},
 		TagStyle{Tags: []*tags.Tag{tags.Strong, tags.Heading}, Bold: true},

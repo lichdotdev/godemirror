@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **`DarkTheme` and `LightTheme` style parameters and builtins**: a
+  parameter's declaration, `definition(local(variableName))`, is italic in the
+  text color, and `standard(variableName)` takes the type color, as
+  `standard(typeName)` and `standard(className)` already did. A called builtin,
+  `function(standard(variableName))`, keeps the function color.
+
 ## [0.6.0] - 2026-10-15
 
 ### Added
