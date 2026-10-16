@@ -4,6 +4,8 @@
 
 package lezer
 
+import "unicode/utf16"
+
 // treeNode is a Tree in place: where it starts, its index in its parent's
 // children, and that parent, anonymous ones included.
 type treeNode struct {
@@ -232,11 +234,15 @@ func (c *cursor) matchContext(context []string) bool {
 }
 
 // styleRule is the first of the node's styleTags rules whose context
-// matches, as @lezer/highlight's getStyleTags picks it.
-func (c *cursor) styleRule() *Rule {
+// matches, as @lezer/highlight's getStyleTags picks it, and whose Names, if
+// it has some, hold the node's text.
+func (c *cursor) styleRule(text []uint16) *Rule {
 	rules := c.typ.Rules
 	for i := range rules {
-		if rules[i].Context == nil || c.matchContext(rules[i].Context) {
+		if rules[i].Context != nil && !c.matchContext(rules[i].Context) {
+			continue
+		}
+		if rules[i].Names == nil || rules[i].Names[string(utf16.Decode(text[c.from:c.to]))] {
 			return &rules[i]
 		}
 	}

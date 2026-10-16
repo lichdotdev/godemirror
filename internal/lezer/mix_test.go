@@ -68,7 +68,8 @@ func TestMixedMatchesLezer(t *testing.T) {
 func TestMixedParseOfRanges(t *testing.T) {
 	text := `class A { /* int a; @@@ int b; */ String s = "!int@@@ c;"; }`
 	ranges := []lezer.Range{{From: 0, To: 20}, {From: 23, To: 50}, {From: 53, To: 60}}
-	tree := java.Parser().WithNest(javaNest).ParseUnits(utf16.Encode([]rune(text)), ranges, nil)
+	units := utf16.Encode([]rune(text))
+	tree := java.Parser().WithNest(javaNest).ParseUnits(units, ranges, nil)
 	want := []string{
 		`tree Program(ClassDeclaration(class,Definition,ClassBody("{",BlockComment,FieldDeclaration(TypeName,VariableDeclarator(Definition,AssignOp,Program(ExpressionStatement(StringLiteral,⚠))),";"),"}")))`,
 		"0 5 definitionKeyword", "6 7 definition(variableName)", "8 9 brace", "10 12 blockComment",
@@ -77,7 +78,7 @@ func TestMixedParseOfRanges(t *testing.T) {
 		"34 40 typeName", "41 42 definition(variableName)", "43 44 definitionOperator", "45 57 string",
 		"57 58 separator", "59 60 brace",
 	}
-	lezertest.CompareLines(t, lezertest.Describe(tree), want)
+	lezertest.CompareLines(t, lezertest.Describe(tree, units), want)
 }
 
 // TestMixedIncrementalMatchesLezer runs the edit sessions under

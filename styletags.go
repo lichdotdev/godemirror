@@ -35,9 +35,17 @@ type StyleTags struct {
 // "/..." to give the tags to everything inside the node too, or in "!" to
 // stop matching inside it. A name with "/" or "!" in it is quoted, as in
 // JSON.
+//
+// Names, when set, limit the rule to nodes whose text is exactly one of
+// them, as the builtin sets (GoBuiltinTags) use it. A node whose text is not
+// among them falls through to the next rule that matches it, a rule with
+// Names being tried before any as deep without. CodeMirror's styleTags
+// cannot read a node's text, so a rule with Names has no CodeMirror
+// equivalent.
 type StyleRule struct {
 	Selector string
 	Tags     []*tags.Tag
+	Names    []string
 }
 
 // parameter is the tag the Richer sets give a parameter's declaration:
@@ -167,6 +175,7 @@ func rulesKey(styles []StyleTags) string {
 			for _, t := range r.Tags {
 				fmt.Fprintf(&b, " %s", t)
 			}
+			fmt.Fprintf(&b, " %q", r.Names)
 			b.WriteByte('\n')
 		}
 		b.WriteByte(0)
@@ -177,7 +186,7 @@ func rulesKey(styles []StyleTags) string {
 func specsOf(rules []StyleRule) []lezer.StyleSpec {
 	specs := make([]lezer.StyleSpec, len(rules))
 	for i, r := range rules {
-		specs[i] = lezer.StyleSpec{Selector: r.Selector, Tags: r.Tags}
+		specs[i] = lezer.StyleSpec{Selector: r.Selector, Tags: r.Tags, Names: r.Names}
 	}
 	return specs
 }

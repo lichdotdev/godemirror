@@ -26,12 +26,14 @@ const (
 	ModeNormal
 )
 
-// Rule is one styleTags rule of a node type: its tags, and the names of the
-// direct parents the node must have for it to apply ("" for any).
+// Rule is one styleTags rule of a node type: its tags, the names of the
+// direct parents the node must have for it to apply ("" for any), and the
+// texts it is limited to (nil for any).
 type Rule struct {
 	Tags    []*tags.Tag
 	Mode    Mode
 	Context []string
+	Names   map[string]bool
 }
 
 // TagSet is the tags that apply to a piece of text: a node's own and the
@@ -112,14 +114,16 @@ func (s *TagSets) join(a, b *TagSet) *TagSet {
 
 // Highlight calls span, in order, for every piece of t whose TagSet is not
 // empty, merging neighbors with the same set, as highlightTree does with a
-// highlighter that gives every tag its own class.
-func Highlight(t *Tree, sets *TagSets, span func(from, to int, set *TagSet)) {
-	b := &highlightBuilder{sets: sets, span: span}
+// highlighter that gives every tag its own class. text is what t was
+// parsed from, in UTF-16 code units, which rules with Names read.
+func Highlight(t *Tree, text []uint16, sets *TagSets, span func(from, to int, set *TagSet)) {
+	b := &highlightBuilder{sets: sets, span: span, text: text}
 	b.highlightRange(newCursor(t), 0, t.Length(), nil)
 	b.flush(t.Length())
 }
 
 type highlightBuilder struct {
+	text  []uint16
 	sets  *TagSets
 	span  func(from, to int, set *TagSet)
 	at    int
@@ -149,7 +153,7 @@ func (b *highlightBuilder) highlightRange(c *cursor, from, to int, inherited *Ta
 		return
 	}
 	class := inherited
-	rule := c.styleRule()
+	rule := c.styleRule(b.text)
 	if rule != nil && len(rule.Tags) > 0 {
 		own := b.sets.ofRule(rule)
 		class = b.sets.join(class, own)

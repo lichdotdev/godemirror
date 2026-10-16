@@ -37,9 +37,13 @@ file is the trap alone.
   place among its siblings, so what the tree tells apart only by position stays out of reach: Java's `a.b` is an
   `Identifier` under `FieldAccess` twice, and `RicherJavaTags` leaves both `variableName`; Python's default value
   `x=DEFAULT` is a `VariableName` under `ParamList` beside the parameter, so `RicherPythonTags` tags `DEFAULT` a
-  parameter too. A path never reads a node's text, so a builtin the grammar parses as a plain name (Go's `len`
-  and `int`, Python's `len`, JavaScript's `console`, Rust's `i32`) cannot be told from a user's, and no scope is
-  tracked, so only a parameter's declaration is tagged, never its uses. Rules for `"javascript"`
+  parameter too. No scope is tracked, so only a parameter's declaration is tagged, never its uses.
+- **`StyleRule.Names` reads a node's text, which CodeMirror's styleTags cannot**: the builtin sets
+  (`GoBuiltinTags` and the others) tag a name by its text alone, so a local variable that shadows a builtin
+  (`len := 3`) is tagged a builtin, and host globals (`console`, `window`) are left out because they differ by
+  host. A rule with Names has nothing in Lezer to be checked against, so those sets are checked by tests alone,
+  not by goldens; the paths they use still match as Lezer's do. A grammar's precedence quirks stay too:
+  `@lezer/go` parses `a + len(s)` as `(a + len)(s)`, so that `len` is not a call and keeps the plain tag. Rules for `"javascript"`
   or `"css"` do not reach the scripts and styles inside an HTML file, which `@codemirror/lang-html` parses with
   its own copies of those grammars, as configuring them does not in CodeMirror either. Each set of rules keeps
   its own parser, so content whose `StyleTags` change is parsed from scratch once, not incrementally.

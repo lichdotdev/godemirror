@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"unicode/utf16"
 
 	"github.com/lichdotdev/godemirror/internal/lezer"
 )
@@ -37,15 +38,16 @@ func MatchGoldens(t *testing.T, p *lezer.Parser, dir string) {
 				t.Fatal(err)
 			}
 			wantLines := strings.Split(strings.TrimSuffix(string(want), "\n"), "\n")
-			CompareLines(t, Describe(p.Parse(string(text))), wantLines)
+			CompareLines(t, Describe(p.Parse(string(text)), utf16.Encode([]rune(string(text)))), wantLines)
 		})
 	}
 }
 
-// Describe is what golden.mjs writes for tree: the tree, then its spans.
-func Describe(tree *lezer.Tree) []string {
+// Describe is what golden.mjs writes for tree, parsed from text: the tree,
+// then its spans.
+func Describe(tree *lezer.Tree, text []uint16) []string {
 	lines := []string{"tree " + tree.String()}
-	lezer.Highlight(tree, lezer.NewTagSets(), func(from, to int, set *lezer.TagSet) {
+	lezer.Highlight(tree, text, lezer.NewTagSets(), func(from, to int, set *lezer.TagSet) {
 		names := make([]string, len(set.Tags))
 		for i, tag := range set.Tags {
 			names[i] = tag.String()

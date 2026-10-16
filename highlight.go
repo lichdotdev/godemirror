@@ -236,7 +236,7 @@ func highlightLezer(parser *lezer.Parser, text string, prev *lezerParse) (*docum
 	units := utf16.Encode([]rune(text))
 	parsed := &lezerParse{parser: parser, units: units, tree: reparse(parser, units, prev)}
 	w := &unitWriter{d: newDocument(), text: text}
-	lezer.Highlight(parsed.tree, lezer.NewTagSets(), func(from, to int, tags *lezer.TagSet) {
+	lezer.Highlight(parsed.tree, units, lezer.NewTagSets(), func(from, to int, tags *lezer.TagSet) {
 		w.writeTo(from, nil)
 		w.writeTo(to, tags)
 	})

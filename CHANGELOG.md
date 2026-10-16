@@ -15,6 +15,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `definition(local(variableName))`, which a theme coloring
   `definition(variableName)` still colors; Go's `make` is
   `function(standard(variableName))` where `@lezer/go` left it untagged.
+- **`StyleRule.Names`** limits a rule to nodes whose text is one of them, which
+  CodeMirror's styleTags cannot say: a node with any other text falls through
+  to the next rule, and a rule with Names is tried before one as deep without.
+- **`GoBuiltinTags`, `JavaScriptBuiltinTags`, `PythonBuiltinTags` and
+  `RustBuiltinTags`** tag builtins by name with it: Go's predeclared types and
+  functions, Python's built-in functions, ECMAScript's globals and
+  TypeScript's primitive types, and Rust's primitive types, as
+  `standard(typeName)`, `standard(className)`, `standard(variableName)` or,
+  called, `function(standard(variableName))`.
 
 ### Changed
 

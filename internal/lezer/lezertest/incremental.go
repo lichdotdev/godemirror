@@ -104,21 +104,21 @@ func matchSession(t *testing.T, p *lezer.Parser, golden string) {
 	}
 	units := utf16.Encode([]rune(s.Text))
 	tree := p.ParseUnits(units, nil, nil)
-	checkStep(t, 0, tree, tree, wantLines[0])
+	checkStep(t, 0, units, tree, tree, wantLines[0])
 	for i, edits := range s.Steps {
 		var changes []lezer.ChangedRange
 		units, changes = Apply(units, edits)
 		fragments := lezer.ApplyChanges(lezer.AddTree(tree, nil, false), changes)
 		tree = p.ParseUnits(units, nil, fragments)
-		checkStep(t, i+1, tree, p.ParseUnits(units, nil, nil), wantLines[i+1])
+		checkStep(t, i+1, units, tree, p.ParseUnits(units, nil, nil), wantLines[i+1])
 	}
 }
 
-// checkStep compares a parse, and fresh, a fresh parse of the same text,
-// with its golden line.
-func checkStep(t *testing.T, step int, tree, fresh *lezer.Tree, want string) {
+// checkStep compares a parse of text, and fresh, a fresh parse of it, with
+// its golden line.
+func checkStep(t *testing.T, step int, text []uint16, tree, fresh *lezer.Tree, want string) {
 	t.Helper()
-	got := fmt.Sprintf("%d %s %s %s %s", step, hash(tree.String()), hash(tree.Layout()), spansHash(tree), spansHash(fresh))
+	got := fmt.Sprintf("%d %s %s %s %s", step, hash(tree.String()), hash(tree.Layout()), spansHash(tree, text), spansHash(fresh, text))
 	if got == want {
 		return
 	}
@@ -131,8 +131,8 @@ func checkStep(t *testing.T, step int, tree, fresh *lezer.Tree, want string) {
 	t.Fatalf("step %d: got %q, want %q", step, got, want)
 }
 
-func spansHash(tree *lezer.Tree) string {
-	return hash(strings.Join(Describe(tree)[1:], "\n"))
+func spansHash(tree *lezer.Tree, text []uint16) string {
+	return hash(strings.Join(Describe(tree, text)[1:], "\n"))
 }
 
 func hash(s string) string {

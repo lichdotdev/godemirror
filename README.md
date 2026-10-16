@@ -39,7 +39,9 @@ godemirror lets you:
   [chroma](https://github.com/alecthomas/chroma) and tagged with the
   CodeMirror tags their Lezer grammars give the same constructs. `StyleTags`
   make a Lezer grammar's tags finer, as CodeMirror's `styleTags` does
-  (`RicherJavaTags`, `RicherGoTags`, `RicherJavaScriptTags`, `RicherPythonTags`, `RicherRustTags`). The themes: `DarkTheme`, `LightTheme`, a ported CodeMirror theme (`OneDark`,
+  (`RicherJavaTags`, `RicherGoTags`, `RicherJavaScriptTags`, `RicherPythonTags`, `RicherRustTags`), and
+  `StyleRule.Names` tags a name by its text, as `GoBuiltinTags` and its siblings do for builtins.
+  The themes: `DarkTheme`, `LightTheme`, a ported CodeMirror theme (`OneDark`,
   `Dracula`, `GitHubLight`, `GitHubDark`, `Nord`) or a theme of your own. Highlighting runs off the UI
   goroutine: a 13,000-line file shows at once and takes its colors when they are
   ready.

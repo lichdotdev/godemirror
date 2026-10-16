@@ -17,10 +17,12 @@ import (
 
 // StyleSpec is one entry of a styleTags object: space-separated paths
 // ("Block/...", "Annotation!", "*/ArgumentList/Identifier") and the tags
-// the nodes they name take.
+// the nodes they name take. Names, when set, limit the entry to nodes whose
+// text is one of them, which styleTags has no way to say.
 type StyleSpec struct {
 	Selector string
 	Tags     []*tags.Tag
+	Names    []string
 }
 
 // StyleTags is what @lezer/highlight's styleTags makes of specs: each node
@@ -42,7 +44,7 @@ func StyleTags(specs []StyleSpec) (map[string][]Rule, error) {
 			if inner == "" {
 				return nil, fmt.Errorf("invalid path %q: it must end in a node name", part)
 			}
-			rule := Rule{Tags: spec.Tags, Mode: mode}
+			rule := Rule{Tags: spec.Tags, Mode: mode, Names: nameSet(spec.Names)}
 			if last > 0 {
 				rule.Context = pieces[:last]
 			}
@@ -50,6 +52,17 @@ func StyleTags(specs []StyleSpec) (map[string][]Rule, error) {
 		}
 	}
 	return byName, nil
+}
+
+func nameSet(names []string) map[string]bool {
+	if len(names) == 0 {
+		return nil
+	}
+	set := make(map[string]bool, len(names))
+	for _, n := range names {
+		set[n] = true
+	}
+	return set
 }
 
 var pathPiece = regexp.MustCompile(`^(?:"(?:[^"\\]|\\.)*?"|[^/!]+)`)
@@ -99,29 +112,40 @@ func pathName(piece string) (string, error) {
 }
 
 // sortRule puts rule into rules, after the ones at least as deep, as
-// Rule.sort does.
+// Rule.sort does, but before the ones as deep with no Names.
 func sortRule(rule Rule, rules []Rule) []Rule {
-	i := slices.IndexFunc(rules, func(r Rule) bool { return len(r.Context) < len(rule.Context) })
+	i := slices.IndexFunc(rules, func(r Rule) bool { return goesBefore(rule, r) })
 	if i < 0 {
 		i = len(rules)
 	}
 	return slices.Insert(slices.Clone(rules), i, rule)
 }
 
+// goesBefore is whether rule x is tried before y: it is deeper, or as deep
+// and limited to Names y is not limited to, so that a node whose text is not
+// among them falls through to y.
+func goesBefore(x, y Rule) bool {
+	if len(x.Context) != len(y.Context) {
+		return len(x.Context) > len(y.Context)
+	}
+	return x.Names != nil && y.Names == nil
+}
+
 // combineRules is ruleNodeProp's combine: a node type's rules a and the
-// rules b added to it, deepest first, b's first among equally deep ones,
-// leaving out a context-free rule of the mode of a context-free one just
-// taken.
+// rules b added to it, deepest first, b's first among equally deep ones
+// unless a's has Names b's lacks, leaving out a context-free rule of the
+// mode of a context-free one just taken, as long as that one has no Names
+// a node can miss.
 func combineRules(a, b []Rule) []Rule {
 	var out []Rule
 	for len(a) > 0 || len(b) > 0 {
 		var take Rule
-		if len(a) == 0 || len(b) > 0 && len(a[0].Context) <= len(b[0].Context) {
+		if len(a) == 0 || len(b) > 0 && !goesBefore(a[0], b[0]) {
 			take, b = b[0], b[1:]
 		} else {
 			take, a = a[0], a[1:]
 		}
-		if n := len(out); n > 0 && out[n-1].Mode == take.Mode && take.Context == nil && out[n-1].Context == nil {
+		if n := len(out); n > 0 && out[n-1].Names == nil && out[n-1].Mode == take.Mode && take.Context == nil && out[n-1].Context == nil {
 			continue
 		}
 		out = append(out, take)
