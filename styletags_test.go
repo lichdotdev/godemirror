@@ -129,28 +129,20 @@ func layoutUntilHighlighted(v *View) error {
 func TestRicherTagsTellParametersAndBuiltins(t *testing.T) {
 	param := tags.Definition(tags.Local(tags.VariableName))
 	cases := []struct {
-		file, text string
-		style      StyleTags
-		line       int
-		word       string
-		want       *tags.Tag
+		style StyleTags
+		textTagCase
 	}{
-		{"p.go", "package p\n\nfunc f(alpha int) int { return alpha }\n", RicherGoTags(), 2, "alpha", param},
-		{"p.go", "package p\n\nvar s = make([]int, 0)\n", RicherGoTags(), 2, "make", tags.Function(tags.Standard(tags.VariableName))},
-		{"A.java", "class A {\n\tvoid f(int alpha) {}\n}\n", RicherJavaTags(), 1, "alpha", param},
-		{"A.java", "class A {\n\tRunnable r = alpha -> {};\n}\n", RicherJavaTags(), 1, "alpha", param},
-		{"p.js", "function f(alpha) { return alpha }\n", RicherJavaScriptTags(), 0, "alpha", param},
-		{"p.ts", "const f = (alpha: number) => 0\n", RicherJavaScriptTags(), 0, "alpha", param},
-		{"p.py", "def f(alpha):\n    return alpha\n", RicherPythonTags(), 0, "alpha", param},
-		{"p.py", "def f(alpha):\n    return alpha\n", RicherPythonTags(), 1, "alpha", tags.VariableName},
-		{"p.rs", "fn f(alpha: i32) -> i32 { alpha }\n", RicherRustTags(), 0, "alpha", param},
+		{RicherGoTags(), textTagCase{"p.go", "package p\n\nfunc f(alpha int) int { return alpha }\n", 2, "alpha", param}},
+		{RicherGoTags(), textTagCase{"p.go", "package p\n\nvar s = make([]int, 0)\n", 2, "make", tags.Function(tags.Standard(tags.VariableName))}},
+		{RicherJavaTags(), textTagCase{"A.java", "class A {\n\tvoid f(int alpha) {}\n}\n", 1, "alpha", param}},
+		{RicherJavaTags(), textTagCase{"A.java", "class A {\n\tRunnable r = alpha -> {};\n}\n", 1, "alpha", param}},
+		{RicherJavaScriptTags(), textTagCase{"p.js", "function f(alpha) { return alpha }\n", 0, "alpha", param}},
+		{RicherJavaScriptTags(), textTagCase{"p.ts", "const f = (alpha: number) => 0\n", 0, "alpha", param}},
+		{RicherPythonTags(), textTagCase{"p.py", "def f(alpha):\n    return alpha\n", 0, "alpha", param}},
+		{RicherPythonTags(), textTagCase{"p.py", "def f(alpha):\n    return alpha\n", 1, "alpha", tags.VariableName}},
+		{RicherRustTags(), textTagCase{"p.rs", "fn f(alpha: i32) -> i32 { alpha }\n", 0, "alpha", param}},
 	}
 	for _, c := range cases {
-		h := newHarness(t, "")
-		h.v.SetContent(Content{Filename: c.file, Text: c.text, StyleTags: []StyleTags{c.style}})
-		waitForHighlight(h)
-		if got := tagAt(t, h.v, c.line, c.word); got != c.want {
-			t.Errorf("%s: %q on line %d is %v, want %v", c.file, c.word, c.line, got, c.want)
-		}
+		requireTags(t, []StyleTags{c.style}, []textTagCase{c.textTagCase})
 	}
 }

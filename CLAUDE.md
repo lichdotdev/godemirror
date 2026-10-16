@@ -47,7 +47,9 @@ lives in the code, its godoc, `README.md` and `docs/`; never restate any of it h
 - **`tags` mirrors `@lezer/highlight`, plus `Parse`, the inverse of `String`.** A change to it comes with a test
   checking `Set` order against the real Lezer output, and `Parse` keeps reading back every name `String` prints.
 - **A ported grammar tags exactly as CodeMirror by default.** Finer tags are opt-in `StyleTags` (like
-  `RicherJavaTags`), checked against goldens the real Lezer writes configured with the same `styleTags`.
+  `RicherJavaTags`), checked against goldens the real Lezer writes configured with the same `styleTags`. A
+  `StyleRule.Names` rule reads a node's text, which Lezer cannot, so it lives in its own set (`GoBuiltinTags`
+  and its siblings), checked by Go tests alone, and never enters a set checked by goldens.
 - **A chroma token takes the tag the language's lezer grammar gives the same construct** (`tagmap.go`). Where
   chroma cannot tell two constructs apart, that goes into `docs/ceilings.md`.
 - Bug fixes start with a test that reproduces the bug, and the test is seen failing without the fix.
