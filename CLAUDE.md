@@ -3,7 +3,7 @@
 `godemirror` is an **open-source Go library that brings CodeMirror's read-only experience to native Go**, on
 [Gio](https://gioui.org): the code view (`View`, `Split`) and the diff view (`DiffView`, unified and side by
 side). That is the goal every decision answers to: when in doubt, ask what CodeMirror gives a caller and how a Go
-caller would want it. [lich](https://github.com/omartelo/lich) is its first user, not its purpose: docs, errors
+caller would want it. [lich](https://github.com/lichdotdev/lich) is its first user, not its purpose: docs, errors
 and defaults answer to a stranger, and nothing about lich belongs in the public docs. Linux first, since fonts
 resolve through fontconfig.
 
