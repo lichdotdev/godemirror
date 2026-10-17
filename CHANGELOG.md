@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **CJK text no longer stalls a view, and views no longer hold a copy of each
+  font apiece.** A character the family lacks asked fontconfig for a fallback
+  once per distinct character, two subprocesses each inside a frame, so a diff
+  full of CJK text froze for seconds; a fallback already loaded now answers for
+  the characters it covers, and the monospace ranking is read once per process.
+  Every view, and a `DiffView` has one per file, read the font files on its
+  own: they are now read once per process and shared, 50 `DiffView`s holding
+  about 1 MB where they held 61 MB.
+
 ## [0.7.0] - 2026-10-15
 
 ### Changed

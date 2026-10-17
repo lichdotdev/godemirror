@@ -9,10 +9,10 @@ import (
 	"image"
 	"image/color"
 	"image/draw"
-	"os"
 	"os/exec"
 	"slices"
 	"strings"
+	"sync"
 
 	"golang.org/x/image/font"
 	"golang.org/x/image/font/opentype"
@@ -44,8 +44,10 @@ type Key struct {
 	Bold, Italic bool
 }
 
+// fontFace is one Rasterizer's view of a shared fontFile: its face at the
+// rasterizer's size, which is not safe to share.
 type fontFace struct {
-	sf   *sfnt.Font
+	file *fontFile
 	face font.Face
 }
 
@@ -75,6 +77,10 @@ type Rasterizer struct {
 	underline, strikethrough Rule
 	// fcLookup names a font file covering a character; nil looks nothing up.
 	fcLookup func(r rune) (string, error)
+	// fallbacks are the faces fcLookup picked so far, in the order it picked
+	// them, tried before asking it again: each ask is a subprocess, and CJK
+	// text brings thousands of characters one face covers.
+	fallbacks []*fontFace
 }
 
 // New loads the four styles fontconfig resolves for family. Call SetSize
@@ -100,10 +106,11 @@ func New(family string) (*Rasterizer, error) {
 func NewFromData(styles [4][]byte) (*Rasterizer, error) {
 	r := &Rasterizer{byFile: map[string]*fontFace{}}
 	for i, data := range styles {
-		f, err := parse(data)
+		file, err := parse(data)
 		if err != nil {
 			return nil, fmt.Errorf("%s font: %w", fontStyles[i], err)
 		}
+		f := &fontFace{file: file}
 		r.styles[i] = f
 		// byFile holds every face SetSize sizes; no path can be "data:N".
 		r.byFile[fmt.Sprint("data:", i)] = f
@@ -133,20 +140,30 @@ func fontconfigCovering(r rune) (string, error) {
 	if len(covering) == 0 {
 		return "", nil
 	}
-	// fc-list knows who covers the character but in no useful order; fc-match
-	// ranks every font against a plain monospace, so the first covering font
-	// in its ranking is the closest regular face.
-	ranked, err := exec.Command("fc-match", "-s", "-f", "%{file}\n", "monospace").Output()
+	ranked, err := rankedAgainstMono()
 	if err != nil {
-		return "", fmt.Errorf("fc-match -s monospace: %w", err)
+		return "", err
 	}
-	for f := range strings.Lines(string(ranked)) {
+	for f := range strings.Lines(ranked) {
 		if f = strings.TrimSpace(f); slices.Contains(covering, f) {
 			return f, nil
 		}
 	}
 	return covering[0], nil
 }
+
+// rankedAgainstMono is every installed font file ranked against a plain
+// monospace, asked once per process: fc-list knows who covers a character but
+// in no useful order, so the first covering font in this ranking is the
+// closest regular face. A font installed since is missing from it and is
+// picked only when it is the first fc-list names.
+var rankedAgainstMono = sync.OnceValues(func() (string, error) {
+	out, err := exec.Command("fc-match", "-s", "-f", "%{file}\n", "monospace").Output()
+	if err != nil {
+		return "", fmt.Errorf("fc-match -s monospace: %w", err)
+	}
+	return string(out), nil
+})
 
 // parseFcListFiles reads `fc-list <pattern> file`, one "path: " per line.
 func parseFcListFiles(out string) []string {
@@ -163,34 +180,18 @@ func (r *Rasterizer) load(path string) (*fontFace, error) {
 	if f, ok := r.byFile[path]; ok {
 		return f, nil
 	}
-	data, err := os.ReadFile(path)
+	file, err := openFontFile(path)
 	if err != nil {
 		return nil, err
 	}
-	f, err := parse(data)
-	if err != nil {
-		return nil, fmt.Errorf("%s: %w", path, err)
-	}
+	f := &fontFace{file: file}
 	if r.px > 0 {
-		if f.face, err = opentype.NewFace(f.sf, &opentype.FaceOptions{Size: r.px, DPI: 72}); err != nil {
+		if f.face, err = opentype.NewFace(file.sf, &opentype.FaceOptions{Size: r.px, DPI: 72}); err != nil {
 			return nil, err
 		}
 	}
 	r.byFile[path] = f
 	return f, nil
-}
-
-// parse reads a font file, or the first font of a collection.
-func parse(data []byte) (*fontFace, error) {
-	coll, err := opentype.ParseCollection(data)
-	if err != nil {
-		return nil, fmt.Errorf("parse font: %w", err)
-	}
-	sf, err := coll.Font(0)
-	if err != nil {
-		return nil, fmt.Errorf("parse font: %w", err)
-	}
-	return &fontFace{sf: sf}, nil
 }
 
 // SetSize re-creates every face at px pixels per em, which drops every cached
@@ -201,7 +202,7 @@ func (r *Rasterizer) SetSize(px float64) error {
 	}
 	r.px = px
 	for _, f := range r.byFile {
-		face, err := opentype.NewFace(f.sf, &opentype.FaceOptions{Size: px, DPI: 72})
+		face, err := opentype.NewFace(f.file.sf, &opentype.FaceOptions{Size: px, DPI: 72})
 		if err != nil {
 			return err
 		}
@@ -219,7 +220,7 @@ func (r *Rasterizer) SetSize(px float64) error {
 }
 
 func (r *Rasterizer) covers(f *fontFace, c rune) bool {
-	gi, err := f.sf.GlyphIndex(&r.buf, c)
+	gi, err := f.file.sf.GlyphIndex(&r.buf, c)
 	return err == nil && gi != 0
 }
 
@@ -245,6 +246,11 @@ func (r *Rasterizer) fallback(c rune) *fontFace {
 	if r.fcLookup == nil {
 		return nil
 	}
+	for _, f := range r.fallbacks {
+		if r.covers(f, c) {
+			return f
+		}
+	}
 	path, err := r.fcLookup(c)
 	if err != nil || path == "" {
 		return nil
@@ -253,6 +259,7 @@ func (r *Rasterizer) fallback(c rune) *fontFace {
 	if err != nil || !r.covers(f, c) {
 		return nil
 	}
+	r.fallbacks = append(r.fallbacks, f)
 	return f
 }
 
@@ -305,7 +312,7 @@ type Rule struct {
 // strikethrough sits across the middle of the x-height with the same
 // thickness, since sfnt does not read the OS/2 table that names it.
 func (r *Rasterizer) rules(m font.Metrics) (underline, strikethrough Rule) {
-	sf := r.styles[0].sf
+	sf := r.styles[0].file.sf
 	thickness, below := 1, 1
 	if post := sf.PostTable(); post != nil && sf.UnitsPerEm() > 0 {
 		scale := r.px / float64(sf.UnitsPerEm())
