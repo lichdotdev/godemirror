@@ -70,7 +70,7 @@ func TestALoadedFallbackServesTheCharactersItCovers(t *testing.T) {
 		t.Fatal(err)
 	}
 	lookups := 0
-	r.fcLookup = func(rune) (string, error) { lookups++; return fallback, nil }
+	r.lookup = func(rune) (fontRef, error) { lookups++; return fontRef{path: fallback}, nil }
 	const first, distinct = 0x474, 20 // Cyrillic Go Mono lacks and DejaVu Sans draws
 	for c := rune(first); c < first+distinct; c++ {
 		if f := r.faceFor(Key{R: c}); f == nil {
@@ -98,7 +98,7 @@ func TestRasterizersShareAFontFile(t *testing.T) {
 		if err := r.SetSize(24); err != nil {
 			t.Fatal(err)
 		}
-		if faces[i], err = r.load(path); err != nil {
+		if faces[i], err = r.load(fontRef{path: path}); err != nil {
 			t.Fatal(err)
 		}
 	}

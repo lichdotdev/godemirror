@@ -3,7 +3,7 @@
 // image per visible row so a full screen of code costs a handful of quads.
 //
 // A View shows one document and a Split shows two side by side. Build them
-// with New or NewSplit, which resolve a font family through fontconfig, or
+// with New or NewSplit, which resolve a font family among the installed fonts, or
 // with NewFromFonts, which takes the font files themselves. Give them a
 // Content and call Layout every frame.
 //
@@ -124,11 +124,14 @@ type rowImage struct {
 	used uint64
 }
 
-// New builds a view drawing family at size. family is a fontconfig name
-// (resolved with fc-match, as in "JetBrains Mono" or "monospace"), and a
-// character it lacks is drawn from whichever installed font covers it. New
-// fails with ErrNoFontconfig when fontconfig is not installed, and with
-// another error when a font file it names cannot be read.
+// New builds a view drawing family at size, as in "JetBrains Mono" or
+// "monospace", and a character family lacks is drawn from whichever installed
+// font covers it. Where fontconfig is installed, family is a fontconfig name
+// resolved with fc-match. Elsewhere (Windows, macOS, a Linux without it) it is
+// the family name a font file in the platform's font directories carries, and
+// "monospace" is the platform's own: Cascadia Mono or Consolas on Windows,
+// Menlo on macOS. New fails with ErrFontNotFound when no such font is
+// installed, and with another error when a font file cannot be read.
 func New(family string, size unit.Sp) (*View, error) {
 	r, err := glyphs.New(family)
 	if err != nil {

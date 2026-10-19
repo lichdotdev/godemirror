@@ -29,8 +29,9 @@ nothing anywhere, so the interesting boundaries are the inputs it reads:
   it, or makes it use memory out of proportion to the input is a
   vulnerability.
 - **Font files.** `NewFromFonts` parses font data it is handed, and `New` loads
-  the files fontconfig names. The same applies: a crafted font that crashes or
-  hangs the process belongs here.
+  the fonts fontconfig names or, without fontconfig, reads every font in the
+  platform's font directories. The same applies: a crafted font that crashes
+  or hangs the process belongs here.
 - **fontconfig.** `New` runs `fc-match` and `fc-list` with fixed arguments,
   never through a shell. Getting them, or anything else, run with arguments of
   an attacker's choosing is a vulnerability.

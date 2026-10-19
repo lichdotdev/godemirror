@@ -185,10 +185,12 @@ and reports frame times.
 - **Gio's system libraries** for your platform (on Linux: Wayland or X11,
   `libxkbcommon`, EGL and Vulkan headers), as listed in
   [Gio's install guide](https://gioui.org/doc/install).
-- **fontconfig** (`fc-match`, `fc-list`) to resolve font families and fall back
-  for missing characters. This is what keeps godemirror Linux-first today.
-  Without it, `New` fails with `ErrNoFontconfig`; `NewFromFonts` takes the font
-  files' contents instead and draws a character they lack as a box.
+- **fontconfig** (`fc-match`, `fc-list`), where it is installed, to resolve font
+  families and fall back for missing characters. Without it (stock Windows and
+  macOS, a bare Linux), `New` reads the fonts in the platform's font directories
+  instead and matches the family by the name each font carries, failing with
+  `ErrFontNotFound` when none has it; `NewFromFonts` takes the font files'
+  contents and draws a character they lack as a box.
 
 ## Build from source
 

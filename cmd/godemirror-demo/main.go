@@ -35,7 +35,7 @@ var (
 	flagSearch  = flag.String("search", "", "highlight the matches of this text, and select the first one")
 	flagLight   = flag.Bool("light", false, "use godemirror.LightTheme")
 	flagTheme   = flag.String("theme", "", "use a ported CodeMirror theme: onedark, dracula, githublight, githubdark or nord")
-	flagFont    = flag.String("font", "JetBrainsMono Nerd Font", "font family, resolved to files by fc-match")
+	flagFont    = flag.String("font", "JetBrainsMono Nerd Font", "font family, resolved to files as godemirror.New does")
 	flagSize    = flag.Float64("size", 13, "font size in sp")
 	flagWidth   = flag.Int("width", 1200, "window width in px")
 	flagHeight  = flag.Int("height", 800, "window height in px")

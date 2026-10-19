@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **`New`, `NewSplit` and `NewDiffView` work without fontconfig**, on Windows,
+  macOS and a Linux that lacks it: they read the fonts in the platform's font
+  directories (`%WINDIR%\Fonts` and the user's on Windows; `/System/Library/Fonts`,
+  `/Library/Fonts` and `~/Library/Fonts` on macOS; the XDG ones on Linux), match
+  the family by the name each font carries, and fall back to those fonts for a
+  character the family lacks, CJK included. `"monospace"` is the platform's
+  own (Cascadia Mono or Consolas on Windows, Menlo on macOS). Where fontconfig
+  is installed nothing changes.
+- **`ErrFontNotFound`**, what `New` fails with, without fontconfig, when no
+  installed font is of the family asked for.
+
+### Changed
+
+- **`New` no longer fails with `ErrNoFontconfig`** where fontconfig is missing.
+  A caller that tested for it to fall back to `NewFromFonts` tests for
+  `ErrFontNotFound` instead.
+
+### Deprecated
+
+- **`ErrNoFontconfig`**: `New` never returns it.
+
 ## [0.7.1] - 2026-10-17
 
 ### Fixed
