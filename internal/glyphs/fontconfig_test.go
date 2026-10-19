@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"os"
 	"path/filepath"
+	"sync"
 	"testing"
 
 	"golang.org/x/image/font/gofont/gomono"
@@ -25,6 +26,27 @@ func TestFontconfigResolvesAStyleToItsFontInACollection(t *testing.T) {
 	}
 	if want := (fontRef{path: ttc, index: 1}); refs[styleIndex(Key{Bold: true})] != want {
 		t.Fatalf("bold = %+v, want %+v", refs[styleIndex(Key{Bold: true})], want)
+	}
+}
+
+// A fallback in a collection is the font fontconfig ranks first there, not
+// the file's first: a regular fallback after its bold was drawn bold.
+func TestAFontconfigFallbackIsItsFontInACollection(t *testing.T) {
+	dir := t.TempDir()
+	ttc := filepath.Join(dir, "GoMono.ttc")
+	if err := os.WriteFile(ttc, collection(gomonobold.TTF, gomono.TTF), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	onlyFontconfigDir(t, dir)
+	ranked := rankedAgainstMono
+	rankedAgainstMono = sync.OnceValues(rankAgainstMono)
+	t.Cleanup(func() { rankedAgainstMono = ranked })
+	ref, err := fontconfigCovering('é')
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := (fontRef{path: ttc, index: 1}); ref != want {
+		t.Fatalf("é covered by %+v, want %+v", ref, want)
 	}
 }
 

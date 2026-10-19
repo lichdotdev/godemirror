@@ -110,7 +110,7 @@ func resolve(family string) ([4]fontRef, func(rune) (fontRef, error), error) {
 	if usesFontconfig {
 		refs, err := fontconfigStyles(family)
 		if !errors.Is(err, ErrNoFontconfig) {
-			return refs, fontconfigLookup, err
+			return refs, fontconfigCovering, err
 		}
 	}
 	installed := installedFonts(fontDirs())
@@ -128,11 +128,6 @@ func fontconfigStyles(family string) ([4]fontRef, error) {
 		refs[i] = ref
 	}
 	return refs, nil
-}
-
-func fontconfigLookup(c rune) (fontRef, error) {
-	path, err := fontconfigCovering(c)
-	return fontRef{path: path}, err
 }
 
 // NewFromData loads the four styles from font files' contents, in
@@ -153,69 +148,91 @@ func NewFromData(styles [4][]byte) (*Rasterizer, error) {
 	return r, nil
 }
 
-// fcMatch names the font fontconfig picks for pattern, the font's index first
-// since a path may hold a colon.
+// fontRefFormat is how fc-match and fc-list are asked to name a font: its
+// index in its file first, since a path may hold a colon.
+const fontRefFormat = "%{index}:%{file}\n"
+
+// fcMatch names the font fontconfig picks for pattern.
 func fcMatch(pattern string) (fontRef, error) {
-	out, err := exec.Command("fc-match", "-f", "%{index}:%{file}", pattern).Output()
+	out, err := exec.Command("fc-match", "-f", fontRefFormat, pattern).Output()
 	if errors.Is(err, exec.ErrNotFound) {
 		return fontRef{}, fmt.Errorf("%w (resolving %s)", ErrNoFontconfig, pattern)
 	}
 	if err != nil {
 		return fontRef{}, fmt.Errorf("fc-match %s: %w", pattern, err)
 	}
-	index, path, ok := strings.Cut(string(out), ":")
-	n, err := strconv.Atoi(index)
-	if !ok || err != nil {
-		return fontRef{}, fmt.Errorf("fc-match %s: want index:file, got %q", pattern, out)
+	refs, err := parseFontRefs(string(out))
+	if err != nil {
+		return fontRef{}, fmt.Errorf("fc-match %s: %w", pattern, err)
 	}
-	return fontRef{path: path, index: n}, nil
+	if len(refs) != 1 {
+		return fontRef{}, fmt.Errorf("fc-match %s: want one font, got %q", pattern, out)
+	}
+	return refs[0], nil
 }
 
-// fontconfigCovering names a font file that has a glyph for r.
-func fontconfigCovering(r rune) (string, error) {
+// fontconfigCovering names a font that has a glyph for r, or none with an
+// empty path.
+func fontconfigCovering(r rune) (fontRef, error) {
 	charset := fmt.Sprintf(":charset=%x", r)
-	out, err := exec.Command("fc-list", charset, "file").Output()
+	out, err := exec.Command("fc-list", "-f", fontRefFormat, charset).Output()
 	if err != nil {
-		return "", fmt.Errorf("fc-list %s: %w", charset, err)
+		return fontRef{}, fmt.Errorf("fc-list %s: %w", charset, err)
 	}
-	covering := parseFcListFiles(string(out))
+	covering, err := parseFontRefs(string(out))
+	if err != nil {
+		return fontRef{}, fmt.Errorf("fc-list %s: %w", charset, err)
+	}
 	if len(covering) == 0 {
-		return "", nil
+		return fontRef{}, nil
 	}
 	ranked, err := rankedAgainstMono()
 	if err != nil {
-		return "", err
+		return fontRef{}, err
 	}
-	for f := range strings.Lines(ranked) {
-		if f = strings.TrimSpace(f); slices.Contains(covering, f) {
+	for _, f := range ranked {
+		if slices.Contains(covering, f) {
 			return f, nil
 		}
 	}
 	return covering[0], nil
 }
 
-// rankedAgainstMono is every installed font file ranked against a plain
+// rankedAgainstMono is every installed font ranked against a plain
 // monospace, asked once per process: fc-list knows who covers a character but
 // in no useful order, so the first covering font in this ranking is the
 // closest regular face. A font installed since is missing from it and is
 // picked only when it is the first fc-list names.
-var rankedAgainstMono = sync.OnceValues(func() (string, error) {
-	out, err := exec.Command("fc-match", "-s", "-f", "%{file}\n", "monospace").Output()
-	if err != nil {
-		return "", fmt.Errorf("fc-match -s monospace: %w", err)
-	}
-	return string(out), nil
-})
+var rankedAgainstMono = sync.OnceValues(rankAgainstMono)
 
-// parseFcListFiles reads `fc-list <pattern> file`, one "path: " per line.
-func parseFcListFiles(out string) []string {
-	var files []string
-	for line := range strings.Lines(out) {
-		if f := strings.TrimSuffix(strings.TrimSpace(line), ":"); f != "" {
-			files = append(files, f)
-		}
+func rankAgainstMono() ([]fontRef, error) {
+	out, err := exec.Command("fc-match", "-s", "-f", fontRefFormat, "monospace").Output()
+	if err != nil {
+		return nil, fmt.Errorf("fc-match -s monospace: %w", err)
 	}
-	return files
+	refs, err := parseFontRefs(string(out))
+	if err != nil {
+		return nil, fmt.Errorf("fc-match -s monospace: %w", err)
+	}
+	return refs, nil
+}
+
+// parseFontRefs reads fontRefFormat, one font per line.
+func parseFontRefs(out string) ([]fontRef, error) {
+	var refs []fontRef
+	for line := range strings.Lines(out) {
+		line = strings.TrimSuffix(line, "\n")
+		if line == "" {
+			continue
+		}
+		index, path, ok := strings.Cut(line, ":")
+		n, err := strconv.Atoi(index)
+		if !ok || err != nil || path == "" {
+			return nil, fmt.Errorf("want index:file, got %q", line)
+		}
+		refs = append(refs, fontRef{path: path, index: n})
+	}
+	return refs, nil
 }
 
 func (r *Rasterizer) load(ref fontRef) (*fontFace, error) {
