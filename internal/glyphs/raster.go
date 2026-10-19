@@ -11,6 +11,7 @@ import (
 	"image/draw"
 	"os/exec"
 	"slices"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -120,11 +121,11 @@ func resolve(family string) ([4]fontRef, func(rune) (fontRef, error), error) {
 func fontconfigStyles(family string) ([4]fontRef, error) {
 	var refs [4]fontRef
 	for i, style := range fontStyles {
-		path, err := fcMatch(family + ":" + style)
+		ref, err := fcMatch(family + ":" + style)
 		if err != nil {
 			return refs, err
 		}
-		refs[i] = fontRef{path: path}
+		refs[i] = ref
 	}
 	return refs, nil
 }
@@ -152,15 +153,22 @@ func NewFromData(styles [4][]byte) (*Rasterizer, error) {
 	return r, nil
 }
 
-func fcMatch(pattern string) (string, error) {
-	out, err := exec.Command("fc-match", "-f", "%{file}", pattern).Output()
+// fcMatch names the font fontconfig picks for pattern, the font's index first
+// since a path may hold a colon.
+func fcMatch(pattern string) (fontRef, error) {
+	out, err := exec.Command("fc-match", "-f", "%{index}:%{file}", pattern).Output()
 	if errors.Is(err, exec.ErrNotFound) {
-		return "", fmt.Errorf("%w (resolving %s)", ErrNoFontconfig, pattern)
+		return fontRef{}, fmt.Errorf("%w (resolving %s)", ErrNoFontconfig, pattern)
 	}
 	if err != nil {
-		return "", fmt.Errorf("fc-match %s: %w", pattern, err)
+		return fontRef{}, fmt.Errorf("fc-match %s: %w", pattern, err)
 	}
-	return string(out), nil
+	index, path, ok := strings.Cut(string(out), ":")
+	n, err := strconv.Atoi(index)
+	if !ok || err != nil {
+		return fontRef{}, fmt.Errorf("fc-match %s: want index:file, got %q", pattern, out)
+	}
+	return fontRef{path: path, index: n}, nil
 }
 
 // fontconfigCovering names a font file that has a glyph for r.

@@ -70,7 +70,7 @@ func TestALoadedFallbackServesTheCharactersItCovers(t *testing.T) {
 		t.Fatal(err)
 	}
 	lookups := 0
-	r.lookup = func(rune) (fontRef, error) { lookups++; return fontRef{path: fallback}, nil }
+	r.lookup = func(rune) (fontRef, error) { lookups++; return fallback, nil }
 	const first, distinct = 0x474, 20 // Cyrillic Go Mono lacks and DejaVu Sans draws
 	for c := rune(first); c < first+distinct; c++ {
 		if f := r.faceFor(Key{R: c}); f == nil {
@@ -85,7 +85,7 @@ func TestALoadedFallbackServesTheCharactersItCovers(t *testing.T) {
 // Every view has a Rasterizer of its own, and a diff has a view per file; one
 // read of each font file per view was tens of megabytes per file shown.
 func TestRasterizersShareAFontFile(t *testing.T) {
-	path, err := fcMatch("DejaVu Sans")
+	ref, err := fcMatch("DejaVu Sans")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -98,12 +98,12 @@ func TestRasterizersShareAFontFile(t *testing.T) {
 		if err := r.SetSize(24); err != nil {
 			t.Fatal(err)
 		}
-		if faces[i], err = r.load(fontRef{path: path}); err != nil {
+		if faces[i], err = r.load(ref); err != nil {
 			t.Fatal(err)
 		}
 	}
 	if faces[0].file != faces[1].file {
-		t.Errorf("two rasterizers each read %s", path)
+		t.Errorf("two rasterizers each read %s", ref.path)
 	}
 	if faces[0].face == faces[1].face {
 		t.Error("two rasterizers draw through one sized face, which is not safe to share")

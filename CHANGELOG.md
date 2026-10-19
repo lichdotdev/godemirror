@@ -30,6 +30,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **`ErrNoFontconfig`**: `New` never returns it.
 
+### Fixed
+
+- **A family whose styles live in one collection file (`.ttc`) draws each
+  style from its own font.** fontconfig names a font in a collection by file
+  and index, and the index was dropped: every style came from the file's first
+  font, so bold or italic text could come out regular, or in another family
+  the collection holds.
+
 ## [0.7.1] - 2026-10-17
 
 ### Fixed
