@@ -13,14 +13,18 @@ import (
 	"golang.org/x/image/math/fixed"
 )
 
-func TestParseFcListFiles(t *testing.T) {
-	out := "/usr/share/fonts/TTF/A.ttf: \n/usr/share/fonts/TTF/B Mono.ttf: \n"
-	want := []string{"/usr/share/fonts/TTF/A.ttf", "/usr/share/fonts/TTF/B Mono.ttf"}
-	if got := parseFcListFiles(out); !slices.Equal(got, want) {
-		t.Fatalf("got %q, want %q", got, want)
+func TestParseFontRefs(t *testing.T) {
+	out := "0:/usr/share/fonts/TTF/A.ttf\n2:/usr/share/fonts/B Mono:CJK.ttc\n"
+	want := []fontRef{{path: "/usr/share/fonts/TTF/A.ttf"}, {path: "/usr/share/fonts/B Mono:CJK.ttc", index: 2}}
+	got, err := parseFontRefs(out)
+	if err != nil || !slices.Equal(got, want) {
+		t.Fatalf("got %+v, %v, want %+v", got, err, want)
 	}
-	if got := parseFcListFiles(""); len(got) != 0 {
-		t.Fatalf("empty output parsed as %q", got)
+	if got, err := parseFontRefs(""); err != nil || len(got) != 0 {
+		t.Fatalf("empty output parsed as %+v, %v", got, err)
+	}
+	if _, err := parseFontRefs("/usr/share/fonts/TTF/A.ttf\n"); err == nil {
+		t.Fatal("a line with no index parsed")
 	}
 }
 
@@ -117,9 +121,9 @@ func TestFallbackLookupsRankAgainstMonospaceOnce(t *testing.T) {
 		t.Fatal(err)
 	}
 	calls := countCalls(t, "fc-match")
-	path, err := fontconfigCovering('B')
-	if err != nil || path == "" {
-		t.Fatalf("fontconfigCovering('B') = %q, %v", path, err)
+	ref, err := fontconfigCovering('B')
+	if err != nil || ref.path == "" {
+		t.Fatalf("fontconfigCovering('B') = %+v, %v", ref, err)
 	}
 	if got := calls(); got != 0 {
 		t.Fatalf("a second lookup ran fc-match %d times, want 0", got)

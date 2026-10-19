@@ -37,6 +37,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and index, and the index was dropped: every style came from the file's first
   font, so bold or italic text could come out regular, or in another family
   the collection holds.
+- **A character the family lacks is drawn from the font fontconfig ranks
+  first, also when that font is in a collection.** The fallback took the
+  collection's first font instead: drawn bold or in another family the file
+  holds, or as a box when that font lacked the character.
 
 ## [0.7.1] - 2026-10-17
 
