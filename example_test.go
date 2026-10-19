@@ -16,8 +16,8 @@ import (
 
 func ExampleView() {
 	view, err := godemirror.New("monospace", unit.Sp(13))
-	if errors.Is(err, godemirror.ErrNoFontconfig) {
-		// Without fontconfig, hand the view the font files instead.
+	if errors.Is(err, godemirror.ErrFontNotFound) {
+		// Without an installed monospace font, hand the view the font files instead.
 		view, err = godemirror.NewFromFonts(godemirror.Fonts{Regular: gomono.TTF}, unit.Sp(13))
 	}
 	if err != nil {
@@ -52,7 +52,7 @@ func ExampleView() {
 
 func ExampleView_SetSearch() {
 	view, err := godemirror.New("monospace", unit.Sp(13))
-	if errors.Is(err, godemirror.ErrNoFontconfig) {
+	if errors.Is(err, godemirror.ErrFontNotFound) {
 		view, err = godemirror.NewFromFonts(godemirror.Fonts{Regular: gomono.TTF}, unit.Sp(13))
 	}
 	if err != nil {

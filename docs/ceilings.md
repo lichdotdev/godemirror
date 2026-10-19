@@ -4,14 +4,24 @@ Deliberate limits and shortcuts, and the traps they set. A bullet earns its plac
 work when nobody knows it and that the call site never shows. The mechanism stays in the code and its godoc; this
 file is the trap alone.
 
-- **Fonts resolve through fontconfig** (`glyphs`): `New` and `NewSplit` run `fc-match` for the family's four
-  styles, and a character the family lacks is looked up with `fc-list :charset=X` and ranked by
-  `fc-match -s monospace`, a ranking read once per process. Gio itself cannot resolve a family like a Nerd
+- **Fonts resolve through fontconfig where it is installed** (`glyphs`): `New` and `NewSplit` run `fc-match` for
+  the family's four styles, and a character the family lacks is looked up with `fc-list :charset=X` and ranked
+  by `fc-match -s monospace`, a ranking read once per process. Gio itself cannot resolve a family like a Nerd
   Font by name. A view tries the fallbacks it already loaded before looking up again, so a character two
-  fallbacks cover is drawn from the one loaded first, not the one fontconfig ranks closer. Font files are read
-  once per process and kept until it exits. A machine without fontconfig (stock macOS, Windows) gets
-  `ErrNoFontconfig` from `New`; `NewFromFonts` takes the font files instead and has no fallback at all, so a
-  character those files lack is drawn as a box.
+  fallbacks cover is drawn from the one loaded first, not the one fontconfig ranks closer. Each font is read
+  once per process and kept until it exits; two fonts of one collection read its file twice. `NewFromFonts`
+  takes the font files instead and has no fallback at all, so a character those files lack is drawn as a box.
+- **Without fontconfig, fonts are found by scanning their directories** (`glyphs`, Windows and macOS always, Linux
+  when `fc-match` is missing): the first `New` of a process reads every font in the platform's font directories
+  (0.1 s for 1,400 fonts), and a font installed afterwards is not found until the process restarts. A family
+  matches only the exact name a font carries (case aside), with no fuzzy match: where `fc-match` always picks
+  something, an unknown family is `ErrFontNotFound`. `monospace` is a fixed per-platform list (Cascadia Mono,
+  Consolas, Courier New on Windows; Menlo, Monaco, Courier New on macOS). A style outside regular, bold,
+  italic and bold italic (Light, SemiBold) is never picked, and a variable font draws its default instance for
+  every style. A missing character is looked up across the fonts in a fixed order (the monospace list, then a
+  per-platform CJK and symbol list, then the rest): Han characters take the first CJK family installed
+  (Microsoft YaHei, PingFang SC), whatever the text's language. A character no font covers reads every font
+  once per process, about 0.1 s for 1,400 fonts.
 - **A missing glyph is a box, and the miss sticks**: a character no font covers, or whose fallback lookup fails
   (fontconfig gone mid-session, a broken font file), is drawn as a box and never fails `Layout`. The miss is
   cached per character until the size changes, so a font installed while the view is open shows only after

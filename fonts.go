@@ -8,10 +8,17 @@ import (
 	"github.com/lichdotdev/godemirror/internal/glyphs"
 )
 
-// ErrNoFontconfig is what New and NewSplit fail with on a machine without
-// fontconfig's fc-match, where a family name cannot be resolved to font
-// files. NewFromFonts needs no fontconfig.
+// ErrNoFontconfig was what New failed with on a machine without fontconfig.
+//
+// Deprecated: New resolves a family without fontconfig and never fails with
+// it; test for ErrFontNotFound instead.
 var ErrNoFontconfig = glyphs.ErrNoFontconfig
+
+// ErrFontNotFound is what New fails with, on a machine without fontconfig,
+// when no font in the platform's font directories is of the family it was
+// asked for. Where fontconfig is installed, fc-match picks its closest font
+// instead.
+var ErrFontNotFound = glyphs.ErrFontNotFound
 
 // Fonts are the contents of a monospace family's font files (TrueType,
 // OpenType or a collection, whose first font is used). Regular is required;
@@ -20,9 +27,9 @@ type Fonts struct {
 	Regular, Bold, Italic, BoldItalic []byte
 }
 
-// NewFromFonts builds a view drawing fonts at size, with no fontconfig. A
-// character the fonts do not cover is drawn as a box, since there is no
-// installed font to fall back to. It fails when Regular is nil or a style is
+// NewFromFonts builds a view drawing fonts at size, without looking for
+// installed fonts. A character the fonts do not cover is drawn as a box, since
+// there is no installed font to fall back to. It fails when Regular is nil or a style is
 // not a font.
 func NewFromFonts(fonts Fonts, size unit.Sp) (*View, error) {
 	r, err := rasterizerOf(fonts)

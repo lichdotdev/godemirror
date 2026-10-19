@@ -11,6 +11,7 @@ import (
 	"image/draw"
 	"os/exec"
 	"slices"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -20,7 +21,7 @@ import (
 	"golang.org/x/image/math/fixed"
 )
 
-// ErrNoFontconfig is what New fails with when fontconfig's fc-match is not
+// ErrNoFontconfig is what fcMatch fails with when fontconfig's fc-match is not
 // installed.
 var ErrNoFontconfig = errors.New("fontconfig not found: fc-match is not on PATH")
 
@@ -61,12 +62,12 @@ type Mask struct {
 // Rasterizer turns characters into coverage masks on the CPU, once each, for
 // the renderers that keep glyphs as images instead of Gio text paths. Built by
 // New, it also owns the fallback Gio lacks: a character the family does not
-// cover is drawn from whichever installed font fontconfig says covers it. A
+// cover is drawn from whichever installed font covers it. A
 // character nothing covers, or whose lookup fails, is drawn as a box (tofu).
 type Rasterizer struct {
 	px     float64
 	styles [4]*fontFace
-	byFile map[string]*fontFace
+	byFile map[fontRef]*fontFace
 	byRune map[rune]*fontFace
 	masks  map[Key]*Mask
 	buf    sfnt.Buffer
@@ -75,58 +76,99 @@ type Rasterizer struct {
 	ascent int
 
 	underline, strikethrough Rule
-	// fcLookup names a font file covering a character; nil looks nothing up.
-	fcLookup func(r rune) (string, error)
-	// fallbacks are the faces fcLookup picked so far, in the order it picked
-	// them, tried before asking it again: each ask is a subprocess, and CJK
-	// text brings thousands of characters one face covers.
+	// lookup names a font covering a character, or none with an empty path;
+	// nil looks nothing up.
+	lookup func(r rune) (fontRef, error)
+	// fallbacks are the faces lookup picked so far, in the order it picked
+	// them, tried before asking it again: with fontconfig each ask is a
+	// subprocess, and CJK text brings thousands of characters one face covers.
 	fallbacks []*fontFace
 }
 
-// New loads the four styles fontconfig resolves for family. Call SetSize
-// before Mask or Cell. It fails with ErrNoFontconfig when fc-match is not
-// installed.
+// New loads the four styles of family. Where fontconfig is installed it
+// resolves family as fc-match does; elsewhere family must be the name of an
+// installed font (or "monospace") in the platform's font directories. Call
+// SetSize before Mask or Cell. It fails with ErrFontNotFound when no font
+// directory holds family.
 func New(family string) (*Rasterizer, error) {
-	r := &Rasterizer{byFile: map[string]*fontFace{}, fcLookup: fontconfigCovering}
-	for i, style := range fontStyles {
-		path, err := fcMatch(family + ":" + style)
-		if err != nil {
-			return nil, err
-		}
-		if r.styles[i], err = r.load(path); err != nil {
+	refs, lookup, err := resolve(family)
+	if err != nil {
+		return nil, err
+	}
+	r := &Rasterizer{byFile: map[fontRef]*fontFace{}, lookup: lookup}
+	for i, ref := range refs {
+		if r.styles[i], err = r.load(ref); err != nil {
 			return nil, err
 		}
 	}
 	return r, nil
+}
+
+// resolve names the fonts of family's four styles, in styleIndex order, and
+// the lookup of a font covering a character the family lacks.
+func resolve(family string) ([4]fontRef, func(rune) (fontRef, error), error) {
+	if usesFontconfig {
+		refs, err := fontconfigStyles(family)
+		if !errors.Is(err, ErrNoFontconfig) {
+			return refs, fontconfigLookup, err
+		}
+	}
+	installed := installedFonts(fontDirs())
+	refs, err := installed.family(family)
+	return refs, installed.covering, err
+}
+
+func fontconfigStyles(family string) ([4]fontRef, error) {
+	var refs [4]fontRef
+	for i, style := range fontStyles {
+		ref, err := fcMatch(family + ":" + style)
+		if err != nil {
+			return refs, err
+		}
+		refs[i] = ref
+	}
+	return refs, nil
+}
+
+func fontconfigLookup(c rune) (fontRef, error) {
+	path, err := fontconfigCovering(c)
+	return fontRef{path: path}, err
 }
 
 // NewFromData loads the four styles from font files' contents, in
 // styleIndex order (regular, bold, italic, bold italic). It never looks a
 // fallback up: a character the fonts do not cover is drawn as tofu.
 func NewFromData(styles [4][]byte) (*Rasterizer, error) {
-	r := &Rasterizer{byFile: map[string]*fontFace{}}
+	r := &Rasterizer{byFile: map[fontRef]*fontFace{}}
 	for i, data := range styles {
-		file, err := parse(data)
+		file, err := parse(data, 0)
 		if err != nil {
 			return nil, fmt.Errorf("%s font: %w", fontStyles[i], err)
 		}
 		f := &fontFace{file: file}
 		r.styles[i] = f
 		// byFile holds every face SetSize sizes; no path can be "data:N".
-		r.byFile[fmt.Sprint("data:", i)] = f
+		r.byFile[fontRef{path: fmt.Sprint("data:", i)}] = f
 	}
 	return r, nil
 }
 
-func fcMatch(pattern string) (string, error) {
-	out, err := exec.Command("fc-match", "-f", "%{file}", pattern).Output()
+// fcMatch names the font fontconfig picks for pattern, the font's index first
+// since a path may hold a colon.
+func fcMatch(pattern string) (fontRef, error) {
+	out, err := exec.Command("fc-match", "-f", "%{index}:%{file}", pattern).Output()
 	if errors.Is(err, exec.ErrNotFound) {
-		return "", fmt.Errorf("%w (resolving %s)", ErrNoFontconfig, pattern)
+		return fontRef{}, fmt.Errorf("%w (resolving %s)", ErrNoFontconfig, pattern)
 	}
 	if err != nil {
-		return "", fmt.Errorf("fc-match %s: %w", pattern, err)
+		return fontRef{}, fmt.Errorf("fc-match %s: %w", pattern, err)
 	}
-	return string(out), nil
+	index, path, ok := strings.Cut(string(out), ":")
+	n, err := strconv.Atoi(index)
+	if !ok || err != nil {
+		return fontRef{}, fmt.Errorf("fc-match %s: want index:file, got %q", pattern, out)
+	}
+	return fontRef{path: path, index: n}, nil
 }
 
 // fontconfigCovering names a font file that has a glyph for r.
@@ -176,11 +218,11 @@ func parseFcListFiles(out string) []string {
 	return files
 }
 
-func (r *Rasterizer) load(path string) (*fontFace, error) {
-	if f, ok := r.byFile[path]; ok {
+func (r *Rasterizer) load(ref fontRef) (*fontFace, error) {
+	if f, ok := r.byFile[ref]; ok {
 		return f, nil
 	}
-	file, err := openFontFile(path)
+	file, err := openFontFile(ref)
 	if err != nil {
 		return nil, err
 	}
@@ -190,7 +232,7 @@ func (r *Rasterizer) load(path string) (*fontFace, error) {
 			return nil, err
 		}
 	}
-	r.byFile[path] = f
+	r.byFile[ref] = f
 	return f, nil
 }
 
@@ -243,7 +285,7 @@ func (r *Rasterizer) faceFor(k Key) *fontFace {
 // that fails is no fallback: a missing glyph is not worth failing a frame
 // over, and the character still shows, as tofu.
 func (r *Rasterizer) fallback(c rune) *fontFace {
-	if r.fcLookup == nil {
+	if r.lookup == nil {
 		return nil
 	}
 	for _, f := range r.fallbacks {
@@ -251,11 +293,11 @@ func (r *Rasterizer) fallback(c rune) *fontFace {
 			return f
 		}
 	}
-	path, err := r.fcLookup(c)
-	if err != nil || path == "" {
+	ref, err := r.lookup(c)
+	if err != nil || ref.path == "" {
 		return nil
 	}
-	f, err := r.load(path)
+	f, err := r.load(ref)
 	if err != nil || !r.covers(f, c) {
 		return nil
 	}

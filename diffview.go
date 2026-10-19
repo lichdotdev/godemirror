@@ -85,8 +85,8 @@ type DiffView struct {
 	leftSide, rightSide side
 }
 
-// NewDiffView builds a diff view drawing family (a fontconfig name) at size.
-// It fails as New does.
+// NewDiffView builds a diff view drawing family at size, resolved as New
+// resolves it. It fails as New does.
 func NewDiffView(family string, size unit.Sp, opts DiffOptions) (*DiffView, error) {
 	r, err := glyphs.New(family)
 	if err != nil {
@@ -95,8 +95,8 @@ func NewDiffView(family string, size unit.Sp, opts DiffOptions) (*DiffView, erro
 	return newDiffView(r, size, opts), nil
 }
 
-// NewDiffViewFromFonts builds a diff view drawing fonts at size, with no
-// fontconfig. It fails as NewFromFonts does.
+// NewDiffViewFromFonts builds a diff view drawing fonts at size, without
+// looking for installed fonts. It fails as NewFromFonts does.
 func NewDiffViewFromFonts(fonts Fonts, size unit.Sp, opts DiffOptions) (*DiffView, error) {
 	r, err := rasterizerOf(fonts)
 	if err != nil {

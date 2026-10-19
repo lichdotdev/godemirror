@@ -9,7 +9,7 @@ import (
 	"golang.org/x/image/font/sfnt"
 )
 
-// fontFile is a parsed font file, the first face of a collection. A file on
+// fontFile is a parsed font file, or one face of a collection. A font on
 // disk is read once per process and shared by every Rasterizer: each view has
 // its own, a diff has a view per file, and a fallback such as a CJK collection
 // is tens of megabytes. sfnt keeps reading from the file's bytes, and a Font
@@ -18,36 +18,43 @@ type fontFile struct {
 	sf *sfnt.Font
 }
 
+// fontRef names one font on disk: index picks it in a collection, and is 0
+// for a file holding a single font.
+type fontRef struct {
+	path  string
+	index int
+}
+
 var fontFiles = struct {
 	sync.Mutex
-	byPath map[string]*fontFile
-}{byPath: map[string]*fontFile{}}
+	byRef map[fontRef]*fontFile
+}{byRef: map[fontRef]*fontFile{}}
 
-func openFontFile(path string) (*fontFile, error) {
+func openFontFile(ref fontRef) (*fontFile, error) {
 	fontFiles.Lock()
 	defer fontFiles.Unlock()
-	if f, ok := fontFiles.byPath[path]; ok {
+	if f, ok := fontFiles.byRef[ref]; ok {
 		return f, nil
 	}
-	data, err := os.ReadFile(path)
+	data, err := os.ReadFile(ref.path)
 	if err != nil {
 		return nil, err
 	}
-	f, err := parse(data)
+	f, err := parse(data, ref.index)
 	if err != nil {
-		return nil, fmt.Errorf("%s: %w", path, err)
+		return nil, fmt.Errorf("%s: %w", ref.path, err)
 	}
-	fontFiles.byPath[path] = f
+	fontFiles.byRef[ref] = f
 	return f, nil
 }
 
-// parse reads a font file, or the first font of a collection.
-func parse(data []byte) (*fontFile, error) {
+// parse reads a font file, or the font at index in a collection.
+func parse(data []byte, index int) (*fontFile, error) {
 	coll, err := opentype.ParseCollection(data)
 	if err != nil {
 		return nil, fmt.Errorf("parse font: %w", err)
 	}
-	sf, err := coll.Font(0)
+	sf, err := coll.Font(index)
 	if err != nil {
 		return nil, fmt.Errorf("parse font: %w", err)
 	}
