@@ -70,13 +70,12 @@ lives in the code, its godoc, `README.md` and `docs/`; never restate any of it h
 
 ## Commits and the downstream pin
 
-- Until the maintainer says otherwise, work lands as local commits on `main`: one commit per finished step (or
-  per batch that lands together), with the gate green, and a Conventional Commits message in English (`feat:`,
-  `fix:`, `docs:`, `refactor:`, `test:`, `ci:`, `chore:`). Unfinished work stays uncommitted. **Never push**, and
-  never create the GitHub repository, until the maintainer says so.
-- lich's spike builds against a pinned worktree of this repository (`../godemirror-pin`), at a commit the session
-  driving it chooses. Report every commit's hash so it can be pinned, and never touch a worktree you did not
-  create.
+- Work happens on a branch and lands on `main` through a pull request, squash-merged once CI is green, titled in
+  Conventional Commits English (`feat:`, `fix:`, `docs:`, `refactor:`, `test:`, `ci:`, `chore:`). Unfinished
+  work stays uncommitted. Commit, push, open or merge only when the maintainer asks. The one commit made
+  straight on `main` is a release's (`chore: release vX.Y.Z`).
+- lich pins a released version in both of its `go.mod` files (the root and `native/`). A change reaches lich
+  through a release (below) and a bump of both pins.
 
 ## Hard Invariants
 
