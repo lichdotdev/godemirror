@@ -137,6 +137,12 @@ file is the trap alone.
   `SetBlocks`. The rows on screen stay until the new ones are highlighted, so an expand or a new thread shows
   a moment late on a big file. `SelectedRange` and `SelectedChanges` read the rows on screen; `Chunks` reads the
   diff set last.
+- **A diff is highlighted a run of rows at a time, and runs only at its gaps**: the rows between two gaps are
+  parsed as one text, apart from the rows past either gap, so a comment or string the lines left out would have
+  closed ends at the gap. That parse starts from scratch each time; only a diff with no gaps left is reparsed
+  incrementally. Within a run, a unified diff still parses its deleted and added rows as one interleaved text,
+  so a change that opens or closes a comment can color the rows of the other side, and a run that starts inside
+  a comment opened in a gap above it shows that comment as code.
 - **A `DiffView` calls back after the frame**: `DiffOptions.Expand` and `Revert` run at the end of `Layout`,
   never while it paints, so a callback may set a new diff at once. A `DiffBlock` on a line inside a gap is not
   shown until the gap is filled.

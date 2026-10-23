@@ -212,6 +212,29 @@ func highlightAfter(filename, text string, styles []StyleTags, prev *lezerParse)
 	return d, nil, nil
 }
 
+// highlightApart is highlight for text whose lines from each of breaks on
+// are highlighted on their own, so that what the lines before a break leave
+// open (a block comment, a string) ends there. It parses from scratch.
+func highlightApart(filename, text string, breaks []int, styles []StyleTags) (*document, error) {
+	lines := strings.Split(normalize(text), "\n")
+	d := &document{}
+	from := 0
+	for _, to := range append(breaks, len(lines)) {
+		if to <= from {
+			continue
+		}
+		// The line end keeps an empty last line, which normalize drops.
+		part, err := highlight(filename, strings.Join(lines[from:to], "\n")+"\n", styles)
+		if err != nil {
+			return nil, err
+		}
+		d.lines, d.tags = append(d.lines, part.lines...), append(d.tags, part.tags...)
+		d.source, d.cellOf = append(d.source, part.source...), append(d.cellOf, part.cellOf...)
+		from = to
+	}
+	return d, nil
+}
+
 // highlightChroma builds the document of text with the tags tagmap.go gives
 // lexer's tokens.
 func highlightChroma(lexer chroma.Lexer, text string) (*document, error) {
