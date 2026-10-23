@@ -28,6 +28,10 @@ type Content struct {
 	// than CodeMirror's own. A StyleTags naming no Lezer grammar, or a
 	// rule whose path does not parse, makes Layout return an error.
 	StyleTags []StyleTags
+
+	// breaks are the lines that do not follow the line above them, a diff's
+	// rows either side of a gap: highlighting starts over at each.
+	breaks []int
 }
 
 // pending is highlighting being worked out off the UI goroutine: for what is
@@ -91,6 +95,12 @@ func (v *View) highlight(c Content, replacement *Content) *pending {
 		}
 		if v.highlightRuns.Load() != run {
 			next <- after
+			return
+		}
+		if len(c.breaks) > 0 {
+			next <- after
+			doc, err := highlightApart(c.Filename, c.Text, c.breaks, c.StyleTags)
+			p.done <- highlighted{doc, err}
 			return
 		}
 		doc, parsed, err := highlightAfter(c.Filename, c.Text, c.StyleTags, after)

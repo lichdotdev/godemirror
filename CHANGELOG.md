@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **A `DiffView` no longer colors the rows after a gap with what the rows
+  before it left open.** A block comment opened above a gap and closed in the
+  lines it leaves out used to run on as a comment through the following hunks
+  until some later `*/`; highlighting now starts over at each gap.
+
 ## [0.8.0] - 2026-10-19
 
 ### Added

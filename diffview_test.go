@@ -11,6 +11,8 @@ import (
 	"gioui.org/io/key"
 	"gioui.org/io/pointer"
 	"gioui.org/layout"
+
+	"github.com/lichdotdev/godemirror/tags"
 )
 
 func newDiffHarness(t *testing.T, opts DiffOptions) (*harness, *DiffView) {
@@ -103,6 +105,39 @@ func TestDiffViewShowsAFileOfAPatch(t *testing.T) {
 	}
 	if chunks := d.Chunks(); len(chunks) != 2 || chunks[0].Lines[0] != (ChangedLine{OldSide, 4, "b"}) {
 		t.Fatalf("Chunks() = %+v", chunks)
+	}
+}
+
+// commentAcrossGapPatch opens a block comment in its first hunk and closes
+// it in the lines its gap leaves out; a later comment's end is the first
+// "*/" the text on screen holds.
+const commentAcrossGapPatch = `diff --git a/A.java b/A.java
+--- a/A.java
++++ b/A.java
+@@ -1,2 +1,2 @@
+-class A {
++class B {
+   /**
+@@ -6,3 +6,3 @@
+-  String s = "x";
++  String s = "y";
+   /** later */
+ }
+`
+
+func TestAGapEndsWhatItsHunkLeftOpen(t *testing.T) {
+	h, d := newDiffHarness(t, DiffOptions{})
+	d.SetPatch(parsePatch(t, commentAcrossGapPatch)[0])
+	waitForHighlight(h)
+	if got := tagAt(t, h.v, 4, `"x"`); got != tags.String {
+		t.Fatalf(`unified: "x" after the gap is %v, want %v`, got, tags.String)
+	}
+	d.Split = true
+	h.v = d.split.Right
+	h.frame()
+	waitForHighlight(h)
+	if got := tagAt(t, h.v, 3, `"y"`); got != tags.String {
+		t.Fatalf(`split: "y" after the gap is %v, want %v`, got, tags.String)
 	}
 }
 

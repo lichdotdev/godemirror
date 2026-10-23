@@ -278,8 +278,11 @@ func (d *DiffView) content(s side, v *View, shows func(Side) bool) Content {
 		// last row (a separator, a filler) needs one more.
 		c.Text += "\n"
 	}
-	for _, r := range s.rows {
+	for i, r := range s.rows {
 		c.Decorations = append(c.Decorations, rowDecoration(r))
+		if r.kind == rowSeparator {
+			c.breaks = append(c.breaks, i)
+		}
 	}
 	c.Widgets = d.widgets(s, v)
 	for _, w := range c.Widgets {
