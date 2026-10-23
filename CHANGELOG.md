@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.1] - 2026-10-23
+
 ### Fixed
 
 - **A `DiffView` no longer colors the rows after a gap with what the rows
@@ -252,7 +254,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   wrapping never splits one, and a gutter label's width counts them too.
   `Pos.Col` and `Span` still count runes.
 
-[Unreleased]: https://github.com/lichdotdev/godemirror/compare/v0.8.0...HEAD
+[Unreleased]: https://github.com/lichdotdev/godemirror/compare/v0.8.1...HEAD
+[0.8.1]: https://github.com/lichdotdev/godemirror/compare/v0.8.0...v0.8.1
 [0.8.0]: https://github.com/lichdotdev/godemirror/compare/v0.7.1...v0.8.0
 [0.7.1]: https://github.com/lichdotdev/godemirror/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/lichdotdev/godemirror/compare/v0.6.0...v0.7.0
