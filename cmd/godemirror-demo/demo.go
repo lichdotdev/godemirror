@@ -119,6 +119,7 @@ func (d *demo) loadEditor() error {
 		return err
 	}
 	d.editor.Theme, d.editor.Wrap = d.theme, *flagWrap
+	d.editor.RectangularSelection, d.editor.CrosshairCursor = true, true
 	return d.editor.SetState(godemirror.EditorStateConfig{Filename: *flagFile, Doc: string(text), AllowMultipleSelections: true})
 }
 

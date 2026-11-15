@@ -24,6 +24,7 @@ import (
 	"time"
 
 	"gioui.org/io/event"
+	"gioui.org/io/key"
 	"gioui.org/io/pointer"
 	"gioui.org/layout"
 	"gioui.org/op"
@@ -104,10 +105,12 @@ type View struct {
 	// hover is the document line under the pointer, -1 for none, and hot the
 	// hover group it belongs to (LineDecoration.HoverGroup), 0 for none.
 	hover int
-	// shift is whether the last pointer event had Shift held, which a Nested
-	// view reads before the wheel arrives to know whether to claim it.
-	shift bool
 	hot   int
+	// mods are the modifiers the last pointer event had held: a Nested view
+	// reads Shift before the wheel arrives to know whether to claim it.
+	mods key.Modifiers
+	// cursor is the pointer's shape over the code.
+	cursor pointer.Cursor
 	// widgetAreas are where last frame's widgets were drawn, which a press
 	// leaves to them rather than starting a selection.
 	widgetAreas []image.Rectangle
@@ -151,6 +154,7 @@ func New(family string, size unit.Sp) (*View, error) {
 func newView(r *glyphs.Rasterizer, size unit.Sp) *View {
 	v := &View{Theme: DarkTheme, r: r, size: size, hover: -1}
 	v.selecting = viewSelector{v}
+	v.cursor = pointer.CursorText
 	v.SetContent(Content{})
 	return v
 }
@@ -230,7 +234,7 @@ func (v *View) paint(gtx layout.Context, f frame) layout.Dimensions {
 	// a line widget laid out on top must be what a press over it reaches.
 	event.Op(gtx.Ops, v)
 	cursor := clip.Rect(image.Rect(f.g.gutterW, 0, f.size.X, f.size.Y)).Push(gtx.Ops)
-	pointer.CursorText.Add(gtx.Ops)
+	v.cursor.Add(gtx.Ops)
 	cursor.Pop()
 	paint.Fill(gtx.Ops, v.Theme.Background)
 	v.paintRows(gtx, f)

@@ -30,6 +30,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `GoalColumn`.
 - **`Theme.Cursor`** colors an `Editor`'s caret: each ported theme takes its source's, and
   `DarkTheme` and `LightTheme` their foreground.
+- **Several cursors at once in an `Editor`**, from `@codemirror/commands` 6.11.1's
+  `defaultKeymap`: Ctrl+Alt+Up and Down add a cursor on the line above or below each one
+  (`addCursorAbove`, `addCursorBelow`), and Escape goes back to the main cursor, or a range to
+  its head (`simplifySelection`). `Editor.RectangularSelection` makes an Alt drag select a
+  rectangle, a range per line, and `Editor.CrosshairCursor` shows a crosshair while Alt is held,
+  as `@codemirror/view` 6.43.15's `rectangularSelection` and `crosshairCursor` do.
 
 ## [0.8.1] - 2026-10-23
 

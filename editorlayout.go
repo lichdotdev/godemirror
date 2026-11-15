@@ -42,6 +42,7 @@ func (e *Editor) Layout(gtx layout.Context) (layout.Dimensions, error) {
 		e.place(e.f)
 	}
 	e.scrollIntoView(gtx)
+	e.trackCrosshair()
 	dims := v.paint(gtx, e.f)
 	if gtx.Focused(v) {
 		e.paintCarets(gtx)

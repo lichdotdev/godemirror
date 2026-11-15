@@ -197,14 +197,15 @@ func countColumn(s string, tabSize, to int) int {
 }
 
 // findColumn is the byte offset into s at column col, as countColumn counts
-// them, or len(s) when s is too short to reach it.
-func findColumn(s string, col, tabSize int) int {
+// them, and whether s reaches that column; when it does not, the offset is
+// len(s).
+func findColumn(s string, col, tabSize int) (offset int, reached bool) {
 	for i, n := 0, 0; ; {
 		if n >= col {
-			return i
+			return i, true
 		}
 		if i == len(s) {
-			return len(s)
+			return len(s), false
 		}
 		if s[i] == '\t' {
 			n += tabSize - n%tabSize

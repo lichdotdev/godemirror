@@ -20,6 +20,8 @@ type mouseSelection struct {
 	clicks      int
 	extend      bool
 	addsToRange bool
+	// rect, when set, is a rectangular selection the press started.
+	rect *rectangle
 }
 
 // posAndSide is the position under at, a point in the view, and the side of
@@ -32,6 +34,13 @@ func (e *Editor) posAndSide(f frame, at image.Point) (pos, assoc int) {
 
 func (m *mouseSelection) press(f frame, at image.Point, clicks int, mods key.Modifiers) {
 	e := m.e
+	m.rect = nil
+	if e.RectangularSelection && mods.Contain(key.ModAlt) {
+		m.rect = &rectangle{start: e.rectPosAt(f, at), startSel: e.state.sel,
+			adds: e.state.conf.AllowMultipleSelections && mods.Contain(key.ModShortcut)}
+		e.mustDispatch(TransactionSpec{Selection: m.rect.get(e.state, m.rect.start), UserEvent: "select.pointer"})
+		return
+	}
 	m.start, m.startAssoc = e.posAndSide(f, at)
 	m.startSel = e.state.sel
 	m.clicks = clicks
@@ -40,13 +49,24 @@ func (m *mouseSelection) press(f frame, at image.Point, clicks int, mods key.Mod
 	m.selectAt(m.start, m.startAssoc)
 }
 
-func (m *mouseSelection) drag(f frame, at image.Point) { m.selectAt(m.e.posAndSide(f, at)) }
+func (m *mouseSelection) drag(f frame, at image.Point) {
+	if m.rect != nil {
+		sel := m.rect.get(m.e.state, m.e.rectPosAt(f, at))
+		m.e.mustDispatch(TransactionSpec{Selection: sel, UserEvent: "select.pointer"})
+		return
+	}
+	m.selectAt(m.e.posAndSide(f, at))
+}
 
 // mapThrough keeps the press where it was through changes made while it is
 // held.
-func (m *mouseSelection) mapThrough(c ChangeSet) {
-	m.start = c.MapPos(m.start, -1)
-	m.startSel = m.startSel.Map(c)
+func (m *mouseSelection) mapThrough(t Transaction) {
+	if m.rect != nil {
+		m.rect.mapThrough(t.StartState, t.State, t.Changes)
+		return
+	}
+	m.start = t.Changes.MapPos(m.start, -1)
+	m.startSel = m.startSel.Map(t.Changes)
 }
 
 func (m *mouseSelection) selectAt(cur, assoc int) {
