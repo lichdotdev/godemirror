@@ -88,6 +88,9 @@ type View struct {
 	target *scrollTarget
 
 	sel selection
+	// selecting is what a press and a drag select: the view's own selection,
+	// or an Editor's.
+	selecting selector
 	// others are the ranges of an Editor's selection beside its main one,
 	// which is sel.
 	others []selection
@@ -147,6 +150,7 @@ func New(family string, size unit.Sp) (*View, error) {
 
 func newView(r *glyphs.Rasterizer, size unit.Sp) *View {
 	v := &View{Theme: DarkTheme, r: r, size: size, hover: -1}
+	v.selecting = viewSelector{v}
 	v.SetContent(Content{})
 	return v
 }

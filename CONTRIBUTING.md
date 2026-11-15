@@ -69,18 +69,24 @@ ported by hand next to it, from the same package version.
 
 ## CodeMirror's editor
 
-The editor ports `@codemirror/state` (and, as they land, `@codemirror/view` and
-`@codemirror/commands`) at the versions its godoc names. Besides CodeMirror's
-own tests, ported to Go, it is checked against goldens the real packages write
-from seeded random changes and selections, by `internal/cmgen` under
-`go generate`, with the packages installed outside the repository:
+The editor ports `@codemirror/state`, `@codemirror/view`, `@codemirror/commands`
+and the indentation of `@codemirror/language` at the versions its godoc names.
+Besides CodeMirror's own tests, ported to Go, it is checked against goldens the
+real packages write from seeded random documents, changes and selections, by
+the scripts in `internal/cmgen` under `go generate`, with the packages
+installed outside the repository:
 
 ```bash
-cd "$(mktemp -d)" && npm init -y && npm install @codemirror/state@6.7.6
+cd "$(mktemp -d)" && npm init -y && npm install @codemirror/state@6.7.6 \
+  @codemirror/view@6.43.15 @codemirror/commands@6.11.1 @codemirror/language@6.13.1
 CODEMIRROR_NODE_MODULES="$PWD/node_modules" go generate .
 ```
 
-That rewrites `testdata/state.golden.json`; never edit it by hand.
+That rewrites the goldens under `testdata` and `extenders_generated.go`, the
+grapheme table `@codemirror/state` walks clusters with; never edit them by
+hand. What CodeMirror only does with a browser (moving by character or group,
+the clipboard, text input) is run in node from the functions `commands.mjs`
+copies out of `@codemirror/view`, unchanged but for taking a state.
 
 ## Before you open a pull request
 

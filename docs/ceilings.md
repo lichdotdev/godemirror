@@ -186,8 +186,30 @@ file is the trap alone.
   cells again and highlights the new text off the UI goroutine. Until that lands, the lines the change touched
   show uncolored and the others keep their old colors, even those the change recolors (a comment opened above
   them).
-- **An editor's pointer selection is the `View`'s, not yet CodeMirror's**: a press places a cursor, a drag
-  selects, Shift extends the main range and keeps the others, a double click takes the word under it as
-  `isWordRune` sees it (letters, digits, `_`) where CodeMirror groups by its character categories, and a
-  triple click the line. Ctrl+click does not add a range and a selection cannot be dragged elsewhere. Each such
-  selection reaches `OnUpdate` with `UserEvent` `"select"`, never CodeMirror's `"select.pointer"`.
+- **An editor has `@codemirror/commands`' standard keymap, as it binds off macOS, and nothing more**: arrows by
+  character and, with Ctrl, by group; Up and Down; Page Up and Down; Home and End (to the wrapped row first,
+  Home then to the line's indentation); Ctrl+Home and Ctrl+End; Shift for each; Enter; Ctrl+A; Backspace and
+  Delete, with Ctrl by group; and Ctrl+C, X and V for the clipboard. Ctrl is Gio's `ModShortcut`, Cmd on macOS,
+  so macOS gets these bindings and none of CodeMirror's macOS ones (Cmd+arrows, Alt+arrows, the Emacs keys).
+  Nothing of `defaultKeymap` beyond them is bound yet: no syntax motion, moving or copying lines, commenting,
+  bracket matching or indenting a selection, and Tab moves focus away, as without `indentWithTab`. Undo and
+  redo are not ported yet.
+- **Enter indents as CodeMirror does with no language**: the new line takes the column of its line's
+  indentation, written in `IndentUnit` (two spaces by default, so a tab-indented line goes on in spaces unless
+  `IndentUnit` is `"\t"`), and between `()`, `[]` or `{}` it breaks twice. No grammar indents by its syntax,
+  as `@codemirror/lang-*`'s `indentNodeProp` would: the Lezer ports carry no indentation. CodeMirror's quirks
+  stay: a line break at the very start of the document is indented to column 0, and the spaces before the
+  cursor are dropped when its whole line, past the document's first lines, is blank. A tab stop is 4 columns,
+  as the views draw it.
+- **A press in an editor selects at once**: `@codemirror/view`'s mouse selection is ported (a click, a drag, a
+  double click by character category, a triple click for the line and its break, Shift to extend the main
+  range, Ctrl+click to add a range, or remove the cursor under it, with `AllowMultipleSelections`), but not its
+  drag and drop, so a press inside the selection does not drag it elsewhere. After a drag the range keeps a
+  goal column of 0, as CodeMirror leaves one there, so Shift+Up or Down from it aims at the line's start.
+- **An editor's caret and text input count the whole document**: Gio's text input counts runes from the start
+  of the document, so every key, edit, selection and snippet it exchanges scans the document up to the cursor,
+  about a millisecond per megabyte. An input method that changes text away from the main cursor while there
+  are several leaves the others where their UTF-16 offsets were, unmapped, as CodeMirror does; a composition
+  is repeated at each cursor outside the main cursor's line that has the same text before it, CodeMirror's
+  behaviour with no DOM node to find the composition in. The caret is drawn only while the editor has focus,
+  and blinks every 1.2 s, starting over when a transaction sets the selection.

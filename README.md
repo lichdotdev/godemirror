@@ -72,10 +72,12 @@ godemirror lets you:
   unified view and both sides of the split.
 - **Edit, when asked.** An `Editor` holds an `EditorState`, a port of
   `@codemirror/state`: a document, a selection of one or more ranges, and
-  transactions you `Dispatch` to change them, as one change set each. It
-  reports what changed through `OnUpdate`, after the frame, so you can read the
-  new document and map your own positions through the changes. Everything
-  else stays read-only.
+  transactions you `Dispatch` to change them, as one change set each. The user
+  types (input methods included), moves and selects with CodeMirror's standard
+  keymap and its mouse selection, and copies, cuts and pastes; Enter keeps the
+  line's indentation in your `IndentUnit`. It reports what changed through
+  `OnUpdate`, after the frame, so you can read the new document and map your
+  own positions through the changes. Everything else stays read-only.
 - **Select and copy.** Drag (past an edge the view scrolls along), double click
   for a word, triple click for a line, Shift+click to extend, Ctrl+A and
   Ctrl+C. Copying gives back the text as it was, tabs included, and
@@ -146,6 +148,7 @@ The deliberate limits, and what they mean for a caller, are in
 | `ChangeSet`, `mapPos`, `MapMode` | `ChangeSet`, `MapPos`, `MapPosTrack` |
 | `EditorSelection`, `SelectionRange`, `allowMultipleSelections` | `EditorSelection`, `SelectionRange`, `EditorStateConfig.AllowMultipleSelections` |
 | `changeByRange`, `replaceSelection` | `ChangeByRange`, `ReplaceSelection` |
+| `standardKeymap`, `drawSelection`, `indentUnit`, `view.focus()` | built into `Editor`, `Theme.Cursor`, `EditorStateConfig.IndentUnit`, `Focus` |
 | `EditorView.lineWrapping` | `View.Wrap` |
 | `EditorView.theme` | `Theme` |
 | `tags` (`@lezer/highlight`), `HighlightStyle.define` | package `tags`, `NewHighlightStyle` |
@@ -252,5 +255,6 @@ HTML, Java, JavaScript, Python and Rust grammars, MIT licensed © 2018 Marijn Ha
 licensed © 2018-2021 Marijn Haverbeke and others: see
 [its license](internal/stream/LICENSE). The editor (`Editor`, `EditorState`, `ChangeSet`,
 `EditorSelection`) ports [`@codemirror/state`](https://codemirror.net/docs/ref/#state),
-MIT licensed © 2018-2021 Marijn Haverbeke and others: see
-[its license](LICENSE.codemirror).
+`@codemirror/view`, `@codemirror/commands`, `@codemirror/language` and
+`@marijn/find-cluster-break`, MIT licensed © 2018-2024 Marijn Haverbeke and
+others: see [their license](LICENSE.codemirror).

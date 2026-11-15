@@ -7,18 +7,19 @@ import (
 )
 
 // The themes below are CodeMirror themes ported spec for spec: the editor
-// theme's background, text, selection, gutter and search colors, and the
-// HighlightStyle with its tags, colors and font styles in their order. Where
-// a theme leaves a color unset, it takes the one CodeMirror's own base theme
-// would show (@codemirror/view for the gutter, @codemirror/search for
-// matches). What CodeMirror draws and godemirror does not (the cursor, the
-// active line, a match's outline, a token's background or border) is left
-// out. A theme has no divider for a Split nor colors for a diff of its own:
+// theme's background, text, selection, cursor, gutter and search colors, and
+// the HighlightStyle with its tags, colors and font styles in their order.
+// Where a theme leaves a color unset, it takes the one CodeMirror's own base
+// theme would show (@codemirror/view for the gutter and the cursor,
+// @codemirror/search for matches). What CodeMirror draws and godemirror does
+// not (the active line, a match's outline, a token's background or border)
+// is left out. A theme has no divider for a Split nor colors for a diff of its own:
 // those come from cmTheme.
 
 // OneDark is @codemirror/theme-one-dark 6.1.3.
 var OneDark = cmTheme(true, Theme{
 	Background:       rgb(0x282c34),
+	Cursor:           rgb(0x528bff),
 	Foreground:       rgb(0xabb2bf),
 	Selection:        rgb(0x3e4451),
 	GutterBackground: rgb(0x282c34),
@@ -53,6 +54,7 @@ var OneDark = cmTheme(true, Theme{
 // Dracula is @uiw/codemirror-theme-dracula 4.25.12.
 var Dracula = cmTheme(true, Theme{
 	Background:       rgb(0x282a36),
+	Cursor:           rgb(0xf8f8f0),
 	Foreground:       rgb(0xf8f8f2),
 	Selection:        rgba(0xffffff1a),
 	GutterBackground: rgb(0x282a36),
@@ -101,6 +103,7 @@ var GitHubLight = cmTheme(false, Theme{
 // sets no gutter colors, so its gutter is @codemirror/view's dark one.
 var GitHubDark = cmTheme(true, Theme{
 	Background:       rgb(0x0d1117),
+	Cursor:           rgb(0xc9d1d9),
 	Foreground:       rgb(0xc9d1d9),
 	Selection:        rgb(0x003d73),
 	GutterBackground: rgb(0x333338),
@@ -127,6 +130,7 @@ var GitHubDark = cmTheme(true, Theme{
 // invalid code is not drawn.
 var Nord = cmTheme(true, Theme{
 	Background:       rgb(0x2e3440),
+	Cursor:           rgb(0xffffff),
 	Foreground:       rgb(0xffffff),
 	Selection:        rgba(0x00000073),
 	GutterBackground: rgb(0x2e3440),
@@ -178,6 +182,10 @@ var (
 	cmSearchDark, cmSearchCurrentDark   = rgba(0x00ffff8a), rgba(0xff00ff8a)
 )
 
+// The cursor of @codemirror/view 6.43.15's base theme, for a theme that sets
+// none.
+var cmCursorLight, cmCursorDark = rgb(0x000000), rgb(0xdddddd)
+
 // cmTheme completes a ported theme with what CodeMirror has no setting for:
 // the divider of a Split and the diff colors. The diff colors are DarkTheme's
 // or LightTheme's, translucent so they sit on any background; the divider and
@@ -188,6 +196,12 @@ func cmTheme(dark bool, t Theme) Theme {
 	if dark {
 		base, overlay = DarkTheme, rgb(0xffffff)
 		searchMatch, searchCurrent = cmSearchDark, cmSearchCurrentDark
+	}
+	if t.Cursor == (color.NRGBA{}) {
+		t.Cursor = cmCursorLight
+		if dark {
+			t.Cursor = cmCursorDark
+		}
 	}
 	if t.SearchMatch == (color.NRGBA{}) {
 		t.SearchMatch, t.SearchCurrent = searchMatch, searchCurrent

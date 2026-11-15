@@ -17,9 +17,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and `SelectionRange` follow CodeMirror's: a selection holds one or more ranges, sorted and merged,
   when `EditorStateConfig.AllowMultipleSelections` is set. `ChangeByRange` and
   `ReplaceSelection` change every range at once, and `LineSeparator` keeps a CRLF file CRLF.
-  Positions are UTF-8 byte offsets, where a `View`'s `Pos` counts runes. A drag or a click
-  selects; the keyboard does not edit yet. `View`, `Split` and `DiffView` stay read-only and
-  unchanged.
+  Positions are UTF-8 byte offsets, where a `View`'s `Pos` counts runes. `View`, `Split` and
+  `DiffView` stay read-only and unchanged.
+- **An `Editor` takes the keyboard and the mouse as CodeMirror does**, ported from
+  `@codemirror/commands` 6.11.1 and `@codemirror/view` 6.43.15: typing and input methods at
+  every cursor; `standardKeymap`'s motions and deletions by character, group, line, page, line
+  boundary and document, with Shift to select; Enter keeping the line's indentation in the new
+  `EditorStateConfig.IndentUnit`; Ctrl+A; copy, cut and paste, a whole line when nothing is
+  selected, a line per cursor when the counts match; CodeMirror's mouse selection, Ctrl+click
+  adding a range; and a blinking caret per range while focused, `Focus` to give it the keyboard.
+  `TransactionSpec.ScrollIntoView` scrolls the main cursor into view, and `SelectionRange` has
+  `GoalColumn`.
+- **`Theme.Cursor`** colors an `Editor`'s caret: each ported theme takes its source's, and
+  `DarkTheme` and `LightTheme` their foreground.
 
 ## [0.8.1] - 2026-10-23
 

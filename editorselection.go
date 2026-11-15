@@ -7,8 +7,7 @@ import (
 
 // SelectionRange and EditorSelection port @codemirror/state 6.7.6's
 // selection.ts, without the bidi level of a cursor and the undirectional
-// ranges of macOS, which nothing in godemirror reads, and, until cursors move
-// by line, the goal column.
+// ranges of macOS, which nothing in godemirror reads.
 
 // rangeFlags are what a range keeps beside its bounds.
 type rangeFlags uint8
@@ -19,25 +18,32 @@ const (
 	inverted
 )
 
+// noGoal is the goal column of a range that has none.
+const noGoal = -1
+
 // SelectionRange is one range of an EditorSelection, from its anchor, the
 // side that stays put when the range is extended, to its head. Positions are
 // byte offsets into EditorState.Doc. Build one with Cursor or Range.
 type SelectionRange struct {
 	from, to int
 	flags    rangeFlags
+	// goal is the column a cursor moving up or down keeps aiming for, in
+	// cells (CodeMirror keeps pixels; a cell is a monospace character's
+	// width), or noGoal.
+	goal int
 }
 
 // Cursor is an empty range at pos.
 func Cursor(pos int) SelectionRange { return cursorAssoc(pos, 0) }
 
 func cursorAssoc(pos, assoc int) SelectionRange {
-	return SelectionRange{from: pos, to: pos, flags: assocFlag(assoc)}
+	return SelectionRange{from: pos, to: pos, flags: assocFlag(assoc), goal: noGoal}
 }
 
 // Range is the range from anchor to head, in either order.
-func Range(anchor, head int) SelectionRange { return rangeAssoc(anchor, head, 0) }
+func Range(anchor, head int) SelectionRange { return rangeWith(anchor, head, noGoal, 0) }
 
-func rangeAssoc(anchor, head, assoc int) SelectionRange {
+func rangeWith(anchor, head, goal, assoc int) SelectionRange {
 	if assoc == 0 && anchor != head {
 		assoc = -1
 		if head < anchor {
@@ -46,9 +52,9 @@ func rangeAssoc(anchor, head, assoc int) SelectionRange {
 	}
 	flags := assocFlag(assoc)
 	if head < anchor {
-		return SelectionRange{from: head, to: anchor, flags: flags | inverted}
+		return SelectionRange{from: head, to: anchor, flags: flags | inverted, goal: goal}
 	}
-	return SelectionRange{from: anchor, to: head, flags: flags}
+	return SelectionRange{from: anchor, to: head, flags: flags, goal: goal}
 }
 
 func assocFlag(assoc int) rangeFlags {
@@ -98,6 +104,17 @@ func (r SelectionRange) Assoc() int {
 	return 0
 }
 
+// GoalColumn is the column, in cells, a cursor moving up or down keeps aiming
+// for across shorter lines, ok false when it has none.
+func (r SelectionRange) GoalColumn() (col int, ok bool) { return r.goal, r.goal != noGoal }
+
+// eq is CodeMirror's SelectionRange.eq: the same anchor, head and goal
+// column, and, with includeAssoc, a cursor sticking to the same side.
+func (r SelectionRange) eq(o SelectionRange, includeAssoc bool) bool {
+	return r.Anchor() == o.Anchor() && r.Head() == o.Head() && r.goal == o.goal &&
+		(!includeAssoc || !r.Empty() || r.Assoc() == o.Assoc())
+}
+
 // Map is the range moved through changes, which start from the document
 // it is in: a cursor keeps to the character before it.
 func (r SelectionRange) Map(c ChangeSet) SelectionRange { return r.mapAssoc(c, -1) }
@@ -114,7 +131,7 @@ func (r SelectionRange) mapAssoc(c ChangeSet, assoc int) SelectionRange {
 	if from == r.from && to == r.to {
 		return r
 	}
-	return SelectionRange{from: from, to: to, flags: r.flags}
+	return SelectionRange{from: from, to: to, flags: r.flags, goal: r.goal}
 }
 
 // Extend is the range grown to cover at least [from, to], keeping its anchor
@@ -124,13 +141,13 @@ func (r SelectionRange) Extend(from, to int) SelectionRange { return r.extend(fr
 func (r SelectionRange) extend(from, to, assoc int) SelectionRange {
 	anchor := r.Anchor()
 	if from <= anchor && to >= anchor {
-		return rangeAssoc(from, to, assoc)
+		return rangeWith(from, to, noGoal, assoc)
 	}
 	head := to
 	if abs(from-anchor) > abs(to-anchor) {
 		head = from
 	}
-	return rangeAssoc(anchor, head, assoc)
+	return rangeWith(anchor, head, noGoal, assoc)
 }
 
 // EditorSelection is one or more ranges, sorted and never overlapping (two
@@ -235,6 +252,20 @@ func (s EditorSelection) AsSingle() EditorSelection {
 // range it overlaps.
 func (s EditorSelection) AddRange(r SelectionRange) EditorSelection {
 	return NewSelection(append([]SelectionRange{r}, s.ranges...), 0)
+}
+
+// eq is CodeMirror's EditorSelection.eq: the same ranges, by
+// SelectionRange.eq, and the same main range.
+func (s EditorSelection) eq(o EditorSelection, includeAssoc bool) bool {
+	if len(s.ranges) != len(o.ranges) || s.main != o.main {
+		return false
+	}
+	for i, r := range s.ranges {
+		if !r.eq(o.ranges[i], includeAssoc) {
+			return false
+		}
+	}
+	return true
 }
 
 // ReplaceRange is the selection with its range at index which replaced by r,
