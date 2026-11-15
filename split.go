@@ -77,6 +77,7 @@ func (s *Split) Layout(gtx layout.Context) (layout.Dimensions, error) {
 	extra := pairedHeights(s.Left.extra, s.Right.extra)
 	s.Left.tops = lineTops(s.Left.starts, lf.ch, extra)
 	s.Right.tops = lineTops(s.Right.starts, rf.ch, extra)
+	s.Left.laid, s.Right.laid = s.Left.doc, s.Right.doc
 	if s.Left.scrollToTarget(lgtx, lf) {
 		s.Right.scroll.Y = s.Left.scroll.Y
 	}

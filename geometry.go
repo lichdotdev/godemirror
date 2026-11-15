@@ -18,41 +18,53 @@ func (v *View) SetScrollTop(y int) { v.scroll.Y = y }
 // LineBlock is where line (0-based) shows, as CodeMirror's lineBlockAt: the
 // top and bottom of its rows, wrapped ones included, in pixels from the top
 // of the document, as the last Layout placed them; blocks under the line
-// are not part of it. line must be in [0, LineCount()); before a first
-// Layout, both are 0.
+// are not part of it. For content set since the last Layout, it is an
+// estimate, as CodeMirror's height map estimates lines it has not measured:
+// a row a line and no blocks. Before any Layout, both are 0. line must be in
+// [0, LineCount()).
 func (v *View) LineBlock(line int) (top, bottom int) {
-	if len(v.tops) < 2 || len(v.starts) < 2 {
-		return 0, 0
-	}
-	top = v.tops[line]
-	return top, top + (v.starts[line+1]-v.starts[line])*v.r.CellH()
+	tops, starts := v.placed()
+	top = tops[line]
+	return top, top + (starts[line+1]-starts[line])*v.r.CellH()
 }
 
 // LineAtHeight is the line (0-based) at y pixels from the top of the
 // document, as CodeMirror's lineBlockAtHeight: the first line above the
 // document, the last below it, and the line a block sits under over the
-// block.
+// block. It estimates as LineBlock does.
 func (v *View) LineAtHeight(y int) int {
-	if len(v.tops) < 2 {
-		return 0
-	}
-	line, _, ok := locate(v.tops, v.starts, v.r.CellH(), y)
+	tops, starts := v.placed()
+	line, _, ok := locate(tops, starts, v.r.CellH(), y)
 	switch {
 	case ok:
 		return line
 	case y < 0:
 		return 0
 	}
-	return len(v.tops) - 2
+	return len(tops) - 2
 }
 
 // ContentHeight is the document's height in pixels as the last Layout
-// placed it, blocks included, as CodeMirror's contentHeight.
+// placed it, blocks included, as CodeMirror's contentHeight. It estimates
+// as LineBlock does.
 func (v *View) ContentHeight() int {
-	if len(v.tops) == 0 {
-		return 0
+	tops, _ := v.placed()
+	return tops[len(tops)-1]
+}
+
+// placed are the tops and starts of the lines on screen: the last
+// Layout's, or, for a document set since, a row a line at the size last laid
+// out, all 0 before any.
+func (v *View) placed() (tops, starts []int) {
+	if v.laid == v.doc {
+		return v.tops, v.starts
 	}
-	return v.tops[len(v.tops)-1]
+	n, ch := len(v.doc.lines), v.r.CellH()
+	tops, starts = make([]int, n+1), make([]int, n+1)
+	for i := range n + 1 {
+		tops[i], starts[i] = i*ch, i
+	}
+	return tops, starts
 }
 
 // ScrollTop is View.ScrollTop of the editor.
