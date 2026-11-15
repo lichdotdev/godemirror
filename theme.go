@@ -15,6 +15,8 @@ type Theme struct {
 	Background color.NRGBA
 	// Selection fills the selected cells.
 	Selection color.NRGBA
+	// Cursor draws an Editor's caret.
+	Cursor color.NRGBA
 	// Border divides the two sides of a Split.
 	Border color.NRGBA
 	// GutterBackground fills the gutter, and GutterForeground draws the line
@@ -92,6 +94,7 @@ var DarkTheme = Theme{
 	Background:       rgb(0x09090b),
 	Border:           over(color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 26}, rgb(0x09090b)),
 	Selection:        color.NRGBA{R: 0x3b, G: 0x82, B: 0xf6, A: 90},
+	Cursor:           rgb(0xfafafa),
 	SearchMatch:      percent(amber400, 30),
 	SearchCurrent:    percent(orange500, 60),
 	GutterBackground: rgb(0x09090b),
@@ -125,6 +128,7 @@ var LightTheme = Theme{
 	Background:       rgb(0xebebed),
 	Border:           rgb(0xdadadd),
 	Selection:        color.NRGBA{R: 0x3b, G: 0x82, B: 0xf6, A: 90},
+	Cursor:           rgb(0x18181b),
 	SearchMatch:      percent(amber400, 55),
 	SearchCurrent:    percent(orange500, 60),
 	GutterBackground: rgb(0xebebed),

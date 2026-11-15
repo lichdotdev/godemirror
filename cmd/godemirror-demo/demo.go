@@ -49,6 +49,8 @@ type demo struct {
 	newLines           []string
 
 	comments []*comment
+	// focused is whether the editor was given the keyboard yet.
+	focused bool
 }
 
 var portedThemes = map[string]godemirror.Theme{
@@ -241,6 +243,10 @@ func (d *demo) layout(gtx layout.Context) error {
 	var err error
 	switch {
 	case d.editor != nil:
+		if !d.focused {
+			d.editor.Focus(gtx)
+			d.focused = true
+		}
 		_, err = d.editor.Layout(gtx)
 	case d.diff == nil:
 		_, err = d.file.Layout(gtx)

@@ -47,6 +47,23 @@ func (p *press) next(now time.Time, where image.Point) int {
 
 func abs(n int) int { return max(n, -n) }
 
+// selector is what a press, and a drag after it, on the view select.
+type selector interface {
+	// press is the clicks-th press in a row at at, with mods held.
+	press(f frame, at image.Point, clicks int, mods key.Modifiers)
+	// drag is the pointer, still held, moved to at.
+	drag(f frame, at image.Point)
+}
+
+// viewSelector selects in the view's own selection.
+type viewSelector struct{ v *View }
+
+func (s viewSelector) press(f frame, at image.Point, clicks int, mods key.Modifiers) {
+	s.v.selectPress(s.v.hit(f, at), clicks, mods.Contain(key.ModShift))
+}
+
+func (s viewSelector) drag(f frame, at image.Point) { s.v.sel.head = s.v.hit(f, at) }
+
 // handlePointer scrolls the view and selects with the primary button. It
 // reports whether a press started a new selection, which a split uses to
 // clear the other side's.
@@ -109,13 +126,13 @@ func (v *View) pointerEvent(gtx layout.Context, f frame, e pointer.Event) (press
 			return false
 		}
 		gtx.Execute(key.FocusCmd{Tag: v})
-		v.selectPress(v.hit(f, at), v.press.next(gtx.Now, at), e.Modifiers.Contain(key.ModShift))
+		v.selecting.press(f, at, v.press.next(gtx.Now, at), e.Modifiers)
 		v.press.dragging = true
 		v.drag.pointer = at
 		return true
 	case pointer.Drag:
 		if v.press.dragging {
-			v.sel.head = v.hit(f, at)
+			v.selecting.drag(f, at)
 			v.drag.pointer = at
 		}
 	case pointer.Release, pointer.Cancel:

@@ -1,7 +1,7 @@
 package godemirror
 
 import (
-	"slices"
+	"time"
 	"unicode/utf8"
 
 	"gioui.org/layout"
@@ -12,9 +12,10 @@ import (
 )
 
 // Editor is a View whose document can be changed, CodeMirror's EditorView
-// over an EditorState: a caller changes it with Dispatch and hears of every
-// change through OnUpdate. Its zero value is not usable; build one with
-// NewEditor or NewEditorFromFonts.
+// over an EditorState: the user types, selects, and copies, cuts and pastes
+// with the keys of CodeMirror's standard keymap; a caller changes it with
+// Dispatch, and hears of every change through OnUpdate. Its zero value is not
+// usable; build one with NewEditor or NewEditorFromFonts.
 //
 // Like a View, an Editor belongs to the goroutine that lays it out.
 type Editor struct {
@@ -39,6 +40,19 @@ type Editor struct {
 	// transactions after it.
 	reported EditorState
 	since    []Transaction
+
+	// f is the frame Layout last laid out, which the motions read.
+	f frame
+	// scrollPending is a ScrollIntoView still to do; keepOnScreen, set by a
+	// page motion, is where on screen the main cursor's row stays instead.
+	scrollPending bool
+	keepOnScreen  *int
+	mouse         mouseSelection
+	ime           imeState
+	// blinkStart is when the caret's blink last started over, and
+	// selectionSet whether a transaction set the selection since.
+	blinkStart   time.Time
+	selectionSet bool
 }
 
 // Update is what an Editor reports after a frame, as CodeMirror's
@@ -86,6 +100,8 @@ func NewEditorFromFonts(fonts Fonts, size unit.Sp) (*Editor, error) {
 
 func newEditor(v *View) *Editor {
 	e := &Editor{Theme: v.Theme, view: v}
+	e.mouse.e = e
+	v.selecting = &e.mouse
 	if err := e.SetState(EditorStateConfig{}); err != nil {
 		panic(err)
 	}
@@ -129,74 +145,15 @@ func (e *Editor) Dispatch(spec TransactionSpec) error {
 	if err != nil {
 		return err
 	}
+	if e.view.press.dragging && t.DocChanged() {
+		e.mouse.mapThrough(t.Changes)
+	}
 	e.state = t.State
 	e.unshown = e.unshown.compose(t.Changes)
 	e.since = append(e.since, t)
+	e.scrollPending = e.scrollPending || t.ScrollIntoView
+	e.selectionSet = e.selectionSet || len(t.Selection.ranges) > 0
 	return nil
-}
-
-// Layout draws the editor into the whole of gtx.Constraints.Max, as
-// View.Layout draws a view, takes the pointer selection into its state, and
-// then reports what was dispatched to OnUpdate. The errors are View.Layout's.
-func (e *Editor) Layout(gtx layout.Context) (layout.Dimensions, error) {
-	e.view.Wrap, e.view.Theme = e.Wrap, e.Theme
-	e.show()
-	dims, err := e.view.Layout(gtx)
-	if err != nil {
-		return dims, err
-	}
-	e.takeSelection()
-	e.report(gtx)
-	return dims, nil
-}
-
-// show gives the view what changed since it last showed the state.
-func (e *Editor) show() {
-	edited := !e.unshown.Empty()
-	if edited {
-		fromA, toA := len(e.shown.doc), 0
-		e.unshown.IterChanges(func(a, b, _, _ int, _ string) {
-			fromA, toA = min(fromA, a), max(toA, b)
-		})
-		keepTop := e.shown.LineAt(fromA).Number - 1
-		keepBottom := e.shown.Lines() - e.shown.LineAt(toA).Number
-		e.view.showEdit(e.state.content(), keepTop, keepBottom)
-		e.unshown = emptyChangeSet(len(e.state.doc))
-	}
-	if !edited && e.mark != nil && e.state.sel.equal(e.shown.sel) {
-		return
-	}
-	e.shown = e.state
-	ranges := e.state.sel.ranges
-	e.mark = make([]selection, len(ranges))
-	for i, r := range ranges {
-		e.mark[i] = selection{e.cellAt(r.Anchor()), e.cellAt(r.Head())}
-	}
-	e.view.sel = e.mark[e.state.sel.main]
-	e.view.others = nil
-	for i, s := range e.mark {
-		if i != e.state.sel.main {
-			e.view.others = append(e.view.others, s)
-		}
-	}
-}
-
-// takeSelection dispatches the selection the pointer or a key made on the
-// view, if it made one.
-func (e *Editor) takeSelection() {
-	v := e.view
-	if v.sel == e.mark[e.state.sel.main] && len(v.others) == len(e.mark)-1 {
-		return
-	}
-	ranges := []SelectionRange{Range(e.offsetAt(v.sel.anchor), e.offsetAt(v.sel.head))}
-	for _, s := range v.others {
-		ranges = append(ranges, Range(e.offsetAt(s.anchor), e.offsetAt(s.head)))
-	}
-	err := e.Dispatch(TransactionSpec{Selection: NewSelection(ranges, 0), UserEvent: "select"})
-	if err != nil {
-		panic("godemirror: the view's selection is outside the editor's document: " + err.Error())
-	}
-	e.show()
 }
 
 func (e *Editor) report(gtx layout.Context) {
@@ -236,10 +193,4 @@ func (e *Editor) offsetAt(p pos) int {
 		off += n
 	}
 	return l.From + off
-}
-
-// equal reports whether s and o hold the same ranges, in direction and
-// stickiness too, and the same main range.
-func (s EditorSelection) equal(o EditorSelection) bool {
-	return s.main == o.main && slices.Equal(s.ranges, o.ranges)
 }

@@ -32,6 +32,10 @@ type EditorStateConfig struct {
 	// are split on, and what SliceDoc joins lines with: "\r\n" keeps a CRLF
 	// file CRLF.
 	LineSeparator string
+	// IndentUnit is one level of indentation, as CodeMirror's indentUnit
+	// facet: a run of spaces, or of tabs, and two spaces when empty. Enter
+	// writes a new line's indentation in it.
+	IndentUnit string
 	// Filename picks the language Doc is highlighted as, as Content.Filename.
 	Filename string
 	// StyleTags add rules to the Lezer grammars they name, as
@@ -54,6 +58,11 @@ type EditorState struct {
 func newEditorState(c EditorStateConfig) (EditorState, error) {
 	conf := c
 	conf.Doc, conf.Selection = "", EditorSelection{}
+	unit, err := indentUnitOf(c.IndentUnit)
+	if err != nil {
+		return EditorState{}, err
+	}
+	conf.IndentUnit = unit
 	s := EditorState{doc: normalizeBreaks(c.Doc, c.LineSeparator), conf: &conf}
 	s.lines = lineStarts(s.doc)
 	s.sel = c.Selection
@@ -215,6 +224,9 @@ type TransactionSpec struct {
 	// names ("input.type", "delete.backward", "select.pointer"), for
 	// Transaction.IsUserEvent.
 	UserEvent string
+	// ScrollIntoView scrolls the main range's head into view on the next
+	// Layout.
+	ScrollIntoView bool
 
 	// set is changes ChangeByRange already merged, made before Changes.
 	set *ChangeSet
@@ -230,8 +242,9 @@ type Transaction struct {
 	Changes ChangeSet
 	// Selection is the selection the transaction set, or the zero
 	// EditorSelection when it only mapped the one before.
-	Selection EditorSelection
-	UserEvent string
+	Selection      EditorSelection
+	UserEvent      string
+	ScrollIntoView bool
 }
 
 // DocChanged reports whether the transaction changes the document.
@@ -271,5 +284,5 @@ func (s EditorState) update(spec TransactionSpec) (Transaction, error) {
 	if !s.conf.AllowMultipleSelections {
 		next.sel = next.sel.AsSingle()
 	}
-	return Transaction{StartState: s, State: next, Changes: changes, Selection: spec.Selection, UserEvent: spec.UserEvent}, nil
+	return Transaction{StartState: s, State: next, Changes: changes, Selection: spec.Selection, UserEvent: spec.UserEvent, ScrollIntoView: spec.ScrollIntoView}, nil
 }

@@ -94,7 +94,7 @@ func (v *View) autoScroll(gtx layout.Context, f frame, limit image.Point) {
 	d.at = gtx.Now
 	v.scroll.X, d.rest.X = advance(v.scroll.X, d.rest.X+autoScrollSpeed(gtx, over.X)*elapsed, limit.X)
 	v.scroll.Y, d.rest.Y = advance(v.scroll.Y, d.rest.Y+autoScrollSpeed(gtx, over.Y)*elapsed, limit.Y)
-	v.sel.head = v.hit(f, d.pointer)
+	v.selecting.drag(f, d.pointer)
 	if room(over.X, v.scroll.X, limit.X) || room(over.Y, v.scroll.Y, limit.Y) {
 		gtx.Execute(op.InvalidateCmd{})
 	}
