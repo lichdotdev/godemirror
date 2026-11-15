@@ -75,11 +75,12 @@ godemirror lets you:
   transactions you `Dispatch` to change them, as one change set each. The user
   types (input methods included), moves and selects with CodeMirror's standard
   keymap and its mouse selection, adds cursors above and below, at the next
-  occurrence (Ctrl+D) or at every one, or drags a rectangle with Alt, and
-  copies, cuts and pastes; Enter keeps the line's indentation in your
-  `IndentUnit`. It reports what changed through `OnUpdate`, after the frame, so
-  you can read the new document and map your own positions through the
-  changes. Everything else stays read-only.
+  occurrence (Ctrl+D) or at every one, or drags a rectangle with Alt, copies,
+  cuts and pastes, and undoes and redoes as CodeMirror's history groups the
+  changes; Enter keeps the line's indentation in your `IndentUnit`. It reports
+  what changed through `OnUpdate`, after the frame, so you can read the new
+  document and map your own positions through the changes. Everything else
+  stays read-only.
 - **Select and copy.** Drag (past an edge the view scrolls along), double click
   for a word, triple click for a line, Shift+click to extend, Ctrl+A and
   Ctrl+C. Copying gives back the text as it was, tabs included, and
@@ -154,6 +155,8 @@ The deliberate limits, and what they mean for a caller, are in
 | `addCursorAbove`, `addCursorBelow`, `simplifySelection` | built into `Editor` (Ctrl+Alt+Up/Down, Escape) |
 | `rectangularSelection()`, `crosshairCursor()` | `Editor.RectangularSelection`, `Editor.CrosshairCursor` |
 | `selectNextOccurrence`, `selectSelectionMatches` | built into `Editor` (Ctrl+D, Ctrl+Shift+L) |
+| `history()`, `undo`, `redo`, `undoDepth`, `redoDepth` | built into `Editor`, `Undo`, `Redo`, `UndoDepth`, `RedoDepth` |
+| `isolateHistory`, `Transaction.addToHistory`, `Transaction.time` | `TransactionSpec.IsolateHistory`, `SkipHistory`, `Time` |
 | `EditorView.lineWrapping` | `View.Wrap` |
 | `EditorView.theme` | `Theme` |
 | `tags` (`@lezer/highlight`), `HighlightStyle.define` | package `tags`, `NewHighlightStyle` |

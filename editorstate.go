@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"slices"
 	"strings"
+	"time"
 	"unicode/utf8"
 )
 
@@ -41,6 +42,10 @@ type EditorStateConfig struct {
 	// StyleTags add rules to the Lezer grammars they name, as
 	// Content.StyleTags.
 	StyleTags []StyleTags
+
+	// history is the undo history's config, CodeMirror's defaults when
+	// zero.
+	history historyConfig
 }
 
 // EditorState is a document and its selection at one moment. It never
@@ -53,6 +58,7 @@ type EditorState struct {
 	lines []int
 	sel   EditorSelection
 	conf  *EditorStateConfig
+	hist  historyState
 }
 
 func newEditorState(c EditorStateConfig) (EditorState, error) {
@@ -63,6 +69,9 @@ func newEditorState(c EditorStateConfig) (EditorState, error) {
 		return EditorState{}, err
 	}
 	conf.IndentUnit = unit
+	if conf.history.joinToEvent == nil {
+		conf.history = defaultHistory
+	}
 	s := EditorState{doc: normalizeBreaks(c.Doc, c.LineSeparator), conf: &conf}
 	s.lines = lineStarts(s.doc)
 	s.sel = c.Selection
@@ -227,13 +236,25 @@ type TransactionSpec struct {
 	// ScrollIntoView scrolls the main range's head into view on the next
 	// Layout.
 	ScrollIntoView bool
+	// SkipHistory keeps the transaction out of the undo history, as
+	// CodeMirror's Transaction.addToHistory set to false: undo does not
+	// take its changes back, and maps the history through them.
+	SkipHistory bool
+	// IsolateHistory keeps the transaction's changes out of the undo events
+	// next to it; by default, changes made close together in time and place
+	// are undone as one, as CodeMirror's history groups them.
+	IsolateHistory IsolateHistory
+	// Time is when the transaction happened, which groups undo events; zero
+	// is now.
+	Time time.Time
 
 	// set is changes ChangeByRange already merged, made before Changes.
 	set *ChangeSet
 	// scrollTo is a position to scroll into view, as CodeMirror's
 	// EditorView.scrollIntoView effect, instead of the main range's head.
-	scrollTo *int
-	err      error
+	scrollTo    *int
+	fromHistory *fromHistory
+	err         error
 }
 
 // Transaction is one update of an EditorState, as CodeMirror's Transaction.
@@ -248,6 +269,11 @@ type Transaction struct {
 	Selection      EditorSelection
 	UserEvent      string
 	ScrollIntoView bool
+	// SkipHistory, IsolateHistory and Time are the spec's, Time now when it
+	// gave none.
+	SkipHistory    bool
+	IsolateHistory IsolateHistory
+	Time           time.Time
 
 	scrollTo *int
 }
@@ -289,5 +315,14 @@ func (s EditorState) update(spec TransactionSpec) (Transaction, error) {
 	if !s.conf.AllowMultipleSelections {
 		next.sel = next.sel.AsSingle()
 	}
-	return Transaction{StartState: s, State: next, Changes: changes, Selection: spec.Selection, UserEvent: spec.UserEvent, ScrollIntoView: spec.ScrollIntoView, scrollTo: spec.scrollTo}, nil
+	t := Transaction{
+		StartState: s, State: next, Changes: changes, Selection: spec.Selection,
+		UserEvent: spec.UserEvent, ScrollIntoView: spec.ScrollIntoView, SkipHistory: spec.SkipHistory,
+		IsolateHistory: spec.IsolateHistory, Time: spec.Time, scrollTo: spec.scrollTo,
+	}
+	if t.Time.IsZero() {
+		t.Time = time.Now()
+	}
+	t.State.hist = s.hist.apply(t, spec.fromHistory, s.conf.history)
+	return t, nil
 }

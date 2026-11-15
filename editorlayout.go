@@ -30,6 +30,8 @@ const (
 func (e *Editor) Layout(gtx layout.Context) (layout.Dimensions, error) {
 	v := e.view
 	v.Wrap, v.Theme = e.Wrap, e.Theme
+	e.now = gtx.Now
+	defer func() { e.now = time.Time{} }()
 	e.show()
 	f, err := v.prepare(gtx)
 	if err != nil {

@@ -40,6 +40,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `selectNextOccurrence` and `selectSelectionMatches`: Ctrl+D selects the word around each cursor,
   then adds the next occurrence of the selection, a whole word when the selection is one; Ctrl+Shift+L
   selects every occurrence of the selected text.
+- **Undo and redo in an `Editor`**, `@codemirror/commands` 6.11.1's history: changes typed or
+  deleted close together are one undo event; `Undo`, `Redo`, `UndoDepth` and `RedoDepth`, and
+  Ctrl+Z, Ctrl+Y and Ctrl+Shift+Z, Ctrl+U and Alt+U to undo and redo the selection alone.
+  `TransactionSpec.IsolateHistory` makes a dispatched change an undo event of its own,
+  `SkipHistory` keeps it out of the history, and `Time` sets when it happened; `Transaction`
+  carries all three.
 
 ## [0.8.1] - 2026-10-23
 
