@@ -110,6 +110,10 @@ func (e *Editor) scrollIntoView(gtx layout.Context) {
 	v, f := e.view, e.f
 	main := e.state.sel.Main()
 	x, top := e.coordsAt(main.Head(), main.Assoc())
+	if e.scrollTarget != nil {
+		x, top = e.coordsAt(*e.scrollTarget, 0)
+		e.scrollTarget = nil
+	}
 	margin := gtx.Dp(revealMargin)
 	y := v.scroll.Y
 	switch {

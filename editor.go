@@ -56,8 +56,11 @@ type Editor struct {
 	// page motion, is where on screen the main cursor's row stays instead.
 	scrollPending bool
 	keepOnScreen  *int
-	mouse         mouseSelection
-	ime           imeState
+	// scrollTarget, when set, is where scrollPending scrolls to instead of
+	// the main range's head.
+	scrollTarget *int
+	mouse        mouseSelection
+	ime          imeState
 	// blinkStart is when the caret's blink last started over, and
 	// selectionSet whether a transaction set the selection since.
 	blinkStart   time.Time
@@ -165,6 +168,9 @@ func (e *Editor) Dispatch(spec TransactionSpec) error {
 	e.unshown = e.unshown.compose(t.Changes)
 	e.since = append(e.since, t)
 	e.scrollPending = e.scrollPending || t.ScrollIntoView
+	if t.scrollTo != nil {
+		e.scrollPending, e.scrollTarget = true, t.scrollTo
+	}
 	e.selectionSet = e.selectionSet || len(t.Selection.ranges) > 0
 	return nil
 }

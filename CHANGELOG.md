@@ -36,6 +36,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   its head (`simplifySelection`). `Editor.RectangularSelection` makes an Alt drag select a
   rectangle, a range per line, and `Editor.CrosshairCursor` shows a crosshair while Alt is held,
   as `@codemirror/view` 6.43.15's `rectangularSelection` and `crosshairCursor` do.
+- **Ctrl+D and Ctrl+Shift+L in an `Editor`**, `@codemirror/search` 6.7.2's
+  `selectNextOccurrence` and `selectSelectionMatches`: Ctrl+D selects the word around each cursor,
+  then adds the next occurrence of the selection, a whole word when the selection is one; Ctrl+Shift+L
+  selects every occurrence of the selected text.
 
 ## [0.8.1] - 2026-10-23
 

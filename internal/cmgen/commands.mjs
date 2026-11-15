@@ -1,7 +1,8 @@
-// commands.mjs writes what CodeMirror's commands and input handling make of
+// commands.mjs writes what CodeMirror's commands (@codemirror/search's
+// occurrence selection among them) and input handling make of
 // random documents and selections, for the Go port's tests to match
 // (testdata/commands.golden.json). A dev tool, run like state.mjs, with
-// @codemirror/state, view, commands and language installed:
+// @codemirror/state, view, commands, language and search installed:
 //
 //	node internal/cmgen/commands.mjs "$CODEMIRROR_NODE_MODULES" testdata/commands.golden.json
 //
@@ -20,6 +21,7 @@ const { EditorState, EditorSelection, CharCategory, findClusterBreak, findColumn
 const { BidiSpan, Direction } = await load(modulesDir, "@codemirror/view");
 const commands = await load(modulesDir, "@codemirror/commands");
 const { indentUnit } = await load(modulesDir, "@codemirror/language");
+const search = await load(modulesDir, "@codemirror/search");
 
 // from @codemirror/view src/bidi.ts
 let movedOver = "";
@@ -337,6 +339,29 @@ for (let i = 0; i < 100; i++) {
   cases.push(c);
 }
 
-const versions = Object.fromEntries(["@codemirror/state", "@codemirror/view", "@codemirror/commands", "@codemirror/language"]
+// searchCases select occurrences in documents of few words, repeated. No
+// word changes under NFKD, which SearchCursor matches through and the port
+// does not (docs/ceilings.md): "e" would select the "e" "é" decomposes to.
+let searchCases = [];
+const words = ["one", "two", "onetwo", "ne", "x_1", "世界"];
+const seps = [" ", " ", "\n", ".", ""];
+for (let i = 0; i < 100; i++) {
+  let doc = Array.from({ length: r(10) + 1 }, () => pick(words) + pick(seps)).join("");
+  let b = boundaries(doc), n = r(3) + 1, ranges = [];
+  let start = pick(b);
+  let len = pick([0, 1, 2, 3, 6]);
+  for (let k = 0; k < n; k++) {
+    let at = k == 0 ? start : pick(b);
+    let end = b.find((p) => p >= at + len) ?? doc.length;
+    ranges.push(EditorSelection.range(at, r(4) == 0 ? at : end));
+  }
+  let state = EditorState.create({ doc, selection: EditorSelection.create(ranges, r(ranges.length)),
+    extensions: EditorState.allowMultipleSelections.of(true) });
+  searchCases.push({ doc, sel: sel(state.selection),
+    next: run(state, search.selectNextOccurrence), matches: run(state, search.selectSelectionMatches) });
+}
+
+const versions = Object.fromEntries(["@codemirror/state", "@codemirror/view", "@codemirror/commands", "@codemirror/language", "@codemirror/search"]
   .map((p) => [p, packageJSON(modulesDir, p).version]));
-writeFileSync(out, `{"versions": ${JSON.stringify(versions)}, "cases": [\n${cases.map((c) => JSON.stringify(c)).join(",\n")}\n]}\n`);
+writeFileSync(out, `{"versions": ${JSON.stringify(versions)}, "cases": [\n${cases.map((c) => JSON.stringify(c)).join(",\n")}\n],
+"searchCases": [\n${searchCases.map((c) => JSON.stringify(c)).join(",\n")}\n]}\n`);
