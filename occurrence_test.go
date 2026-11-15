@@ -99,16 +99,26 @@ func TestCtrlDAndCtrlShiftLSelectOccurrences(t *testing.T) {
 	}
 }
 
-func TestOccurrencesMatchCodeUnitsNotNormalizedText(t *testing.T) {
-	// CodeMirror's SearchCursor matches through NFKD, so there Ctrl+Shift+L
-	// on this "e" also selects the "e" a decomposed "é" starts with.
-	s := markedState(t, "<e> é")
-	spec, _ := s.selectSelectionMatches()
-	tr, err := s.update(spec)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if got := marked(tr.State); got != "<e> é" {
-		t.Fatalf("got %q, want the e alone", got)
+func TestOccurrencesMatchThroughNFKD(t *testing.T) {
+	// As CodeMirror's SearchCursor: an "e" finds the "e" a precomposed "é"
+	// decomposes to, and the match covers the whole "é"; the two forms of
+	// "é", and a ligature and its letters, find each other.
+	for _, c := range [][2]string{
+		{"<e> é", "<e> <é>"},
+		{"<é> e\u0301", "<é> <e\u0301>"},
+		{"<fi> ﬁ", "<fi> <ﬁ>"},
+	} {
+		s := markedState(t, c[0])
+		spec, ok := s.selectSelectionMatches()
+		if !ok {
+			t.Fatalf("%q: nothing selected", c[0])
+		}
+		tr, err := s.update(spec)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got := marked(tr.State); got != c[1] {
+			t.Errorf("%q: got %q, want %q", c[0], got, c[1])
+		}
 	}
 }

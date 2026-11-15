@@ -26,7 +26,7 @@ lives in the code, its godoc, `README.md` and `docs/`; never restate any of it h
 ## Rules of the codebase
 
 - Go 1.27 and Gio v0.10. The `go` directive in `go.mod` is the version CI installs (`go-version-file`), so it
-  moves only on purpose. The dependency set is Gio, `golang.org/x/image` and chroma; a new one needs the
+  moves only on purpose. The dependency set is Gio, `golang.org/x/image`, `golang.org/x/text` and chroma; a new one needs the
   maintainer's yes first.
 - **The package stays app-free.** Nothing that belongs to one app enters it: an app's layout, its buttons, its
   strings and its theme live in the app. The package takes data (`Content`) and Gio widgets

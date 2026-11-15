@@ -218,12 +218,14 @@ file is the trap alone.
   is repeated at each cursor outside the main cursor's line that has the same text before it, CodeMirror's
   behaviour with no DOM node to find the composition in. The caret is drawn only while the editor has focus,
   and blinks every 1.2 s, starting over when a transaction sets the selection.
-- **An editor's occurrences are the selected text, code unit for code unit**: Ctrl+D and Ctrl+Shift+L find
-  text equal to the selection, where `@codemirror/search`'s `SearchCursor` matches through NFKD normalization:
-  there, a precomposed `é` and `e` with a combining accent find each other, and an `e` finds the `e` an `é`
-  decomposes to; here neither does. CodeMirror also takes the query with the line separator and searches
-  lines joined by `"\n"`, so with `LineSeparator` `"\r\n"` a selection over a line break has no other
-  occurrence, kept as it is. Ctrl+Shift+L selects nothing past 1,000 matches, as CodeMirror's does.
+- **An editor finds occurrences through NFKD, and selects whole characters**: Ctrl+D and Ctrl+Shift+L match
+  the selection's text as `@codemirror/search`'s `SearchCursor` does, both sides NFKD-normalized: a precomposed
+  `é` and `e` with a combining accent find each other, `fi` finds the ligature `ﬁ`, and an `e` finds the `e` an
+  `é` decomposes to, selecting the whole `é`. The normalization is `golang.org/x/text`'s, of its own Unicode
+  version, which a character newer than it may tell apart from the browser's. CodeMirror also takes the query
+  with the line separator and searches lines joined by `"\n"`, so with `LineSeparator` `"\r\n"` a selection
+  over a line break has no other occurrence, kept as it is. Ctrl+Shift+L selects nothing past 1,000 matches, as
+  CodeMirror's does. The read-only views' `SetSearch` does not normalize.
 - **An editor's undo history is CodeMirror's `history()` with its defaults, always on**: changes 500 ms apart
   or less, touching each other, typed or deleted, are one undo event (a composition always joins the event
   before it); at least 100 events are kept; none of `minDepth`, `newGroupDelay` or `joinToEvent` can be set,

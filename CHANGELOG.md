@@ -39,7 +39,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Ctrl+D and Ctrl+Shift+L in an `Editor`**, `@codemirror/search` 6.7.2's
   `selectNextOccurrence` and `selectSelectionMatches`: Ctrl+D selects the word around each cursor,
   then adds the next occurrence of the selection, a whole word when the selection is one; Ctrl+Shift+L
-  selects every occurrence of the selected text.
+  selects every occurrence of the selected text. Both match through NFKD normalization, as its
+  `SearchCursor` does: the two forms of `é` find each other, a ligature its letters, and an `e`
+  the `e` of an `é`, which it selects whole. godemirror depends on `golang.org/x/text` for it.
 - **Undo and redo in an `Editor`**, `@codemirror/commands` 6.11.1's history: changes typed or
   deleted close together are one undo event; `Undo`, `Redo`, `UndoDepth` and `RedoDepth`, and
   Ctrl+Z, Ctrl+Y and Ctrl+Shift+Z, Ctrl+U and Alt+U to undo and redo the selection alone.

@@ -1,12 +1,7 @@
 package godemirror
 
-import "strings"
-
 // selectNextOccurrence and selectSelectionMatches port @codemirror/search
-// 6.7.2's commands of the same names, with its SearchCursor reduced to what
-// they search for: text equal, code unit for code unit, to the selection.
-// CodeMirror's cursor also matches text equal once both are NFKD-normalized
-// (a precomposed "é" and "e" with a combining accent); godemirror's does not.
+// 6.7.2's commands of the same names, searching with searchCursor.
 
 // maxSelectionMatches is how many matches selectSelectionMatches selects
 // before it gives up, as @codemirror/search's does.
@@ -35,26 +30,6 @@ func (s EditorState) wordAt(pos int) (SelectionRange, bool) {
 		return SelectionRange{}, false
 	}
 	return Range(start+line.From, end+line.From), true
-}
-
-// matchesIn are the places query appears in the document's bytes [from, to),
-// in order, none overlapping the one before, as SearchCursor.next finds them.
-func (s EditorState) matchesIn(query string, from, to int) func(yield func(from, to int) bool) {
-	return func(yield func(from, to int) bool) {
-		if query == "" {
-			return
-		}
-		for at := from; at < to; {
-			i := strings.Index(s.doc[at:to], query)
-			if i < 0 {
-				return
-			}
-			if !yield(at+i, at+i+len(query)) {
-				return
-			}
-			at += i + len(query)
-		}
-	}
 }
 
 // selectWord selects the word around each cursor.
