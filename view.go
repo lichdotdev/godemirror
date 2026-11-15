@@ -53,6 +53,12 @@ type View struct {
 	// Theme colors the view; it starts as DarkTheme. A change shows on the
 	// next Layout, which composes the rows on screen again.
 	Theme Theme
+	// OnScroll, when set, is called at the end of a Layout that leaves the
+	// view scrolled elsewhere than the last call saw it, whatever moved it
+	// (the wheel, a drag, ScrollToLine, SetScrollTop), so that other views
+	// can follow; never while the view paints. A Split or a DiffView does
+	// not call it.
+	OnScroll func()
 
 	// r may be shared with the other side of a Split; px and composedIn are
 	// the size and the theme this view's row images were composed at.
@@ -87,6 +93,9 @@ type View struct {
 	scroll   image.Point
 	// target is a ScrollToLine waiting for the next Layout.
 	target *scrollTarget
+
+	// scrolled is the scroll position OnScroll was last told of.
+	scrolled image.Point
 
 	sel selection
 	// selecting is what a press and a drag select: the view's own selection,
@@ -189,7 +198,14 @@ func (v *View) Layout(gtx layout.Context) (layout.Dimensions, error) {
 	v.scrollToTarget(gtx, f)
 	v.handlePointer(gtx, f)
 	v.handleKeys(gtx)
-	return v.paint(gtx, f), nil
+	dims := v.paint(gtx, f)
+	if v.scroll != v.scrolled {
+		v.scrolled = v.scroll
+		if v.OnScroll != nil {
+			v.OnScroll()
+		}
+	}
+	return dims, nil
 }
 
 // frame is one frame's measurements, carried between the phases of a layout.

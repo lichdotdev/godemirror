@@ -32,6 +32,8 @@ type Editor struct {
 	// as CodeMirror's crosshairCursor does, a hint that a drag selects a
 	// rectangle.
 	CrosshairCursor bool
+	// OnScroll is View.OnScroll of the editor.
+	OnScroll func()
 	// OnUpdate, when set, is called at the end of Layout with the
 	// transactions dispatched since the last call, if any, as CodeMirror's
 	// updateListener: never while the editor paints, so it may dispatch
