@@ -123,9 +123,9 @@ file is the trap alone.
   the span of cells, cut to the line's end. The view's width is not in it: an unwrapped row holds a page of
   `pageCols` columns, two screens rounded up to 64, so resizing redraws a row only when its page changes, and
   wrapped, only when its own segment does. A view drops them all when its own font size in pixels or its
-  `Theme` changes, and an `Editor` on every change to its document (spans, search matches and the selection are
-  painted beneath the images and never join the key). The two
-  sides of a `Split` share one rasterizer, so a view must compare against the size it composed at, never ask the
+  `Theme` changes; an `Editor`'s edit drops the images of the lines it touched and renumbers the ones after
+  them, so a key still names the line it shows (spans, search matches and the selection are painted beneath
+  the images and never join the key). The two sides of a `Split` share one rasterizer, so a view must compare against the size it composed at, never ask the
   rasterizer whether the size changed: the first side to set it would be the only one told. Anything new that
   changes a row's pixels (a per-cell style, a ligature) must join the key or drop the cache, or the old image
   keeps being drawn. The three bugs this has caused (wrap, resize, theme) showed only after a toggle or a
@@ -181,11 +181,14 @@ file is the trap alone.
   transactions only, where `updateListener` also hears of viewport, focus and geometry changes. With
   `LineSeparator` set, a bare `"\n"` inside the text is still a line break, where CodeMirror keeps it inside
   its line.
-- **An editor's document is one string, and every transaction rebuilds what shows it**: a change copies `Doc`
-  and finds its line starts again, where CodeMirror edits a tree of lines, and the view builds every line's
-  cells again and highlights the new text off the UI goroutine. Until that lands, the lines the change touched
-  show uncolored and the others keep their old colors, even those the change recolors (a comment opened above
-  them).
+- **An editor's document is one string, and only its highlighting is rebuilt whole**: a change copies `Doc`
+  and finds its line starts again, where CodeMirror edits a tree of lines; the view builds the cells and the
+  wrapping of the lines the change touched and keeps the others', with their colors and row images. A
+  keystroke in the middle of 13,000 lines of Java costs the UI goroutine about 1 ms where rebuilding the
+  view's document took 23. Highlighting then reparses incrementally but builds every line's cells and tags
+  again, off the UI goroutine, as the ceiling on content changes says. Until it lands, the lines the change
+  touched show uncolored and the others keep their old colors, even those the change recolors (a comment
+  opened above them).
 - **An editor has `@codemirror/commands`' standard keymap, as it binds off macOS, and nothing more**: arrows by
   character and, with Ctrl, by group; Up and Down; Page Up and Down; Home and End (to the wrapped row first,
   Home then to the line's indentation); Ctrl+Home and Ctrl+End; Shift for each; Enter; Ctrl+A; Backspace and

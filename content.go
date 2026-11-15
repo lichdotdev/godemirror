@@ -110,29 +110,63 @@ func (v *View) highlight(c Content, replacement *Content) *pending {
 	return p
 }
 
-// showEdit shows c, an edit of what is on screen, keeping the scroll and
-// the selection. Its text shows at once, the colors of its first keepTop and
-// last keepBottom lines, which the edit left alone, carried over until its
-// own highlighting is ready.
-func (v *View) showEdit(c Content, keepTop, keepBottom int) {
-	doc := plain(c.Text)
-	old := v.doc
-	carry := func(from, to int) {
-		if len(old.tags[from]) == len(doc.lines[to]) {
-			doc.tags[to] = old.tags[from]
+// showEdit shows c, an edit of what is on screen that left its first keepTop
+// and last keepBottom lines alone and made middle of the lines between,
+// keeping the scroll and the selection. Only middle's lines are built
+// again: the others keep their cells, colors and wrapping, and their row
+// images, renumbered, until c's own highlighting is ready.
+func (v *View) showEdit(c Content, keepTop, keepBottom int, middle string) {
+	old, mid := v.doc, newDocument()
+	mid.add(middle, nil)
+	tail := len(old.lines) - keepBottom
+	v.doc = &document{
+		lines:  splice(old.lines, keepTop, tail, mid.lines),
+		tags:   splice(old.tags, keepTop, tail, mid.tags),
+		source: splice(old.source, keepTop, tail, mid.source),
+		cellOf: splice(old.cellOf, keepTop, tail, mid.cellOf),
+	}
+	if v.wrapCols >= 0 {
+		wraps := make([][]int, len(mid.lines))
+		for i, l := range mid.lines {
+			wraps[i] = wrapLine(l, v.wrapCols)
 		}
+		v.wraps = splice(v.wraps, keepTop, tail, wraps)
 	}
-	for i := range min(keepTop, len(doc.lines), len(old.lines)) {
-		carry(i, i)
-	}
-	for i := 1; i <= min(keepBottom, len(doc.lines), len(old.lines)); i++ {
-		carry(len(old.lines)-i, len(doc.lines)-i)
-	}
+	v.renumberRows(keepTop, tail, len(mid.lines)-(tail-keepTop))
 	v.content = c
-	v.wrapCols = -1
-	v.setDocument(doc)
+	v.longest = 0
+	for _, l := range v.doc.lines {
+		v.longest = max(v.longest, len(l))
+	}
+	v.measureLabels()
 	v.findMatches()
 	v.pending = v.highlight(c, nil)
+}
+
+// splice is s with s[from:to] replaced by mid, in a new slice.
+func splice[T any](s []T, from, to int, mid []T) []T {
+	out := make([]T, 0, len(s)-(to-from)+len(mid))
+	out = append(out, s[:from]...)
+	out = append(out, mid...)
+	return append(out, s[to:]...)
+}
+
+// renumberRows keeps the row images of the lines before from, those from
+// to on renumbered by delta, and drops the others and the gutter's, as an
+// edit of the lines [from, to) leaves them.
+func (v *View) renumberRows(from, to, delta int) {
+	rows := make(map[rowKey]*rowImage, len(v.rows))
+	for k, img := range v.rows {
+		switch {
+		case k.line < from:
+			rows[k] = img
+		case k.line >= to:
+			k.line += delta
+			rows[k] = img
+		}
+	}
+	v.rows = rows
+	v.gutter = map[int]*rowImage{}
 }
 
 func (v *View) showContent(c Content, doc *document) {
