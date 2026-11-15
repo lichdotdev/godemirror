@@ -123,8 +123,8 @@ file is the trap alone.
   the span of cells, cut to the line's end. The view's width is not in it: an unwrapped row holds a page of
   `pageCols` columns, two screens rounded up to 64, so resizing redraws a row only when its page changes, and
   wrapped, only when its own segment does. A view drops them all when its own font size in pixels or its
-  `Theme` changes (spans, search matches and the selection are painted beneath the images and never join the
-  key). The two
+  `Theme` changes, and an `Editor` on every change to its document (spans, search matches and the selection are
+  painted beneath the images and never join the key). The two
   sides of a `Split` share one rasterizer, so a view must compare against the size it composed at, never ask the
   rasterizer whether the size changed: the first side to set it would be the only one told. Anything new that
   changes a row's pixels (a per-cell style, a ligature) must join the key or drop the cache, or the old image
@@ -167,3 +167,27 @@ file is the trap alone.
   and `Theme.Selection` is not painted over it; drag it wider or narrower and it is a plain selection again. In
   a `DiffView` a `Match`'s lines count the rows of the view on screen (deletions and additions included), not
   file lines, and `FindNext` stays on the side of a split that holds the selection.
+- **An editor counts bytes, the read-only views count runes**: every position of an `Editor` (`ChangeSpec`,
+  `SelectionRange`, `Line`, `MapPos`) is a UTF-8 byte offset into `EditorState.Doc`, whose lines are joined by
+  `"\n"` whatever `LineSeparator` is, so offsets into `SliceDoc`'s CRLF text are not positions. A `View`'s `Pos`
+  (`Select`, `Selection`, `Match`) counts a column in runes, a tab or a wide character as one. A place carried
+  between a `View` and an `Editor` is converted (the runes of its line up to it), never passed across as is.
+  `Dispatch` refuses a position inside a character, where CodeMirror's UTF-16 offsets let one split a
+  surrogate pair.
+- **An editor is `@codemirror/state`'s document and selection, without its extension system**: no facets,
+  fields, effects, annotations, change or transaction filters; the options CodeMirror sets through facets are
+  `EditorStateConfig` fields, fixed until the next `SetState`. A cursor has no bidi level and no range is
+  undirectional (macOS). `Dispatch` takes one spec, so `sequential` specs do not exist. `OnUpdate` hears of
+  transactions only, where `updateListener` also hears of viewport, focus and geometry changes. With
+  `LineSeparator` set, a bare `"\n"` inside the text is still a line break, where CodeMirror keeps it inside
+  its line.
+- **An editor's document is one string, and every transaction rebuilds what shows it**: a change copies `Doc`
+  and finds its line starts again, where CodeMirror edits a tree of lines, and the view builds every line's
+  cells again and highlights the new text off the UI goroutine. Until that lands, the lines the change touched
+  show uncolored and the others keep their old colors, even those the change recolors (a comment opened above
+  them).
+- **An editor's pointer selection is the `View`'s, not yet CodeMirror's**: a press places a cursor, a drag
+  selects, Shift extends the main range and keeps the others, a double click takes the word under it as
+  `isWordRune` sees it (letters, digits, `_`) where CodeMirror groups by its character categories, and a
+  triple click the line. Ctrl+click does not add a range and a selection cannot be dragged elsewhere. Each such
+  selection reaches `OnUpdate` with `UserEvent` `"select"`, never CodeMirror's `"select.pointer"`.

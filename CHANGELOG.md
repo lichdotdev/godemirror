@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **`Editor`, an opt-in editable view**, built with `NewEditor` or `NewEditorFromFonts` and
+  holding an `EditorState`, a port of `@codemirror/state` 6.7.6's document and selection.
+  `Dispatch(TransactionSpec)` replaces ranges of the document and sets the selection as one
+  transaction; `OnUpdate` reports each frame's transactions after the frame, as CodeMirror's
+  `updateListener`. `ChangeSet` (with `MapPos`, `MapPosTrack` and `MapMode`), `EditorSelection`
+  and `SelectionRange` follow CodeMirror's: a selection holds one or more ranges, sorted and merged,
+  when `EditorStateConfig.AllowMultipleSelections` is set. `ChangeByRange` and
+  `ReplaceSelection` change every range at once, and `LineSeparator` keeps a CRLF file CRLF.
+  Positions are UTF-8 byte offsets, where a `View`'s `Pos` counts runes. A drag or a click
+  selects; the keyboard does not edit yet. `View`, `Split` and `DiffView` stay read-only and
+  unchanged.
+
 ## [0.8.1] - 2026-10-23
 
 ### Fixed

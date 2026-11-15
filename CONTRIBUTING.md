@@ -67,6 +67,21 @@ fixture is added by dropping it into `testdata` and generating again. A
 grammar's JavaScript (external tokenizers, specializers, a context tracker) is
 ported by hand next to it, from the same package version.
 
+## CodeMirror's editor
+
+The editor ports `@codemirror/state` (and, as they land, `@codemirror/view` and
+`@codemirror/commands`) at the versions its godoc names. Besides CodeMirror's
+own tests, ported to Go, it is checked against goldens the real packages write
+from seeded random changes and selections, by `internal/cmgen` under
+`go generate`, with the packages installed outside the repository:
+
+```bash
+cd "$(mktemp -d)" && npm init -y && npm install @codemirror/state@6.7.6
+CODEMIRROR_NODE_MODULES="$PWD/node_modules" go generate .
+```
+
+That rewrites `testdata/state.golden.json`; never edit it by hand.
+
 ## Before you open a pull request
 
 Run the same gate CI runs:

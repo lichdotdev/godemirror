@@ -1,11 +1,13 @@
-// Package godemirror is a read-only code view for Gio: a monospace document
-// with a line-number gutter, wrapping or horizontal scrolling, drawn as one
-// image per visible row so a full screen of code costs a handful of quads.
+// Package godemirror is CodeMirror for Gio: a monospace document with a
+// line-number gutter, wrapping or horizontal scrolling, drawn as one image per
+// visible row so a full screen of code costs a handful of quads.
 //
-// A View shows one document and a Split shows two side by side. Build them
-// with New or NewSplit, which resolve a font family among the installed fonts, or
-// with NewFromFonts, which takes the font files themselves. Give them a
-// Content and call Layout every frame.
+// A View shows one document and a Split shows two side by side, read-only.
+// Build them with New or NewSplit, which resolve a font family among the
+// installed fonts, or with NewFromFonts, which takes the font files
+// themselves. Give them a Content and call Layout every frame. An Editor is
+// the opt-in editable view, a port of CodeMirror's EditorState and its
+// transactions.
 //
 // A View or a Split belongs to the goroutine that lays it out: call its
 // methods and set its fields there, between frames. Only highlighting runs on
@@ -85,8 +87,11 @@ type View struct {
 	// target is a ScrollToLine waiting for the next Layout.
 	target *scrollTarget
 
-	sel   selection
-	press press
+	sel selection
+	// others are the ranges of an Editor's selection beside its main one,
+	// which is sel.
+	others []selection
+	press  press
 	// drag scrolls the view while a selection is held beyond its edge.
 	drag dragScroll
 	// matcher is the search set with SetSearch, and matches what it found in
