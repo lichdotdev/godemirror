@@ -80,7 +80,7 @@ func (v *View) handlePointer(gtx layout.Context, f frame) (pressed bool) {
 	// admits what the sideways one would. A nested view does so only while
 	// Shift is held, or it would take every wheel its parent should scroll by.
 	vertical := down
-	if !v.Nested || v.shift {
+	if !v.Nested || v.mods.Contain(key.ModShift) {
 		vertical = pointer.ScrollRange{Min: min(down.Min, sideways.Min), Max: max(down.Max, sideways.Max)}
 	}
 	for {
@@ -111,7 +111,7 @@ func (v *View) handlePointer(gtx layout.Context, f frame) (pressed bool) {
 func (v *View) pointerEvent(gtx layout.Context, f frame, e pointer.Event) (pressed bool) {
 	at := e.Position.Round()
 	v.hover = v.lineUnder(f, at)
-	v.shift = e.Modifiers.Contain(key.ModShift)
+	v.mods = e.Modifiers
 	switch e.Kind {
 	case pointer.Leave:
 		v.hover = -1

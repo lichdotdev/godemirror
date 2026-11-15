@@ -16,7 +16,7 @@ import { writeFileSync } from "node:fs";
 import { load, packageJSON } from "../lezer/gen/load.mjs";
 
 const [modulesDir, out] = process.argv.slice(2);
-const { EditorState, EditorSelection, CharCategory, findClusterBreak, Text } = await load(modulesDir, "@codemirror/state");
+const { EditorState, EditorSelection, CharCategory, findClusterBreak, findColumn, countColumn, Text } = await load(modulesDir, "@codemirror/state");
 const { BidiSpan, Direction } = await load(modulesDir, "@codemirror/view");
 const commands = await load(modulesDir, "@codemirror/commands");
 const { indentUnit } = await load(modulesDir, "@codemirror/language");
@@ -114,6 +114,34 @@ function groupAt(state, pos, bias = 1) {
     to = next
   }
   return EditorSelection.undirectionalRange(from + line.from, to + line.from)
+}
+
+// from @codemirror/view src/rectangular-selection.ts
+const MaxOff = 2000
+function rectangleFor(state, a, b) {
+  let startLine = Math.min(a.line, b.line), endLine = Math.max(a.line, b.line)
+  let ranges = []
+  if (a.off > MaxOff || b.off > MaxOff || a.col < 0 || b.col < 0) {
+    let startOff = Math.min(a.off, b.off), endOff = Math.max(a.off, b.off)
+    for (let i = startLine; i <= endLine; i++) {
+      let line = state.doc.line(i)
+      if (line.length <= endOff)
+        ranges.push(EditorSelection.range(line.from + startOff, line.to + endOff))
+    }
+  } else {
+    let startCol = Math.min(a.col, b.col), endCol = Math.max(a.col, b.col)
+    for (let i = startLine; i <= endLine; i++) {
+      let line = state.doc.line(i)
+      let start = findColumn(line.text, startCol, state.tabSize, true)
+      if (start < 0) {
+        ranges.push(EditorSelection.cursor(line.to))
+      } else {
+        let end = findColumn(line.text, endCol, state.tabSize)
+        ranges.push(EditorSelection.range(line.from + start, line.from + end))
+      }
+    }
+  }
+  return ranges
 }
 
 // from @codemirror/view src/input.ts, without the clipboard filters
@@ -249,7 +277,8 @@ function run(state, command) {
 }
 
 const stateCommands = ["deleteCharBackward", "deleteCharForward", "deleteGroupBackward", "deleteGroupForward",
-  "insertNewlineAndIndent", "selectAll", "cursorDocStart", "cursorDocEnd", "selectDocStart", "selectDocEnd"];
+  "insertNewlineAndIndent", "selectAll", "cursorDocStart", "cursorDocEnd", "selectDocStart", "selectDocEnd",
+  "simplifySelection"];
 
 function moveCommand(state, forward, group, select) {
   let move = (range) => group
@@ -279,6 +308,13 @@ for (let i = 0; i < 100; i++) {
   c.groupAt = { pos: at, bias: pick([-1, 1]) };
   let g = groupAt(state, at, c.groupAt.bias);
   c.groupAt.range = [g.from, g.to];
+  let corner = () => {
+    let line = state.doc.line(r(state.doc.lines) + 1), bs = boundaries(line.text), off = pick(bs);
+    let col = r(3) == 0 ? countColumn(line.text, state.tabSize) + r(4) : countColumn(line.text, state.tabSize, off);
+    return { line: line.number, col, off };
+  };
+  let ra = corner(), rb = corner();
+  c.rect = { a: ra, b: rb, ranges: rectangleFor(state, ra, rb).map((r) => [r.anchor, r.head]) };
   let copied = copiedRange(state);
   c.copied = { text: copied.text, ranges: copied.ranges.map((r) => [r.from, r.to]), linewise: copied.linewise };
   c.paste = { input: pick(["x", "a\nb", "one\ntwo\nthree", copied.text, "\t"]) };

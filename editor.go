@@ -4,6 +4,7 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"gioui.org/io/key"
 	"gioui.org/layout"
 	"gioui.org/op"
 	"gioui.org/unit"
@@ -23,6 +24,14 @@ type Editor struct {
 	Wrap bool
 	// Theme colors the editor; it starts as DarkTheme.
 	Theme Theme
+	// RectangularSelection makes a drag with Alt held select a rectangle, a
+	// range per line, as CodeMirror's rectangularSelection does; it needs
+	// AllowMultipleSelections to keep more than one.
+	RectangularSelection bool
+	// CrosshairCursor turns the pointer into a crosshair while Alt is held,
+	// as CodeMirror's crosshairCursor does, a hint that a drag selects a
+	// rectangle.
+	CrosshairCursor bool
 	// OnUpdate, when set, is called at the end of Layout with the
 	// transactions dispatched since the last call, if any, as CodeMirror's
 	// updateListener: never while the editor paints, so it may dispatch
@@ -53,6 +62,10 @@ type Editor struct {
 	// selectionSet whether a transaction set the selection since.
 	blinkStart   time.Time
 	selectionSet bool
+	// altDown is whether Alt is held, as the last key or pointer event said,
+	// and pointerMods the modifiers of the last pointer event seen.
+	altDown     bool
+	pointerMods key.Modifiers
 }
 
 // Update is what an Editor reports after a frame, as CodeMirror's
@@ -146,7 +159,7 @@ func (e *Editor) Dispatch(spec TransactionSpec) error {
 		return err
 	}
 	if e.view.press.dragging && t.DocChanged() {
-		e.mouse.mapThrough(t.Changes)
+		e.mouse.mapThrough(t)
 	}
 	e.state = t.State
 	e.unshown = e.unshown.compose(t.Changes)

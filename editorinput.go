@@ -16,9 +16,9 @@ import (
 // makes, or ok false when it does not apply.
 type command func(e *Editor) (TransactionSpec, bool)
 
-// binding is a key of @codemirror/commands 6.11.1's standardKeymap, as it
-// binds it off macOS: name with exactly mods held runs run, and with Shift
-// held too, shift.
+// binding is a key of @codemirror/commands 6.11.1's keymaps, as they bind
+// it off macOS: name with exactly mods held runs run, and with Shift held
+// too, shift.
 type binding struct {
 	name       key.Name
 	mods       key.Modifiers
@@ -29,7 +29,10 @@ func stateCommand(f func(EditorState) (TransactionSpec, bool)) command {
 	return func(e *Editor) (TransactionSpec, bool) { return f(e.state) }
 }
 
-var standardKeymap = []binding{
+// keymap is standardKeymap, and the bindings of defaultKeymap that work
+// with several cursors: addCursorAbove, addCursorBelow and
+// simplifySelection.
+var keymap = []binding{
 	{key.NameLeftArrow, 0, stateCommand(func(s EditorState) (TransactionSpec, bool) { return s.cursorByChar(false) }),
 		stateCommand(func(s EditorState) (TransactionSpec, bool) { return s.selectByChar(false) })},
 	{key.NameLeftArrow, key.ModShortcut, stateCommand(func(s EditorState) (TransactionSpec, bool) { return s.cursorByGroup(false) }),
@@ -62,6 +65,9 @@ var standardKeymap = []binding{
 	{key.NameDeleteForward, 0, stateCommand(func(s EditorState) (TransactionSpec, bool) { return s.deleteByChar(true, false) }), nil},
 	{key.NameDeleteBackward, key.ModShortcut, stateCommand(func(s EditorState) (TransactionSpec, bool) { return s.deleteByGroup(false) }), nil},
 	{key.NameDeleteForward, key.ModShortcut, stateCommand(func(s EditorState) (TransactionSpec, bool) { return s.deleteByGroup(true) }), nil},
+	{key.NameUpArrow, key.ModShortcut | key.ModAlt, func(e *Editor) (TransactionSpec, bool) { return e.addCursorVertically(false) }, nil},
+	{key.NameDownArrow, key.ModShortcut | key.ModAlt, func(e *Editor) (TransactionSpec, bool) { return e.addCursorVertically(true) }, nil},
+	{key.NameEscape, 0, stateCommand(EditorState.simplifySelection), nil},
 }
 
 // Clipboard keys, which a browser turns into the copy, cut and paste events
@@ -80,8 +86,9 @@ func (e *Editor) keyFilters() []event.Filter {
 		key.Filter{Focus: v, Name: keyCopy, Required: key.ModShortcut},
 		key.Filter{Focus: v, Name: keyCut, Required: key.ModShortcut},
 		key.Filter{Focus: v, Name: keyPaste, Required: key.ModShortcut},
+		key.Filter{Focus: v, Name: key.NameAlt, Optional: key.ModAlt | key.ModShift | key.ModShortcut | key.ModCtrl | key.ModSuper},
 	}
-	for _, b := range standardKeymap {
+	for _, b := range keymap {
 		f := key.Filter{Focus: v, Name: b.name, Required: b.mods}
 		if b.shift != nil {
 			f.Optional = key.ModShift
@@ -103,6 +110,7 @@ func (e *Editor) handleInput(gtx layout.Context) {
 		case key.FocusEvent:
 			e.ime = imeState{}
 		case key.Event:
+			e.onAltKey(ev)
 			if ev.State == key.Press {
 				e.onKey(gtx, ev)
 			}
@@ -134,7 +142,7 @@ func (e *Editor) onKey(gtx layout.Context, ev key.Event) {
 		gtx.Execute(clipboard.ReadCmd{Tag: e.view})
 		return
 	}
-	for _, b := range standardKeymap {
+	for _, b := range keymap {
 		if b.name != ev.Name || b.mods != mods {
 			continue
 		}

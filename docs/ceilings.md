@@ -189,9 +189,10 @@ file is the trap alone.
 - **An editor has `@codemirror/commands`' standard keymap, as it binds off macOS, and nothing more**: arrows by
   character and, with Ctrl, by group; Up and Down; Page Up and Down; Home and End (to the wrapped row first,
   Home then to the line's indentation); Ctrl+Home and Ctrl+End; Shift for each; Enter; Ctrl+A; Backspace and
-  Delete, with Ctrl by group; and Ctrl+C, X and V for the clipboard. Ctrl is Gio's `ModShortcut`, Cmd on macOS,
+  Delete, with Ctrl by group; Ctrl+C, X and V for the clipboard; and, of `defaultKeymap`, Ctrl+Alt+Up and Down
+  to add a cursor and Escape to go back to one. Ctrl is Gio's `ModShortcut`, Cmd on macOS,
   so macOS gets these bindings and none of CodeMirror's macOS ones (Cmd+arrows, Alt+arrows, the Emacs keys).
-  Nothing of `defaultKeymap` beyond them is bound yet: no syntax motion, moving or copying lines, commenting,
+  Nothing else of `defaultKeymap` is bound yet: no syntax motion, moving or copying lines, commenting,
   bracket matching or indenting a selection, and Tab moves focus away, as without `indentWithTab`. Undo and
   redo are not ported yet.
 - **Enter indents as CodeMirror does with no language**: the new line takes the column of its line's
@@ -204,7 +205,11 @@ file is the trap alone.
 - **A press in an editor selects at once**: `@codemirror/view`'s mouse selection is ported (a click, a drag, a
   double click by character category, a triple click for the line and its break, Shift to extend the main
   range, Ctrl+click to add a range, or remove the cursor under it, with `AllowMultipleSelections`), but not its
-  drag and drop, so a press inside the selection does not drag it elsewhere. After a drag the range keeps a
+  drag and drop, so a press inside the selection does not drag it elsewhere. `RectangularSelection` and
+  `CrosshairCursor` are `rectangularSelection` and `crosshairCursor` with their default, Alt: no other key or
+  event filter can be set, and a window manager that moves windows on Alt+drag takes the drag first. Past a
+  line's 2,000th character CodeMirror stops counting a rectangle's columns and uses offsets; godemirror always
+  counts columns. After a drag the range keeps a
   goal column of 0, as CodeMirror leaves one there, so Shift+Up or Down from it aims at the line's start.
 - **An editor's caret and text input count the whole document**: Gio's text input counts runes from the start
   of the document, so every key, edit, selection and snippet it exchanges scans the document up to the cursor,

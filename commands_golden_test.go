@@ -22,6 +22,10 @@ type commandCase struct {
 		Pos, Bias int
 		Range     [2]int
 	}
+	Rect struct {
+		A, B   struct{ Line, Col, Off int }
+		Ranges [][2]int
+	}
 	Copied struct {
 		Text     string
 		Ranges   [][2]int
@@ -162,6 +166,7 @@ func TestCommandsMatchCodeMirror(t *testing.T) {
 			"cursorDocEnd":           func() (TransactionSpec, bool) { return s.cursorDoc(true) },
 			"selectDocStart":         func() (TransactionSpec, bool) { return s.selectDoc(false) },
 			"selectDocEnd":           func() (TransactionSpec, bool) { return s.selectDoc(true) },
+			"simplifySelection":      s.simplifySelection,
 		}
 		for _, forward := range []bool{false, true} {
 			run[fmt.Sprintf("move %v false false", forward)] = func() (TransactionSpec, bool) { return s.cursorByChar(forward) }
@@ -180,12 +185,20 @@ func TestCommandsMatchCodeMirror(t *testing.T) {
 	}
 }
 
-func TestGroupAtAndClipboardMatchCodeMirror(t *testing.T) {
+func TestGroupAtRectangleAndClipboardMatchCodeMirror(t *testing.T) {
 	for i, c := range loadCommandCases(t) {
 		s, u := c.state(t), unitsOf(c.Doc)
 		g := s.groupAt(u.toByte[c.GroupAt.Pos], c.GroupAt.Bias)
 		if got := [2]int{u.toUnit[g.from], u.toUnit[g.to]}; got != c.GroupAt.Range {
 			t.Errorf("case %d (%q): groupAt %d bias %d = %v, CodeMirror %v", i, c.Doc, c.GroupAt.Pos, c.GroupAt.Bias, got, c.GroupAt.Range)
+		}
+		var rect [][2]int
+		a, b := c.Rect.A, c.Rect.B
+		for _, r := range s.rectangleFor(rectPos{a.Line, a.Col, a.Off}, rectPos{b.Line, b.Col, b.Off}) {
+			rect = append(rect, [2]int{u.toUnit[r.Anchor()], u.toUnit[r.Head()]})
+		}
+		if fmt.Sprint(rect) != fmt.Sprint(c.Rect.Ranges) {
+			t.Errorf("case %d (%q): rectangle %+v to %+v = %v, CodeMirror %v", i, c.Doc, a, b, rect, c.Rect.Ranges)
 		}
 		cp := s.copiedRange()
 		var ranges [][2]int

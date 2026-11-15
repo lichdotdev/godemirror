@@ -74,7 +74,8 @@ godemirror lets you:
   `@codemirror/state`: a document, a selection of one or more ranges, and
   transactions you `Dispatch` to change them, as one change set each. The user
   types (input methods included), moves and selects with CodeMirror's standard
-  keymap and its mouse selection, and copies, cuts and pastes; Enter keeps the
+  keymap and its mouse selection, adds cursors above and below or drags a
+  rectangle with Alt, and copies, cuts and pastes; Enter keeps the
   line's indentation in your `IndentUnit`. It reports what changed through
   `OnUpdate`, after the frame, so you can read the new document and map your
   own positions through the changes. Everything else stays read-only.
@@ -149,6 +150,8 @@ The deliberate limits, and what they mean for a caller, are in
 | `EditorSelection`, `SelectionRange`, `allowMultipleSelections` | `EditorSelection`, `SelectionRange`, `EditorStateConfig.AllowMultipleSelections` |
 | `changeByRange`, `replaceSelection` | `ChangeByRange`, `ReplaceSelection` |
 | `standardKeymap`, `drawSelection`, `indentUnit`, `view.focus()` | built into `Editor`, `Theme.Cursor`, `EditorStateConfig.IndentUnit`, `Focus` |
+| `addCursorAbove`, `addCursorBelow`, `simplifySelection` | built into `Editor` (Ctrl+Alt+Up/Down, Escape) |
+| `rectangularSelection()`, `crosshairCursor()` | `Editor.RectangularSelection`, `Editor.CrosshairCursor` |
 | `EditorView.lineWrapping` | `View.Wrap` |
 | `EditorView.theme` | `Theme` |
 | `tags` (`@lezer/highlight`), `HighlightStyle.define` | package `tags`, `NewHighlightStyle` |
