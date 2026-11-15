@@ -147,7 +147,9 @@ func (e *Editor) SetState(c EditorStateConfig) error {
 // content is what the view shows of s. A final line end starts no line of a
 // Content's Text, so one more is added: an empty last line stays a line.
 func (s EditorState) content() Content {
-	return Content{Filename: s.conf.Filename, Text: s.doc + "\n", StyleTags: s.conf.StyleTags}
+	c := Content{Filename: s.conf.Filename, Text: s.doc + "\n", StyleTags: s.conf.StyleTags}
+	c.Decorations, c.Widgets = s.lineDecorations()
+	return c
 }
 
 // State is the editor's current state, with every transaction dispatched so

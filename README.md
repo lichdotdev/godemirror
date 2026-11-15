@@ -157,6 +157,7 @@ The deliberate limits, and what they mean for a caller, are in
 | `selectNextOccurrence`, `selectSelectionMatches` | built into `Editor` (Ctrl+D, Ctrl+Shift+L) |
 | `history()`, `undo`, `redo`, `undoDepth`, `redoDepth` | built into `Editor`, `Undo`, `Redo`, `UndoDepth`, `RedoDepth` |
 | `isolateHistory`, `Transaction.addToHistory`, `Transaction.time` | `TransactionSpec.IsolateHistory`, `SkipHistory`, `Time` |
+| `Decoration.line`, `Decoration.widget` in a state field, `RangeSet.map` | `LineDecorationAt`, `LineWidgetAt` in `Decorations`, set by `EditorStateConfig` or `TransactionSpec.Decorations` and mapped through every change |
 | `EditorView.lineWrapping` | `View.Wrap` |
 | `EditorView.theme` | `Theme` |
 | `tags` (`@lezer/highlight`), `HighlightStyle.define` | package `tags`, `NewHighlightStyle` |

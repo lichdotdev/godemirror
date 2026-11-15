@@ -48,6 +48,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `TransactionSpec.IsolateHistory` makes a dispatched change an undo event of its own,
   `SkipHistory` keeps it out of the history, and `Time` sets when it happened; `Transaction`
   carries all three.
+- **Decorations on an `Editor` that follow edits**: `LineDecorationAt` puts a `LineDecoration` on
+  the line starting at a position, and `LineWidgetAt` a `LineWidget` on the line of a position,
+  mapped through every change as `@codemirror/state` 6.7.6's `RangeSet.map` maps
+  `@codemirror/view`'s line and widget decorations: a line decoration goes with the line break
+  before its line, a widget with a deletion across it. They start in
+  `EditorStateConfig.Decorations`, are replaced by `TransactionSpec.Decorations`, and are read
+  back with `EditorState.Decorations`.
 
 ## [0.8.1] - 2026-10-23
 
