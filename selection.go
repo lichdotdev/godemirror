@@ -73,7 +73,7 @@ func (v *View) ClearSelection() { v.sel = selection{} }
 
 // Pos is a place in the document between two characters: Line is 0-based,
 // and Col counts the runes of the line's text before it, a tab or a wide
-// character as one.
+// character as one. An Editor counts bytes instead (EditorState).
 type Pos struct{ Line, Col int }
 
 // Select selects the text between from and to, in either order, as a drag
@@ -218,15 +218,25 @@ func (v *View) lineAt(p pos) selection {
 	return selection{pos{p.line, 0}, pos{p.line, len(v.doc.lines[p.line])}}
 }
 
-// paintSelection fills the selected cells of every visible row. A line the
-// selection runs past also has its newline lit, one cell beyond its end. A
-// selection that is exactly a search match is the current match, which
-// paintSpans already lit in the theme's SearchCurrent.
+// paintSelection fills the selected cells of every visible row, for the
+// selection and any further ranges an Editor's selection has. A line a range
+// runs past also has its newline lit, one cell beyond its end. A selection
+// that is exactly a search match is the current match, which paintSpans
+// already lit in the theme's SearchCurrent.
 func (v *View) paintSelection(gtx layout.Context, f frame, rows []visibleRow, code image.Rectangle) {
-	if v.sel.empty() || v.isCurrentMatch() {
+	for _, s := range v.others {
+		v.paintRange(gtx, f, rows, code, s)
+	}
+	if !v.isCurrentMatch() {
+		v.paintRange(gtx, f, rows, code, v.sel)
+	}
+}
+
+func (v *View) paintRange(gtx layout.Context, f frame, rows []visibleRow, code image.Rectangle, s selection) {
+	if s.empty() {
 		return
 	}
-	from, to := v.sel.ordered()
+	from, to := s.ordered()
 	for _, r := range rows {
 		if r.line < from.line || r.line > to.line {
 			continue
@@ -258,9 +268,12 @@ func (v *View) paintSelection(gtx layout.Context, f frame, rows []visibleRow, co
 // selectPress starts or extends the selection for a press at p, the clicks-th
 // in a row at the same place.
 func (v *View) selectPress(p pos, clicks int, extend bool) {
-	switch {
-	case extend:
+	if extend {
 		v.sel.head = p
+		return
+	}
+	v.others = nil
+	switch {
 	case clicks == 2:
 		v.sel = v.wordAt(p)
 	case clicks >= 3:

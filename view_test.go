@@ -17,13 +17,14 @@ import (
 	"gioui.org/unit"
 )
 
-// harness drives a View, or a Split when split is set, through Gio's own
-// input router, frame by frame.
+// harness drives a View, or a Split, DiffView or Editor when one is set,
+// through Gio's own input router, frame by frame.
 type harness struct {
 	t      *testing.T
 	v      *View
 	split  *Split
 	diff   *DiffView
+	ed     *Editor
 	size   image.Point
 	ops    op.Ops
 	router input.Router
@@ -54,6 +55,8 @@ func (h *harness) frame() {
 	}
 	var err error
 	switch {
+	case h.ed != nil:
+		_, err = h.ed.Layout(gtx)
 	case h.diff != nil:
 		_, err = h.diff.Layout(gtx)
 	case h.split != nil:

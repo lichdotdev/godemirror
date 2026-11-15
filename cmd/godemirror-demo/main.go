@@ -1,4 +1,4 @@
-// Demo of godemirror: a file in a View, or a diff in a DiffView, in a window
+// Demo of godemirror: a file in a View or an Editor, or a diff in a DiffView, in a window
 // or, with -bench or -shot, headless. Headless, it scrolls frame by frame
 // through Gio's own input router and reports frame times or writes a PNG.
 package main
@@ -32,7 +32,8 @@ var (
 	flagChanges = flag.Bool("changes", false, "in a diff, tint the words that changed within a line")
 	flagSplit   = flag.Bool("split", false, "start a diff side by side")
 	flagWrap    = flag.Bool("wrap", false, "wrap long lines instead of scrolling sideways")
-	flagSearch  = flag.String("search", "", "highlight the matches of this text, and select the first one")
+	flagEdit    = flag.Bool("edit", false, "show -file in an Editor")
+	flagSearch  = flag.String("search", "", "highlight the matches of this text, and select the first one; with -edit, select them all")
 	flagLight   = flag.Bool("light", false, "use godemirror.LightTheme")
 	flagTheme   = flag.String("theme", "", "use a ported CodeMirror theme: onedark, dracula, githublight, githubdark or nord")
 	flagFont    = flag.String("font", "JetBrainsMono Nerd Font", "font family, resolved to files as godemirror.New does")

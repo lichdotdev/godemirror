@@ -31,11 +31,13 @@ const (
 // backend that caps its answers would.
 const fillPart = 500
 
-// demo shows -file in a View, or a diff in a DiffView: -old against -file,
-// diffed by the library, or the first file of the -diff patch.
+// demo shows -file in a View or, with -edit, an Editor, or a diff in a
+// DiffView: -old against -file, diffed by the library, or the first file of
+// the -diff patch.
 type demo struct {
-	file *godemirror.View
-	diff *godemirror.DiffView
+	file   *godemirror.View
+	editor *godemirror.Editor
+	diff   *godemirror.DiffView
 	// theme is the views' theme, which the comments take their colors from.
 	theme godemirror.Theme
 	th    *material.Theme
@@ -69,6 +71,9 @@ func newDemo() (*demo, error) {
 		}
 		d.theme = t
 	}
+	if *flagEdit {
+		return d, d.loadEditor()
+	}
 	if *flagOld == "" && *flagDiff == "" {
 		return d, d.loadFile()
 	}
@@ -101,6 +106,18 @@ func (d *demo) loadFile() error {
 	d.file.Theme, d.file.Wrap = d.theme, *flagWrap
 	d.file.SetContent(godemirror.Content{Filename: *flagFile, Text: string(text)})
 	return nil
+}
+
+func (d *demo) loadEditor() error {
+	text, err := os.ReadFile(*flagFile)
+	if err != nil {
+		return err
+	}
+	if d.editor, err = godemirror.NewEditor(*flagFont, unit.Sp(*flagSize)); err != nil {
+		return err
+	}
+	d.editor.Theme, d.editor.Wrap = d.theme, *flagWrap
+	return d.editor.SetState(godemirror.EditorStateConfig{Filename: *flagFile, Doc: string(text), AllowMultipleSelections: true})
 }
 
 func (d *demo) loadDocs() error {
@@ -146,6 +163,9 @@ func (d *demo) search(text string) error {
 	if text == "" {
 		return nil
 	}
+	if d.editor != nil {
+		return d.selectAll(text)
+	}
 	q := godemirror.SearchQuery{Text: text}
 	if d.diff == nil {
 		if err := d.file.SetSearch(q); err != nil {
@@ -159,6 +179,26 @@ func (d *demo) search(text string) error {
 	}
 	d.diff.FindNext()
 	return nil
+}
+
+// selectAll selects every occurrence of text in the editor, a range each, the
+// first one main.
+func (d *demo) selectAll(text string) error {
+	doc := d.editor.State().Doc()
+	var ranges []godemirror.SelectionRange
+	for at := 0; ; {
+		i := strings.Index(doc[at:], text)
+		if i < 0 {
+			break
+		}
+		at += i
+		ranges = append(ranges, godemirror.Range(at, at+len(text)))
+		at += len(text)
+	}
+	if len(ranges) == 0 {
+		return nil
+	}
+	return d.editor.Dispatch(godemirror.TransactionSpec{Selection: godemirror.NewSelection(ranges, 0)})
 }
 
 // expand answers a gap of the patch from -new, fillPart lines at a time.
@@ -198,11 +238,15 @@ func (d *demo) layout(gtx layout.Context) error {
 	area := clip.Rect(image.Rectangle{Max: gtx.Constraints.Max}).Push(gtx.Ops)
 	event.Op(gtx.Ops, d)
 	area.Pop()
-	if d.diff == nil {
-		_, err := d.file.Layout(gtx)
-		return err
+	var err error
+	switch {
+	case d.editor != nil:
+		_, err = d.editor.Layout(gtx)
+	case d.diff == nil:
+		_, err = d.file.Layout(gtx)
+	default:
+		_, err = d.diff.Layout(gtx)
 	}
-	_, err := d.diff.Layout(gtx)
 	return err
 }
 
@@ -225,6 +269,12 @@ func (d *demo) handleKeys(gtx layout.Context) {
 }
 
 func (d *demo) onKey(name key.Name) {
+	if d.editor != nil {
+		if name == keyWrap {
+			d.editor.Wrap = !d.editor.Wrap
+		}
+		return
+	}
 	if d.diff == nil {
 		if name == keyWrap {
 			d.file.Wrap = !d.file.Wrap

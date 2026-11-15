@@ -110,6 +110,31 @@ func (v *View) highlight(c Content, replacement *Content) *pending {
 	return p
 }
 
+// showEdit shows c, an edit of what is on screen, keeping the scroll and
+// the selection. Its text shows at once, the colors of its first keepTop and
+// last keepBottom lines, which the edit left alone, carried over until its
+// own highlighting is ready.
+func (v *View) showEdit(c Content, keepTop, keepBottom int) {
+	doc := plain(c.Text)
+	old := v.doc
+	carry := func(from, to int) {
+		if len(old.tags[from]) == len(doc.lines[to]) {
+			doc.tags[to] = old.tags[from]
+		}
+	}
+	for i := range min(keepTop, len(doc.lines), len(old.lines)) {
+		carry(i, i)
+	}
+	for i := 1; i <= min(keepBottom, len(doc.lines), len(old.lines)); i++ {
+		carry(len(old.lines)-i, len(doc.lines)-i)
+	}
+	v.content = c
+	v.wrapCols = -1
+	v.setDocument(doc)
+	v.findMatches()
+	v.pending = v.highlight(c, nil)
+}
+
 func (v *View) showContent(c Content, doc *document) {
 	v.content = c
 	v.sel = selection{}

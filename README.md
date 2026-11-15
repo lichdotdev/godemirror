@@ -1,12 +1,12 @@
 <div align="center">
   <h1>godemirror</h1>
-  <p><strong>CodeMirror's read-only experience, native to Go.</strong></p>
+  <p><strong>CodeMirror, native to Go.</strong></p>
   <p>
     A code view and a diff view for <a href="https://gioui.org">Gio</a>:
     syntax-highlighted code with a line gutter, wrapping or sideways scrolling,
-    selection and copy, line decorations, widgets on and between lines, and
-    diffs unified or side by side. Drawn as one image per visible row, so a full
-    screen of code costs a handful of quads.
+    selection and copy, line decorations, widgets on and between lines,
+    diffs unified or side by side, and an opt-in editor. Drawn as one image per
+    visible row, so a full screen of code costs a handful of quads.
   </p>
   <p>
     <a href="https://pkg.go.dev/github.com/lichdotdev/godemirror"><img alt="Go Reference" src="https://pkg.go.dev/badge/github.com/lichdotdev/godemirror.svg" /></a>
@@ -25,8 +25,9 @@ On the web, an app that shows code reaches for
 [CodeMirror](https://codemirror.net): highlighting, decorations, widgets
 between lines, a merge view. A native Go app has had nothing like it, and
 drawing code with a GUI toolkit's text stack is slow at full screen.
-godemirror brings that experience to Go, for viewing: file previews, diffs,
-code review, logs. It does not edit text.
+godemirror brings that experience to Go: file previews, diffs, code review,
+logs, and, when you ask for it, an editor whose document and selection follow
+CodeMirror 6's own rules.
 
 godemirror lets you:
 
@@ -69,6 +70,12 @@ godemirror lets you:
   the matches, wrapping, selecting each one and scrolling it into view. The
   search box is yours to draw. In a `DiffView` one query looks through the
   unified view and both sides of the split.
+- **Edit, when asked.** An `Editor` holds an `EditorState`, a port of
+  `@codemirror/state`: a document, a selection of one or more ranges, and
+  transactions you `Dispatch` to change them, as one change set each. It
+  reports what changed through `OnUpdate`, after the frame, so you can read the
+  new document and map your own positions through the changes. Everything
+  else stays read-only.
 - **Select and copy.** Drag (past an edge the view scrolls along), double click
   for a word, triple click for a line, Shift+click to extend, Ctrl+A and
   Ctrl+C. Copying gives back the text as it was, tabs included, and
@@ -95,6 +102,31 @@ if _, err := view.Layout(gtx); err != nil {
 }
 ```
 
+To edit, build an `Editor` instead and change its document with transactions:
+
+```go
+editor, err := godemirror.NewEditor("JetBrainsMono Nerd Font", unit.Sp(13))
+if err != nil {
+	return err
+}
+if err := editor.SetState(godemirror.EditorStateConfig{Filename: "main.go", Doc: source}); err != nil {
+	return err
+}
+editor.OnUpdate = func(u godemirror.Update) {
+	if u.DocChanged() {
+		save(u.State.Doc())
+	}
+}
+// replace bytes [from, to) of the document, as one transaction
+err = editor.Dispatch(godemirror.TransactionSpec{
+	Changes: []godemirror.ChangeSpec{{From: from, To: to, Insert: "resolved"}},
+})
+```
+
+An editor's positions are byte offsets into `EditorState.Doc`, whose lines are
+joined by `"\n"` (`LineSeparator` keeps a CRLF file CRLF in `SliceDoc`); the
+read-only views count a `Pos` column in runes.
+
 `Content` also carries `Labels`, `Decorations`, `Widgets` and `Blocks`, indexed
 by document line. `SetContent` shows a new document from its top;
 `UpdateContent` swaps in a new version of the same one (a diff with lines pulled
@@ -109,6 +141,11 @@ The deliberate limits, and what they mean for a caller, are in
 | CodeMirror 6 | godemirror |
 |---|---|
 | `EditorView` with `EditorState.readOnly` | `View` |
+| `EditorView`, `EditorState.create` | `Editor`, `NewEditor`, `SetState(EditorStateConfig)` |
+| `view.dispatch(spec)`, `updateListener` | `Dispatch(TransactionSpec)`, `OnUpdate` |
+| `ChangeSet`, `mapPos`, `MapMode` | `ChangeSet`, `MapPos`, `MapPosTrack` |
+| `EditorSelection`, `SelectionRange`, `allowMultipleSelections` | `EditorSelection`, `SelectionRange`, `EditorStateConfig.AllowMultipleSelections` |
+| `changeByRange`, `replaceSelection` | `ChangeByRange`, `ReplaceSelection` |
 | `EditorView.lineWrapping` | `View.Wrap` |
 | `EditorView.theme` | `Theme` |
 | `tags` (`@lezer/highlight`), `HighlightStyle.define` | package `tags`, `NewHighlightStyle` |
@@ -160,7 +197,7 @@ both `DarkTheme` and `LightTheme`.
 ## The demo
 
 `cmd/godemirror-demo` shows what the library draws, in a window or headless: a
-file in a `View`, or a diff in a `DiffView`, with expandable gaps, Revert on
+file in a `View` or an `Editor`, or a diff in a `DiffView`, with expandable gaps, Revert on
 hover and comments anchored to lines as `DiffBlock`s.
 
 ```bash
@@ -173,7 +210,8 @@ go run ./cmd/godemirror-demo -diff /tmp/change.patch -new path/to/changed/file -
 In the window: **Alt+W** toggles wrapping, **Alt+S** switches a diff between
 unified and side by side, and **Alt+N** opens a comment under the selected
 lines. Reverting a chunk of two files puts it back and shows the diff again.
-`-search text` highlights its matches and selects the first, `-light` uses
+`-search text` highlights its matches and selects the first (with `-edit`,
+which shows the file in an `Editor`, it selects them all), `-light` uses
 `LightTheme`, and `-bench N` with `-shot out.png` runs it headless
 and reports frame times.
 
@@ -212,4 +250,7 @@ HTML, Java, JavaScript, Python and Rust grammars, MIT licensed © 2018 Marijn Ha
 `@codemirror/language`'s stream parser and the Kotlin and shell modes of
 [`@codemirror/legacy-modes`](https://github.com/codemirror/legacy-modes), MIT
 licensed © 2018-2021 Marijn Haverbeke and others: see
-[its license](internal/stream/LICENSE).
+[its license](internal/stream/LICENSE). The editor (`Editor`, `EditorState`, `ChangeSet`,
+`EditorSelection`) ports [`@codemirror/state`](https://codemirror.net/docs/ref/#state),
+MIT licensed © 2018-2021 Marijn Haverbeke and others: see
+[its license](LICENSE.codemirror).
