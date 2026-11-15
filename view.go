@@ -83,8 +83,10 @@ type View struct {
 	// wrapCols is 0 when unwrapped and -1 when they must be rebuilt.
 	wraps  [][]int
 	starts []int
-	// tops is lineTops: where each line starts once blocks are counted in.
+	// tops is lineTops: where each line starts once blocks are counted in;
+	// laid is the document tops and starts were placed for.
 	tops []int
+	laid *document
 	// blocks are this frame's laid-out BlockWidgets by the line they open
 	// under, and extra their height per line.
 	blocks   map[int][]laidBlock
@@ -195,6 +197,7 @@ func (v *View) Layout(gtx layout.Context) (layout.Dimensions, error) {
 	}
 	v.starts = rowStarts(v.wraps, nil)
 	v.tops = lineTops(v.starts, f.ch, v.extra)
+	v.laid = v.doc
 	v.scrollToTarget(gtx, f)
 	v.handlePointer(gtx, f)
 	v.handleKeys(gtx)

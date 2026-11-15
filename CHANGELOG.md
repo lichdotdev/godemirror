@@ -61,7 +61,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `SetScrollTop`; `LineBlock` (`LineBlockAt` by position on an `Editor`), the top and bottom of a
   line's rows in the last frame; `LineAtHeight` (`LineBlockAtHeight`); `ContentHeight`; and
   `OnScroll`, called after a frame that left the view scrolled elsewhere, so that views beside it
-  can follow it.
+  can follow it. Between a new content and the next frame, the geometry is an estimate of a row a
+  line, as CodeMirror estimates lines it has not measured.
 
 ## [0.8.1] - 2026-10-23
 

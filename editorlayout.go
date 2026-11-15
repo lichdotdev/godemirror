@@ -71,6 +71,7 @@ func (e *Editor) place(f frame) {
 	v.wrapRows(f.g.cols)
 	v.starts = rowStarts(v.wraps, nil)
 	v.tops = lineTops(v.starts, f.ch, v.extra)
+	v.laid = v.doc
 	e.f = f
 }
 

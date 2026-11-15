@@ -248,7 +248,9 @@ file is the trap alone.
 - **Scroll and line geometry are a single view's, in whole pixels**: `ScrollTop`, `SetScrollTop`,
   `LineBlock` (`LineBlockAt` on an `Editor`), `LineAtHeight` and `ContentHeight` answer what CodeMirror's
   `scrollDOM.scrollTop`, `lineBlockAt`, `lineBlockAtHeight` and `contentHeight` do, from the last `Layout`:
-  between a `Dispatch` and the next frame, an `Editor` answers for the document on screen. A line's block
+  between a `Dispatch` and the next frame, an `Editor` answers for the document on screen. Content set since
+  the last `Layout` (`SetContent`, `SetState`) is estimated, as CodeMirror's height map estimates lines it has
+  not measured, but more crudely: a row a line, wrapping and blocks left out, until the next frame places it. A line's block
   covers its rows, not the block widgets under it, which CodeMirror makes blocks of their own. `OnScroll`
   is ours: CodeMirror has a DOM scroll event, godemirror calls back after the frame that left the view
   scrolled elsewhere, the scroll a caller set included, so views that follow each other must stop where the
