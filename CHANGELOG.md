@@ -55,6 +55,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   before its line, a widget with a deletion across it. They start in
   `EditorStateConfig.Decorations`, are replaced by `TransactionSpec.Decorations`, and are read
   back with `EditorState.Decorations`.
+- **Scroll and line geometry on a `View` and an `Editor`**, as CodeMirror's `scrollDOM.scrollTop`,
+  `lineBlockAt`, `lineBlockAtHeight` and `contentHeight` answer them: `ScrollTop` and
+  `SetScrollTop`; `LineBlock` (`LineBlockAt` by position on an `Editor`), the top and bottom of a
+  line's rows in the last frame; `LineAtHeight` (`LineBlockAtHeight`); `ContentHeight`; and
+  `OnScroll`, called after a frame that left the view scrolled elsewhere, so that views beside it
+  can follow it.
 
 ## [0.8.1] - 2026-10-23
 

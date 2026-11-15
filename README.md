@@ -168,6 +168,7 @@ The deliberate limits, and what they mean for a caller, are in
 | `state.selection`, `dispatch({selection})` | `Selection`, `Select`, `SelectLines` |
 | `SearchQuery`, `findNext`, `findPrevious` | `SearchQuery`, `SetSearch`, `FindNext`, `FindPrevious`, `Matches` (no panel: draw your own search box) |
 | `EditorView.scrollIntoView` | `ScrollToLine` |
+| `scrollDOM.scrollTop`, `lineBlockAt`, `lineBlockAtHeight`, `contentHeight` | `ScrollTop`, `SetScrollTop`, `LineBlock` (`LineBlockAt` on an `Editor`), `LineAtHeight` (`LineBlockAtHeight`), `ContentHeight`, and `OnScroll` |
 | `state.doc.lines`, `doc.line(n)` | `LineCount`, `LineText` |
 | `MergeView`, `unifiedMergeView` | `DiffView` (`Split` on or off) |
 | `collapseUnchanged` | `DiffOptions.Collapse`, or the gaps of a patch |

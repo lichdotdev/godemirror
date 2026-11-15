@@ -50,6 +50,12 @@ func (e *Editor) Layout(gtx layout.Context) (layout.Dimensions, error) {
 		e.paintCarets(gtx)
 		e.tellIME(gtx)
 	}
+	if v.scroll != v.scrolled {
+		v.scrolled = v.scroll
+		if e.OnScroll != nil {
+			e.OnScroll()
+		}
+	}
 	e.report(gtx)
 	return dims, nil
 }

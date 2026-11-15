@@ -242,3 +242,15 @@ file is the trap alone.
   no decoration: the caller decorates it again, in `OnUpdate`, as a CodeMirror state field would with its
   effects. A decoration's `Spans` count runes of its line and do not follow edits within it, where
   CodeMirror would use mark decorations, which are not ported; nor are block widgets on an editor.
+- **Scroll and line geometry are a single view's, in whole pixels**: `ScrollTop`, `SetScrollTop`,
+  `LineBlock` (`LineBlockAt` on an `Editor`), `LineAtHeight` and `ContentHeight` answer what CodeMirror's
+  `scrollDOM.scrollTop`, `lineBlockAt`, `lineBlockAtHeight` and `contentHeight` do, from the last `Layout`:
+  between a `Dispatch` and the next frame, an `Editor` answers for the document on screen. A line's block
+  covers its rows, not the block widgets under it, which CodeMirror makes blocks of their own. `OnScroll`
+  is ours: CodeMirror has a DOM scroll event, godemirror calls back after the frame that left the view
+  scrolled elsewhere, the scroll a caller set included, so views that follow each other must stop where the
+  position they set is the one they were told of. Views inside a `Split` or a `DiffView` neither call it nor
+  answer for their place in it. CodeMirror has no three-pane view: `@codemirror/merge` 6.12.3's `MergeView`
+  aligns two editors in one scroller with block-widget spacers before each unchanged stretch and places its
+  revert buttons at `lineBlockAt(chunk.fromA).top`, with no connectors between the sides; an `Editor` has no
+  block widgets for such spacers, so panes beside it follow its scroll instead.
