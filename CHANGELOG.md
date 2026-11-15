@@ -17,7 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and `SelectionRange` follow CodeMirror's: a selection holds one or more ranges, sorted and merged,
   when `EditorStateConfig.AllowMultipleSelections` is set. `ChangeByRange` and
   `ReplaceSelection` change every range at once, and `LineSeparator` keeps a CRLF file CRLF.
-  Positions are UTF-8 byte offsets, where a `View`'s `Pos` counts runes. `View`, `Split` and
+  Positions are UTF-8 byte offsets, where a `View`'s `Pos` counts runes. An edit rebuilds only the lines it
+  touched on screen. `View`, `Split` and
   `DiffView` stay read-only and unchanged.
 - **An `Editor` takes the keyboard and the mouse as CodeMirror does**, ported from
   `@codemirror/commands` 6.11.1 and `@codemirror/view` 6.43.15: typing and input methods at

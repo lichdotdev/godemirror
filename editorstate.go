@@ -100,12 +100,14 @@ func newEditorState(c EditorStateConfig) (EditorState, error) {
 
 func lineStarts(doc string) []int {
 	starts := []int{0}
-	for i := range len(doc) {
-		if doc[i] == '\n' {
-			starts = append(starts, i+1)
+	for at := 0; ; {
+		i := strings.IndexByte(doc[at:], '\n')
+		if i < 0 {
+			return starts
 		}
+		at += i + 1
+		starts = append(starts, at)
 	}
-	return starts
 }
 
 // Doc is the document, its lines joined by "\n" whatever LineSeparator is:

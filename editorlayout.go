@@ -85,7 +85,8 @@ func (e *Editor) show() (edited bool) {
 		})
 		keepTop := e.shown.LineAt(fromA).Number - 1
 		keepBottom := e.shown.Lines() - e.shown.LineAt(toA).Number
-		e.view.showEdit(e.state.content(), keepTop, keepBottom)
+		first, last := e.state.Line(keepTop+1), e.state.Line(e.state.Lines()-keepBottom)
+		e.view.showEdit(e.state.content(), keepTop, keepBottom, e.state.doc[first.From:last.To])
 		e.unshown = emptyChangeSet(len(e.state.doc))
 	} else if e.state.decosGen != e.shown.decosGen {
 		e.view.content.Decorations, e.view.content.Widgets = e.state.lineDecorations()
