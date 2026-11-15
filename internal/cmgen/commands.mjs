@@ -339,11 +339,11 @@ for (let i = 0; i < 100; i++) {
   cases.push(c);
 }
 
-// searchCases select occurrences in documents of few words, repeated. No
-// word changes under NFKD, which SearchCursor matches through and the port
-// does not (docs/ceilings.md): "e" would select the "e" "é" decomposes to.
+// searchCases select occurrences in documents of few words, repeated, some
+// of which NFKD changes: SearchCursor matches through it.
 let searchCases = [];
-const words = ["one", "two", "onetwo", "ne", "x_1", "世界"];
+const words = ["one", "two", "onetwo", "ne", "x_1", "世界", "é", "e\u0301", "e", "ﬁ", "fi", "Å", "A\u030a",
+  "①", "1", "ｶ", "카"];
 const seps = [" ", " ", "\n", ".", ""];
 for (let i = 0; i < 100; i++) {
   let doc = Array.from({ length: r(10) + 1 }, () => pick(words) + pick(seps)).join("");
@@ -361,7 +361,20 @@ for (let i = 0; i < 100; i++) {
     next: run(state, search.selectNextOccurrence), matches: run(state, search.selectSelectionMatches) });
 }
 
+// cursorCases are every match SearchCursor finds of a query in a document
+// of such words.
+let cursorCases = [];
+for (let i = 0; i < 150; i++) {
+  let doc = Array.from({ length: r(12) + 1 }, () => pick(words) + pick(seps)).join("");
+  let query = pick([pick(words), pick(words) + pick(words), pick(["e", "\u0301", "f", "i", "A", "\u030a", "1", "ne"])]);
+  let matches = [];
+  for (let cur = new search.SearchCursor(Text.of(doc.split("\n")), query); !cur.next().done;)
+    matches.push([cur.value.from, cur.value.to]);
+  cursorCases.push({ doc, query, matches });
+}
+
 const versions = Object.fromEntries(["@codemirror/state", "@codemirror/view", "@codemirror/commands", "@codemirror/language", "@codemirror/search"]
   .map((p) => [p, packageJSON(modulesDir, p).version]));
 writeFileSync(out, `{"versions": ${JSON.stringify(versions)}, "cases": [\n${cases.map((c) => JSON.stringify(c)).join(",\n")}\n],
-"searchCases": [\n${searchCases.map((c) => JSON.stringify(c)).join(",\n")}\n]}\n`);
+"searchCases": [\n${searchCases.map((c) => JSON.stringify(c)).join(",\n")}\n],
+"cursorCases": [\n${cursorCases.map((c) => JSON.stringify(c)).join(",\n")}\n]}\n`);

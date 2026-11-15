@@ -106,6 +106,10 @@ type commandGoldens struct {
 	Versions    map[string]string
 	Cases       []commandCase
 	SearchCases []searchCase
+	CursorCases []struct {
+		Doc, Query string
+		Matches    [][2]int
+	}
 }
 
 func loadCommandCases(t *testing.T) []commandCase {
@@ -255,5 +259,22 @@ func TestOccurrenceSelectionMatchesCodeMirror(t *testing.T) {
 		checkResult(t, fmt.Sprintf("case %d (%q %v) selectNextOccurrence", i, c.Doc, c.Sel), s, spec, ok, c.Next)
 		spec, ok = s.selectSelectionMatches()
 		checkResult(t, fmt.Sprintf("case %d (%q %v) selectSelectionMatches", i, c.Doc, c.Sel), s, spec, ok, c.Matches)
+	}
+}
+
+func TestSearchCursorMatchesCodeMirror(t *testing.T) {
+	for i, c := range loadCommandGoldens(t).CursorCases {
+		s, err := newEditorState(EditorStateConfig{Doc: c.Doc})
+		if err != nil {
+			t.Fatal(err)
+		}
+		u := unitsOf(c.Doc)
+		var got [][2]int
+		for from, to := range s.matchesIn(c.Query, 0, len(s.doc)) {
+			got = append(got, [2]int{u.toUnit[from], u.toUnit[to]})
+		}
+		if fmt.Sprint(got) != fmt.Sprint(c.Matches) {
+			t.Errorf("case %d: %q in %q matched %v, CodeMirror %v", i, c.Query, c.Doc, got, c.Matches)
+		}
 	}
 }

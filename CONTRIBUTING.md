@@ -115,7 +115,7 @@ Then:
 A change to the API is best proposed in an issue before it is written: say
 what a caller does today, what they would write instead, and what it costs.
 New dependencies need the maintainer's agreement first; the library depends on
-Gio, `golang.org/x/image` and chroma only.
+Gio, `golang.org/x/image`, `golang.org/x/text` and chroma only.
 
 Commit messages follow [Conventional Commits](https://www.conventionalcommits.org)
 (`feat:`, `fix:`, `docs:`, `refactor:`, `test:`, `chore:`, `perf:`, `ci:`).
