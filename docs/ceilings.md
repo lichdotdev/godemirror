@@ -235,3 +235,10 @@ file is the trap alone.
   redoes on every platform, and macOS gets none of its own bindings. Effects in the history
   (`invertedEffects`) and its JSON form are not ported. A transaction made outside of `Layout` happened at
   `time.Now()` unless its `Time` says otherwise; one made by input, at the frame's `gtx.Now`.
+- **An editor's decorations are lines and widgets, mapped as CodeMirror maps them**: `LineDecorationAt` is
+  `Decoration.line`, which stays on its line as text is typed at its start (a new line typed there leaves it
+  on the empty line before the text) and goes with the line break before it; `LineWidgetAt` is an inline
+  `Decoration.widget`, dropped by a deletion across it. A line typed in the middle of a decorated region gets
+  no decoration: the caller decorates it again, in `OnUpdate`, as a CodeMirror state field would with its
+  effects. A decoration's `Spans` count runes of its line and do not follow edits within it, where
+  CodeMirror would use mark decorations, which are not ported; nor are block widgets on an editor.

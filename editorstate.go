@@ -42,6 +42,9 @@ type EditorStateConfig struct {
 	// StyleTags add rules to the Lezer grammars they name, as
 	// Content.StyleTags.
 	StyleTags []StyleTags
+	// Decorations are the line decorations and widgets the editor starts
+	// with.
+	Decorations Decorations
 
 	// history is the undo history's config, CodeMirror's defaults when
 	// zero.
@@ -59,11 +62,15 @@ type EditorState struct {
 	sel   EditorSelection
 	conf  *EditorStateConfig
 	hist  historyState
+	// decos are the decorations, and decosGen counts the times they
+	// changed, for an Editor to know when to show them again.
+	decos    Decorations
+	decosGen int
 }
 
 func newEditorState(c EditorStateConfig) (EditorState, error) {
 	conf := c
-	conf.Doc, conf.Selection = "", EditorSelection{}
+	conf.Doc, conf.Selection, conf.Decorations = "", EditorSelection{}, Decorations{}
 	unit, err := indentUnitOf(c.IndentUnit)
 	if err != nil {
 		return EditorState{}, err
@@ -81,6 +88,10 @@ func newEditorState(c EditorStateConfig) (EditorState, error) {
 	if err := s.checkSelection(s.sel); err != nil {
 		return EditorState{}, err
 	}
+	if err := c.Decorations.check(s); err != nil {
+		return EditorState{}, err
+	}
+	s.decos = c.Decorations.sorted()
 	if !conf.AllowMultipleSelections {
 		s.sel = s.sel.AsSingle()
 	}
@@ -247,6 +258,11 @@ type TransactionSpec struct {
 	// Time is when the transaction happened, which groups undo events; zero
 	// is now.
 	Time time.Time
+	// Decorations, when set, replace the editor's decorations after the
+	// changes, at positions in the document they make; when nil, the
+	// decorations are mapped through the changes. A caller recomputes them
+	// in OnUpdate, as a CodeMirror state field does with its effects.
+	Decorations *Decorations
 
 	// set is changes ChangeByRange already merged, made before Changes.
 	set *ChangeSet
@@ -314,6 +330,16 @@ func (s EditorState) update(spec TransactionSpec) (Transaction, error) {
 	}
 	if !s.conf.AllowMultipleSelections {
 		next.sel = next.sel.AsSingle()
+	}
+	next.decos, next.decosGen = s.decos.mapThrough(changes), s.decosGen
+	if !changes.Empty() {
+		next.decosGen++
+	}
+	if spec.Decorations != nil {
+		if err := spec.Decorations.check(next); err != nil {
+			return Transaction{}, err
+		}
+		next.decos, next.decosGen = spec.Decorations.sorted(), s.decosGen+1
 	}
 	t := Transaction{
 		StartState: s, State: next, Changes: changes, Selection: spec.Selection,
