@@ -65,6 +65,9 @@ type Editor struct {
 	// selectionSet whether a transaction set the selection since.
 	blinkStart   time.Time
 	selectionSet bool
+	// now, while Layout runs, is its frame's time, which the transactions it
+	// dispatches happened at.
+	now time.Time
 	// altDown is whether Alt is held, as the last key or pointer event said,
 	// and pointerMods the modifiers of the last pointer event seen.
 	altDown     bool
@@ -157,6 +160,9 @@ func (e *Editor) State() EditorState { return e.state }
 // changing nothing, when a change or a selection range of spec is outside
 // the document, inside a character, or a change's From is after its To.
 func (e *Editor) Dispatch(spec TransactionSpec) error {
+	if spec.Time.IsZero() {
+		spec.Time = e.now
+	}
 	t, err := e.state.update(spec)
 	if err != nil {
 		return err
@@ -173,6 +179,32 @@ func (e *Editor) Dispatch(spec TransactionSpec) error {
 	}
 	e.selectionSet = e.selectionSet || len(t.Selection.ranges) > 0
 	return nil
+}
+
+// Undo takes the last undo event back, as CodeMirror's undo: changes made
+// close together are one event, unless a transaction isolated them. It
+// reports whether there was one to undo.
+func (e *Editor) Undo() bool { return e.dispatchHistory(e.state.hist.popChanges(doneBranch, e.state)) }
+
+// Redo makes the last undone event again, as CodeMirror's redo, and reports
+// whether there was one.
+func (e *Editor) Redo() bool {
+	return e.dispatchHistory(e.state.hist.popChanges(undoneBranch, e.state))
+}
+
+// UndoDepth is how many events Undo can take back, as CodeMirror's
+// undoDepth.
+func (e *Editor) UndoDepth() int { return e.state.hist.depth(doneBranch) }
+
+// RedoDepth is how many events Redo can make again, as CodeMirror's
+// redoDepth.
+func (e *Editor) RedoDepth() int { return e.state.hist.depth(undoneBranch) }
+
+func (e *Editor) dispatchHistory(spec TransactionSpec, ok bool) bool {
+	if ok {
+		e.mustDispatch(spec)
+	}
+	return ok
 }
 
 func (e *Editor) report(gtx layout.Context) {

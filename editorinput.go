@@ -25,14 +25,25 @@ type binding struct {
 	run, shift command
 }
 
+// historyCommand is undo (doneBranch) or redo, and selectionCommand
+// undoSelection or redoSelection.
+func historyCommand(side branchName) command {
+	return func(e *Editor) (TransactionSpec, bool) { return e.state.hist.popChanges(side, e.state) }
+}
+
+func selectionCommand(side branchName) command {
+	return func(e *Editor) (TransactionSpec, bool) { return e.state.hist.popSelectionOf(side, e.state) }
+}
+
 func stateCommand(f func(EditorState) (TransactionSpec, bool)) command {
 	return func(e *Editor) (TransactionSpec, bool) { return f(e.state) }
 }
 
 // keymap is standardKeymap, the bindings of defaultKeymap that work with
 // several cursors (addCursorAbove, addCursorBelow and simplifySelection),
-// and those of @codemirror/search 6.7.2's searchKeymap that need no search
-// panel (selectNextOccurrence and selectSelectionMatches).
+// historyKeymap, as it binds keys on Linux, and those of @codemirror/search
+// 6.7.2's searchKeymap that need no search panel (selectNextOccurrence and
+// selectSelectionMatches).
 var keymap = []binding{
 	{key.NameLeftArrow, 0, stateCommand(func(s EditorState) (TransactionSpec, bool) { return s.cursorByChar(false) }),
 		stateCommand(func(s EditorState) (TransactionSpec, bool) { return s.selectByChar(false) })},
@@ -70,6 +81,10 @@ var keymap = []binding{
 	{key.NameDownArrow, key.ModShortcut | key.ModAlt, func(e *Editor) (TransactionSpec, bool) { return e.addCursorVertically(true) }, nil},
 	{key.NameEscape, 0, stateCommand(EditorState.simplifySelection), nil},
 	{"D", key.ModShortcut, stateCommand(EditorState.selectNextOccurrence), nil},
+	{"Z", key.ModShortcut, historyCommand(doneBranch), historyCommand(undoneBranch)},
+	{"Y", key.ModShortcut, historyCommand(undoneBranch), nil},
+	{"U", key.ModShortcut, selectionCommand(doneBranch), nil},
+	{"U", key.ModAlt, selectionCommand(undoneBranch), nil},
 	{"L", key.ModShortcut, nil, stateCommand(EditorState.selectSelectionMatches)},
 }
 

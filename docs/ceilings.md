@@ -194,8 +194,7 @@ file is the trap alone.
   next occurrence and Ctrl+Shift+L every occurrence. There is no search panel, so none of its other keys. Ctrl is Gio's `ModShortcut`, Cmd on macOS,
   so macOS gets these bindings and none of CodeMirror's macOS ones (Cmd+arrows, Alt+arrows, the Emacs keys).
   Nothing else of `defaultKeymap` is bound yet: no syntax motion, moving or copying lines, commenting,
-  bracket matching or indenting a selection, and Tab moves focus away, as without `indentWithTab`. Undo and
-  redo are not ported yet.
+  bracket matching or indenting a selection, and Tab moves focus away, as without `indentWithTab`.
 - **Enter indents as CodeMirror does with no language**: the new line takes the column of its line's
   indentation, written in `IndentUnit` (two spaces by default, so a tab-indented line goes on in spaces unless
   `IndentUnit` is `"\t"`), and between `()`, `[]` or `{}` it breaks twice. No grammar indents by its syntax,
@@ -225,3 +224,12 @@ file is the trap alone.
   decomposes to; here neither does. CodeMirror also takes the query with the line separator and searches
   lines joined by `"\n"`, so with `LineSeparator` `"\r\n"` a selection over a line break has no other
   occurrence, kept as it is. Ctrl+Shift+L selects nothing past 1,000 matches, as CodeMirror's does.
+- **An editor's undo history is CodeMirror's `history()` with its defaults, always on**: changes 500 ms apart
+  or less, touching each other, typed or deleted, are one undo event (a composition always joins the event
+  before it); at least 100 events are kept; none of `minDepth`, `newGroupDelay` or `joinToEvent` can be set,
+  and the history cannot be turned off, only bypassed per transaction (`SkipHistory`). A dispatch with no
+  `UserEvent` joins typing next to it within the delay, as in CodeMirror: give a programmatic edit
+  `IsolateHistory` to make it an undo of its own. `historyKeymap` is bound as on Linux, so Ctrl+Shift+Z
+  redoes on every platform, and macOS gets none of its own bindings. Effects in the history
+  (`invertedEffects`) and its JSON form are not ported. A transaction made outside of `Layout` happened at
+  `time.Now()` unless its `Time` says otherwise; one made by input, at the frame's `gtx.Now`.

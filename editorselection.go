@@ -229,13 +229,15 @@ func (s EditorSelection) Main() SelectionRange { return s.ranges[s.main] }
 
 // Map is the selection moved through changes, which start from the
 // document it is in: a cursor keeps to the character before it.
-func (s EditorSelection) Map(c ChangeSet) EditorSelection {
+func (s EditorSelection) Map(c ChangeSet) EditorSelection { return s.mapAssoc(c, -1) }
+
+func (s EditorSelection) mapAssoc(c ChangeSet, assoc int) EditorSelection {
 	if c.Empty() {
 		return s
 	}
 	ranges := make([]SelectionRange, len(s.ranges))
 	for i, r := range s.ranges {
-		ranges[i] = r.Map(c)
+		ranges[i] = r.mapAssoc(c, assoc)
 	}
 	return NewSelection(ranges, s.main)
 }

@@ -129,8 +129,11 @@ func TestAnEditKeepsTheColorsOfTheLinesItLeftAlone(t *testing.T) {
 	before := h.v.doc.tags
 	dispatch(t, h.ed, TransactionSpec{Changes: []ChangeSpec{{From: 19, To: 20, Insert: "2"}}})
 	h.frame()
+	// The edit's own highlighting may already land in this frame, with tags
+	// equal to the carried ones but interned anew, so the tags are compared
+	// by name.
 	after := h.v.doc.tags
-	if after[0][0] == nil || after[0][0] != before[0][0] || after[4][0] != before[4][0] {
+	if after[0][0] == nil || tagNames(after[0][0]) != tagNames(before[0][0]) || tagNames(after[4][0]) != tagNames(before[4][0]) {
 		t.Fatal("an untouched line lost its colors before the highlighting landed")
 	}
 	waitForHighlight(h)

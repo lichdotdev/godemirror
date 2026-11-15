@@ -232,6 +232,24 @@ func (c ChangeSet) invert(doc string) ChangeSet {
 	return ChangeSet{sections, inserted}
 }
 
+// desc is the changes without the text they insert, CodeMirror's
+// ChangeDesc: enough to map positions and other changes through.
+func (c ChangeSet) desc() ChangeSet { return ChangeSet{sections: c.sections} }
+
+// invertedDesc is the desc of the changes that undo these.
+func (c ChangeSet) invertedDesc() ChangeSet {
+	sections := make([]int, len(c.sections))
+	for i := 0; i < len(sections); i += 2 {
+		n, ins := c.sections[i], c.sections[i+1]
+		if ins < 0 {
+			sections[i], sections[i+1] = n, ins
+		} else {
+			sections[i], sections[i+1] = ins, n
+		}
+	}
+	return ChangeSet{sections: sections}
+}
+
 // compose is these changes followed by other, which must start from the
 // document these produce.
 func (c ChangeSet) compose(other ChangeSet) ChangeSet {
