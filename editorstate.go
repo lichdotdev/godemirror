@@ -230,7 +230,10 @@ type TransactionSpec struct {
 
 	// set is changes ChangeByRange already merged, made before Changes.
 	set *ChangeSet
-	err error
+	// scrollTo is a position to scroll into view, as CodeMirror's
+	// EditorView.scrollIntoView effect, instead of the main range's head.
+	scrollTo *int
+	err      error
 }
 
 // Transaction is one update of an EditorState, as CodeMirror's Transaction.
@@ -245,6 +248,8 @@ type Transaction struct {
 	Selection      EditorSelection
 	UserEvent      string
 	ScrollIntoView bool
+
+	scrollTo *int
 }
 
 // DocChanged reports whether the transaction changes the document.
@@ -284,5 +289,5 @@ func (s EditorState) update(spec TransactionSpec) (Transaction, error) {
 	if !s.conf.AllowMultipleSelections {
 		next.sel = next.sel.AsSingle()
 	}
-	return Transaction{StartState: s, State: next, Changes: changes, Selection: spec.Selection, UserEvent: spec.UserEvent, ScrollIntoView: spec.ScrollIntoView}, nil
+	return Transaction{StartState: s, State: next, Changes: changes, Selection: spec.Selection, UserEvent: spec.UserEvent, ScrollIntoView: spec.ScrollIntoView, scrollTo: spec.scrollTo}, nil
 }

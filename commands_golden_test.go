@@ -94,28 +94,44 @@ func (u units) written(s EditorSelection) unitSelection {
 	return g
 }
 
+// searchCase is one of the goldens' searchCases: what selectNextOccurrence
+// and selectSelectionMatches make of a selection.
+type searchCase struct {
+	Doc           string
+	Sel           unitSelection
+	Next, Matches *commandResult
+}
+
+type commandGoldens struct {
+	Versions    map[string]string
+	Cases       []commandCase
+	SearchCases []searchCase
+}
+
 func loadCommandCases(t *testing.T) []commandCase {
+	t.Helper()
+	return loadCommandGoldens(t).Cases
+}
+
+func loadCommandGoldens(t *testing.T) commandGoldens {
 	t.Helper()
 	data, err := os.ReadFile("testdata/commands.golden.json")
 	if err != nil {
 		t.Fatal(err)
 	}
-	var golden struct {
-		Versions map[string]string
-		Cases    []commandCase
-	}
+	var golden commandGoldens
 	if err := json.Unmarshal(data, &golden); err != nil {
 		t.Fatal(err)
 	}
 	for pkg, want := range map[string]string{
 		"@codemirror/state": "6.7.6", "@codemirror/view": "6.43.15",
-		"@codemirror/commands": "6.11.1", "@codemirror/language": "6.13.1",
+		"@codemirror/commands": "6.11.1", "@codemirror/language": "6.13.1", "@codemirror/search": "6.7.2",
 	} {
 		if golden.Versions[pkg] != want {
 			t.Fatalf("goldens from %s %s, the port is of %s", pkg, golden.Versions[pkg], want)
 		}
 	}
-	return golden.Cases
+	return golden
 }
 
 func (c commandCase) state(t *testing.T) EditorState {
@@ -226,5 +242,18 @@ func TestTextInputMatchesCodeMirror(t *testing.T) {
 		change := ChangeSpec{From: u.toByte[in.From], To: u.toByte[in.To], Insert: in.Insert}
 		what := fmt.Sprintf("case %d (%q %v) input %+v", i, c.Doc, c.Sel, in)
 		checkResult(t, what, s, s.applyDefaultInsert(change, newSel, in.Composing >= 0), true, in.Result)
+	}
+}
+
+func TestOccurrenceSelectionMatchesCodeMirror(t *testing.T) {
+	for i, c := range loadCommandGoldens(t).SearchCases {
+		s, err := newEditorState(EditorStateConfig{Doc: c.Doc, Selection: unitsOf(c.Doc).selection(t, c.Sel), AllowMultipleSelections: true})
+		if err != nil {
+			t.Fatal(err)
+		}
+		spec, ok := s.selectNextOccurrence()
+		checkResult(t, fmt.Sprintf("case %d (%q %v) selectNextOccurrence", i, c.Doc, c.Sel), s, spec, ok, c.Next)
+		spec, ok = s.selectSelectionMatches()
+		checkResult(t, fmt.Sprintf("case %d (%q %v) selectSelectionMatches", i, c.Doc, c.Sel), s, spec, ok, c.Matches)
 	}
 }

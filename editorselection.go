@@ -268,6 +268,12 @@ func (s EditorSelection) eq(o EditorSelection, includeAssoc bool) bool {
 	return true
 }
 
+// addSecondary is the selection with r added, merged with any range it
+// overlaps, its main range kept, as CodeMirror's addRange with main false.
+func (s EditorSelection) addSecondary(r SelectionRange) EditorSelection {
+	return NewSelection(append([]SelectionRange{r}, s.ranges...), s.main+1)
+}
+
 // ReplaceRange is the selection with its range at index which replaced by r,
 // merged with any range it then overlaps.
 func (s EditorSelection) ReplaceRange(r SelectionRange, which int) EditorSelection {

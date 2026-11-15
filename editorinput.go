@@ -29,9 +29,10 @@ func stateCommand(f func(EditorState) (TransactionSpec, bool)) command {
 	return func(e *Editor) (TransactionSpec, bool) { return f(e.state) }
 }
 
-// keymap is standardKeymap, and the bindings of defaultKeymap that work
-// with several cursors: addCursorAbove, addCursorBelow and
-// simplifySelection.
+// keymap is standardKeymap, the bindings of defaultKeymap that work with
+// several cursors (addCursorAbove, addCursorBelow and simplifySelection),
+// and those of @codemirror/search 6.7.2's searchKeymap that need no search
+// panel (selectNextOccurrence and selectSelectionMatches).
 var keymap = []binding{
 	{key.NameLeftArrow, 0, stateCommand(func(s EditorState) (TransactionSpec, bool) { return s.cursorByChar(false) }),
 		stateCommand(func(s EditorState) (TransactionSpec, bool) { return s.selectByChar(false) })},
@@ -68,6 +69,8 @@ var keymap = []binding{
 	{key.NameUpArrow, key.ModShortcut | key.ModAlt, func(e *Editor) (TransactionSpec, bool) { return e.addCursorVertically(false) }, nil},
 	{key.NameDownArrow, key.ModShortcut | key.ModAlt, func(e *Editor) (TransactionSpec, bool) { return e.addCursorVertically(true) }, nil},
 	{key.NameEscape, 0, stateCommand(EditorState.simplifySelection), nil},
+	{"D", key.ModShortcut, stateCommand(EditorState.selectNextOccurrence), nil},
+	{"L", key.ModShortcut, nil, stateCommand(EditorState.selectSelectionMatches)},
 }
 
 // Clipboard keys, which a browser turns into the copy, cut and paste events

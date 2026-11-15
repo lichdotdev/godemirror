@@ -189,8 +189,9 @@ file is the trap alone.
 - **An editor has `@codemirror/commands`' standard keymap, as it binds off macOS, and nothing more**: arrows by
   character and, with Ctrl, by group; Up and Down; Page Up and Down; Home and End (to the wrapped row first,
   Home then to the line's indentation); Ctrl+Home and Ctrl+End; Shift for each; Enter; Ctrl+A; Backspace and
-  Delete, with Ctrl by group; Ctrl+C, X and V for the clipboard; and, of `defaultKeymap`, Ctrl+Alt+Up and Down
-  to add a cursor and Escape to go back to one. Ctrl is Gio's `ModShortcut`, Cmd on macOS,
+  Delete, with Ctrl by group; Ctrl+C, X and V for the clipboard; of `defaultKeymap`, Ctrl+Alt+Up and Down to
+  add a cursor and Escape to go back to one; and of `@codemirror/search`'s `searchKeymap`, Ctrl+D to select the
+  next occurrence and Ctrl+Shift+L every occurrence. There is no search panel, so none of its other keys. Ctrl is Gio's `ModShortcut`, Cmd on macOS,
   so macOS gets these bindings and none of CodeMirror's macOS ones (Cmd+arrows, Alt+arrows, the Emacs keys).
   Nothing else of `defaultKeymap` is bound yet: no syntax motion, moving or copying lines, commenting,
   bracket matching or indenting a selection, and Tab moves focus away, as without `indentWithTab`. Undo and
@@ -218,3 +219,9 @@ file is the trap alone.
   is repeated at each cursor outside the main cursor's line that has the same text before it, CodeMirror's
   behaviour with no DOM node to find the composition in. The caret is drawn only while the editor has focus,
   and blinks every 1.2 s, starting over when a transaction sets the selection.
+- **An editor's occurrences are the selected text, code unit for code unit**: Ctrl+D and Ctrl+Shift+L find
+  text equal to the selection, where `@codemirror/search`'s `SearchCursor` matches through NFKD normalization:
+  there, a precomposed `é` and `e` with a combining accent find each other, and an `e` finds the `e` an `é`
+  decomposes to; here neither does. CodeMirror also takes the query with the line separator and searches
+  lines joined by `"\n"`, so with `LineSeparator` `"\r\n"` a selection over a line break has no other
+  occurrence, kept as it is. Ctrl+Shift+L selects nothing past 1,000 matches, as CodeMirror's does.
