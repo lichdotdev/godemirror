@@ -83,6 +83,8 @@ type View struct {
 	// wrapCols is 0 when unwrapped and -1 when they must be rebuilt.
 	wraps  [][]int
 	starts []int
+	// laidOut is the gutter and the cells of the last frame, for Geometry.
+	laidOut Geometry
 	// tops is lineTops: where each line starts once blocks are counted in;
 	// laid is the document tops and starts were placed for.
 	tops []int
@@ -242,6 +244,7 @@ func (v *View) prepare(gtx layout.Context) (frame, error) {
 	v.frameNo++
 	f := frame{size: gtx.Constraints.Max, cw: v.r.CellW(), ch: v.r.CellH()}
 	f.g = v.geometry(f.size, f.cw)
+	v.laidOut = Geometry{GutterWidth: f.g.gutterW, TextX: f.g.textX, CellWidth: f.cw}
 	v.wrapRows(f.g.cols)
 	v.layoutBlocks(gtx, f)
 	return f, nil

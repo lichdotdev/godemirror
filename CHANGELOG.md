@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **`View.Geometry` and `Editor.Geometry`**, where the last Layout put the gutter and the text
+  across: `GutterWidth`, `TextX` and `CellWidth`, in pixels, so a caller can draw beside the gutter
+  or past a line's text.
+
 ## [0.9.0] - 2026-11-15
 
 ### Added

@@ -6,6 +6,23 @@ package godemirror
 // heights in pixels from the top of the document, as the last Layout placed
 // it. A Split or a DiffView places its views itself.
 
+// Geometry is where a view's last Layout put its gutter and its text across,
+// in pixels from the view's left edge: what a caller needs to draw beside
+// the gutter or past a line's text, which CodeMirror leaves to the DOM.
+type Geometry struct {
+	// GutterWidth is the gutter's width; the code area starts where it ends.
+	GutterWidth int
+	// TextX is where a line's first cell starts while the view is not
+	// scrolled sideways.
+	TextX int
+	// CellWidth is one cell's width; a wide character takes two.
+	CellWidth int
+}
+
+// Geometry is the gutter and the cells of the last Layout, all 0 before
+// any. A Split's or a DiffView's views measure their own.
+func (v *View) Geometry() Geometry { return v.laidOut }
+
 // ScrollTop is how far the view is scrolled down, in pixels from the top of
 // the document, as CodeMirror's scrollDOM.scrollTop.
 func (v *View) ScrollTop() int { return v.scroll.Y }
@@ -84,6 +101,9 @@ func (e *Editor) LineBlockAt(pos int) (top, bottom int) {
 // as View.LineAtHeight and CodeMirror's lineBlockAtHeight, a line of the
 // document the last Layout showed.
 func (e *Editor) LineBlockAtHeight(y int) Line { return e.shown.Line(e.view.LineAtHeight(y) + 1) }
+
+// Geometry is View.Geometry of the editor.
+func (e *Editor) Geometry() Geometry { return e.view.Geometry() }
 
 // ContentHeight is View.ContentHeight of the editor.
 func (e *Editor) ContentHeight() int { return e.view.ContentHeight() }
