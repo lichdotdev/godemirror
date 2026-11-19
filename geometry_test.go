@@ -131,3 +131,32 @@ func TestGeometryBeforeAnyLayoutIsZero(t *testing.T) {
 		t.Fatalf("before any Layout: line 2 at %d..%d, height %d, line at 10 %d", top, bottom, v.ContentHeight(), v.LineAtHeight(10))
 	}
 }
+
+func TestGeometryIsTheLastFramesGutterAndCells(t *testing.T) {
+	v, err := New("monospace", 12)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if g := v.Geometry(); g != (Geometry{}) {
+		t.Fatalf("geometry %+v before any Layout, want zero", g)
+	}
+	h := newHarness(t, strings.Repeat("line\n", 119))
+	g := h.v.Geometry()
+	if g.CellWidth != h.v.r.CellW() || g.GutterWidth != 5*g.CellWidth || g.TextX != g.GutterWidth+g.CellWidth/2 {
+		t.Fatalf("geometry %+v, want a gutter of 3 digits and 2 cells, text half a cell past it", g)
+	}
+	h.v.SetContent(Content{Text: strings.Repeat("line\n", 1000)})
+	h.frame()
+	if got := h.v.Geometry().GutterWidth; got != 6*g.CellWidth {
+		t.Fatalf("gutter %d with a fourth digit, want %d", got, 6*g.CellWidth)
+	}
+}
+
+func TestAnEditorsGeometryIsItsViews(t *testing.T) {
+	h := newHarness(t, "")
+	h.ed = newTestEditor(t, EditorStateConfig{Doc: strings.Repeat("x\n", 20)})
+	h.frame()
+	if g := h.ed.Geometry(); g != h.ed.view.Geometry() || g.GutterWidth == 0 {
+		t.Fatalf("editor geometry %+v, its view's %+v", g, h.ed.view.Geometry())
+	}
+}
