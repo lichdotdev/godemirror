@@ -161,6 +161,7 @@ The deliberate limits, and what they mean for a caller, are in
 | `EditorView.lineWrapping` | `View.Wrap` |
 | `EditorView.theme` | `Theme` |
 | `tags` (`@lezer/highlight`), `HighlightStyle.define` | package `tags`, `NewHighlightStyle` |
+| `highlightCode` (`@lezer/highlight`) | `Highlight` |
 | `lineNumbers({formatNumber})` | `Content.Labels` |
 | `Decoration.line`, `gutterLineClass` | `LineDecoration` |
 | `Decoration.mark` | `LineDecoration.Spans` |
