@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **`Highlight`, a text's highlighted runs for a caller that draws the text itself**, a code
+  block in Markdown, say: the language picked by the filename as `Content.Filename` picks it, and
+  each line's runs in the `TagStyle` a `View` with the same `Theme` draws them in, tabs expanded
+  to the view's stops. It runs on the calling goroutine.
+
 ## [0.10.0] - 2026-11-19
 
 ### Added
