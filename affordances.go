@@ -22,6 +22,24 @@ const (
 	maxAffordanceLabels = 64
 )
 
+// RevertPlacement is where a DiffView puts its revert affordance.
+type RevertPlacement uint8
+
+const (
+	// RevertAtRightEdge puts it against the code area's right edge on the
+	// chunk's first row, over the end of the code, with the label "Revert".
+	RevertAtRightEdge RevertPlacement = iota
+	// RevertInGutter puts it over the chunk's first row's gutter cell, in
+	// place of its line number, for a view too narrow to give up the code
+	// area's edge. The default affordance there is the compact "↩", which
+	// fits the cell; a side-by-side diff uses the new side's gutter.
+	RevertInGutter
+)
+
+// compactRevertLabel is the default revert affordance in a gutter cell,
+// which "Revert" does not fit.
+const compactRevertLabel = "↩"
+
 func defaultExpandLabel(hidden int) string {
 	if hidden == 1 {
 		return "1 unchanged line"
@@ -97,13 +115,17 @@ func (d *DiffView) widgets(s side, v *View) []LineWidget {
 	for chunk, row := range s.reverts {
 		c := d.chunks[chunk-1]
 		revert := d.affordances.queue(func() { d.opts.Revert(c) })
+		placement, label := RightEdge, "Revert"
+		if d.opts.RevertPlacement == RevertInGutter {
+			placement, label = GutterCell, compactRevertLabel
+		}
 		w := d.opts.RevertWidget
 		if w == nil {
 			w = func(_ Chunk, revert func()) layout.Widget {
-				return d.defaultAffordance(v, clickable(d.affordances.revert, chunk), "Revert", true, revert)
+				return d.defaultAffordance(v, clickable(d.affordances.revert, chunk), label, true, revert)
 			}
 		}
-		out = append(out, LineWidget{Line: row, Placement: RightEdge, WhileHovered: true, Widget: w(c, revert)})
+		out = append(out, LineWidget{Line: row, Placement: placement, WhileHovered: true, Widget: w(c, revert)})
 	}
 	return out
 }

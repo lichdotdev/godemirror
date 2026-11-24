@@ -32,6 +32,14 @@ type DiffOptions struct {
 	ExpandWidget func(g Gap, expand func()) layout.Widget
 	RevertWidget func(c Chunk, revert func()) layout.Widget
 
+	// UnifiedGutter is how a unified diff numbers its rows; the zero value
+	// is TwoColumnGutter. A side-by-side diff always has one number per
+	// row, each side's own.
+	UnifiedGutter UnifiedGutter
+	// RevertPlacement is where Revert's default and RevertWidget's widget
+	// sit; the zero value is RevertAtRightEdge.
+	RevertPlacement RevertPlacement
+
 	// HighlightChanges tints the words that changed within a line, in each
 	// deleted line and the added line it pairs with by position in its
 	// chunk, with the theme's ChangeColors.Changed. Lines with no word in
@@ -247,7 +255,7 @@ func (d *DiffView) layOut() {
 		}
 	}
 	d.chunks = chunksOf(d.rows)
-	d.unifiedSide = unified(d.rows)
+	d.unifiedSide = unified(d.rows, d.opts.UnifiedGutter)
 	d.leftSide, d.rightSide = split(d.rows)
 }
 

@@ -226,8 +226,14 @@ func (v *View) measureLabels() {
 		v.labelWidth = len(strconv.Itoa(len(v.doc.lines)))
 		return
 	}
-	v.labelWidth = 1
-	for _, l := range v.content.Labels {
-		v.labelWidth = max(v.labelWidth, len(textCells(l)))
+	v.labelWidth = widestLabel(v.content.Labels)
+}
+
+// widestLabel is the width in cells of the widest of labels, at least 1.
+func widestLabel(labels []string) int {
+	width := 1
+	for _, l := range labels {
+		width = max(width, len(textCells(l)))
 	}
+	return width
 }

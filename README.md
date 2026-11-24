@@ -208,6 +208,13 @@ in as many parts as your backend answers in. `Chunks`, `SelectedRange` and
 a review thread to a line of either file. The colors live in `Theme.Diff`, in
 both `DarkTheme` and `LightTheme`.
 
+For a narrow view, `DiffOptions.UnifiedGutter` set to `OneColumnGutter` numbers a
+unified diff's rows once (the new file's number, or the old one's for a deleted
+line), and `RevertPlacement` set to `RevertInGutter` puts the revert over the
+chunk's first line number instead of over the end of the code. `Height(gtx,
+width)` is how tall the rows are at a width, wrapped or not, unified or split,
+for a caller that gives each diff exactly the room it needs.
+
 ## The demo
 
 `cmd/godemirror-demo` shows what the library draws, in a window or headless: a
@@ -224,7 +231,7 @@ go run ./cmd/godemirror-demo -diff /tmp/change.patch -new path/to/changed/file -
 In the window: **Alt+W** toggles wrapping, **Alt+S** switches a diff between
 unified and side by side, and **Alt+N** opens a comment under the selected
 lines. Reverting a chunk of two files puts it back and shows the diff again.
-`-search text` highlights its matches and selects the first (with `-edit`,
+`-narrow` uses the narrow gutter, `-search text` highlights its matches and selects the first (with `-edit`,
 which shows the file in an `Editor`, it selects them all), `-light` uses
 `LightTheme`, and `-bench N` with `-shot out.png` runs it headless
 and reports frame times.

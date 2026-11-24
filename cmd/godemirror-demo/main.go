@@ -31,6 +31,7 @@ var (
 	flagNew     = flag.String("new", "", "with -diff, the new file's text, which fills the lines the diff left out")
 	flagChanges = flag.Bool("changes", false, "in a diff, tint the words that changed within a line")
 	flagSplit   = flag.Bool("split", false, "start a diff side by side")
+	flagNarrow  = flag.Bool("narrow", false, "in a diff, one line number per row and the revert in the gutter")
 	flagWrap    = flag.Bool("wrap", false, "wrap long lines instead of scrolling sideways")
 	flagEdit    = flag.Bool("edit", false, "show -file in an Editor")
 	flagSearch  = flag.String("search", "", "highlight the matches of this text, and select the first one; with -edit, select them all")

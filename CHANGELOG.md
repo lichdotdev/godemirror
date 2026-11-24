@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **`DiffOptions.UnifiedGutter`**, how a unified diff numbers its rows: `TwoColumnGutter`, the
+  default, shows the old and the new number, and `OneColumnGutter` shows one, the line's number in
+  the modified file or, for a deleted line, in the original, in about half the width.
+- **`GutterCell`, a `Placement` that draws a `LineWidget` over its line's gutter cell**, on the
+  line's first row and in place of its label, which is not drawn while the widget is.
+  `DiffOptions.RevertPlacement` takes it for the revert with `RevertInGutter`; the default,
+  `RevertAtRightEdge`, is what a `DiffView` always did. In the gutter the default revert is the
+  compact "↩", and `RevertWidget` still replaces it.
+- **`DiffView.Height(gtx, width)`**, the height of the diff's rows laid out `width` pixels wide, in
+  the mode the view is in (`Split`, `Wrap`), to size a `DiffView` from outside without laying it
+  out. With `Wrap` it counts the rows each line wraps into; `BlockWidget`s are not counted.
+
 ## [0.11.0] - 2026-11-23
 
 ### Added

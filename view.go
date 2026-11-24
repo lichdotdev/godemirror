@@ -272,9 +272,15 @@ type geometry struct {
 }
 
 func (v *View) geometry(size image.Point, cw int) geometry {
-	gutterW := (v.labelWidth + 2) * cw
+	return geometryOf(v.labelWidth, size.X, cw)
+}
+
+// geometryOf is the geometry of a view width pixels wide, with cw-wide cells
+// and labels labelWidth cells wide.
+func geometryOf(labelWidth, width, cw int) geometry {
+	gutterW := (labelWidth + 2) * cw
 	textX := gutterW + cw/2
-	return geometry{gutterW: gutterW, textX: textX, cols: max((size.X-textX)/cw, 1)}
+	return geometry{gutterW: gutterW, textX: textX, cols: max((width-textX)/cw, 1)}
 }
 
 func (v *View) wrapRows(cols int) {
@@ -318,12 +324,14 @@ func (v *View) paintRows(gtx layout.Context, f frame) {
 	// under it instead of showing through.
 	paint.FillShape(gtx.Ops, v.Theme.GutterBackground, clip.Rect(image.Rect(0, 0, g.gutterW, size.Y)).Op())
 	v.paintGutterDecorations(gtx, rows, g.gutterW, ch)
+	covered := v.coveredLabels(rows)
 	for _, r := range rows {
-		if r.segment > 0 {
+		if r.segment > 0 || covered[r.line] {
 			continue
 		}
 		v.paintGutterLabel(gtx, r.line, r.y, g, cw)
 	}
+	v.paintGutterWidgets(gtx, f, rows)
 }
 
 // pageStep is the granularity of an unwrapped page, in columns: a view

@@ -85,6 +85,9 @@ func newDemo() (*demo, error) {
 		Revert:           d.revert,
 		HighlightChanges: *flagChanges,
 	}
+	if *flagNarrow {
+		opts.UnifiedGutter, opts.RevertPlacement = godemirror.OneColumnGutter, godemirror.RevertInGutter
+	}
 	var err error
 	if d.diff, err = godemirror.NewDiffView(*flagFont, unit.Sp(*flagSize), opts); err != nil {
 		return nil, err

@@ -146,6 +146,13 @@ file is the trap alone.
 - **A `DiffView` calls back after the frame**: `DiffOptions.Expand` and `Revert` run at the end of `Layout`,
   never while it paints, so a callback may set a new diff at once. A `DiffBlock` on a line inside a gap is not
   shown until the gap is filled.
+- **`DiffView.Height` leaves out blocks and is not cached**: a `DiffBlock` or `BlockWidget` is laid out only by
+  `Layout`, once a frame, so its height is the caller's to add. Without `Wrap` the call is the row count times
+  the row height; with it, every row is measured again each call, so a very long diff is sized when the diff, the
+  width or `Wrap` change, not every frame.
+- **A `GutterCell` widget is as wide as the gutter**: it is laid out with at most the gutter's width and centered
+  in the cell, so a wider one is clipped. A `RevertWidget` in the gutter has to fit a cell of a few characters;
+  the default, a single "↩", does.
 - **A held drag scrolls the view; `Select` does not**: dragging a selection past an edge scrolls the view for as
   long as the button is held there, and each such frame asks for the next with `op.InvalidateCmd`, so the host
   must honor it (a window that redraws only on input events scrolls only as the pointer moves). The time of a

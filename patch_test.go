@@ -57,7 +57,7 @@ func TestParsePatchRejectsABrokenHunkHeader(t *testing.T) {
 }
 
 func TestUnifiedNumbersBothColumnsAndOffersGaps(t *testing.T) {
-	u := unified(parsePatch(t, twoFilePatch)[0].source().rows(nil))
+	u := unified(parsePatch(t, twoFilePatch)[0].source().rows(nil), TwoColumnGutter)
 	if want := "\na\nb\nb2\nB\ne\n\nc\nd"; u.text != want {
 		t.Fatalf("text = %q, want %q", u.text, want)
 	}
@@ -75,14 +75,14 @@ func TestUnifiedNumbersBothColumnsAndOffersGaps(t *testing.T) {
 
 func TestPullingPartOfAGapKeepsTheRestOpen(t *testing.T) {
 	src := parsePatch(t, twoFilePatch)[0].source()
-	u := unified(src.rows(map[int][]string{6: {"n6"}}))
+	u := unified(src.rows(map[int][]string{6: {"n6"}}), TwoColumnGutter)
 	if want := "\na\nb\nb2\nB\ne\nn6\n\nc\nd"; u.text != want {
 		t.Fatalf("text = %q, want %q", u.text, want)
 	}
 	if g := u.gaps[7]; g == nil || g.From != 7 || g.To != 8 || g.OldFrom != 8 {
 		t.Fatalf("rest of the gap = %+v", u.gaps[7])
 	}
-	whole := unified(src.rows(map[int][]string{6: {"n6", "n7", "n8"}}))
+	whole := unified(src.rows(map[int][]string{6: {"n6", "n7", "n8"}}), TwoColumnGutter)
 	if want := "\na\nb\nb2\nB\ne\nn6\nn7\nn8\nc\nd"; whole.text != want || len(whole.gaps) != 1 {
 		t.Fatalf("a gap pulled in whole must leave no separator: %q, gaps %v", whole.text, whole.gaps)
 	}
@@ -132,7 +132,7 @@ func TestAGapAfterAnInsertionOnlyHunkCanBeExpanded(t *testing.T) {
 	files := parsePatch(t, "diff --git a/x b/x\n--- a/x\n+++ b/x\n"+
 		"@@ -5,0 +6,2 @@\n+n1\n+n2\n"+
 		"@@ -10 +12 @@\n-o\n+N\n")
-	u := unified(files[0].source().rows(nil))
+	u := unified(files[0].source().rows(nil), TwoColumnGutter)
 	var between *Gap
 	for _, g := range u.gaps {
 		if g.From == 8 {
@@ -156,7 +156,7 @@ func fileLines(n int) []string {
 func TestDocsWithoutCollapseShowEveryLine(t *testing.T) {
 	a := strings.Join(fileLines(5), "\n")
 	b := strings.Replace(a, "l3", "L3", 1)
-	u := unified(docsSource(a, b, nil).rows(nil))
+	u := unified(docsSource(a, b, nil).rows(nil), TwoColumnGutter)
 	if want := "l1\nl2\nl3\nL3\nl4\nl5"; u.text != want || len(u.gaps) != 0 {
 		t.Fatalf("text = %q, gaps %v; want %q and no gaps", u.text, u.gaps, want)
 	}
@@ -165,7 +165,7 @@ func TestDocsWithoutCollapseShowEveryLine(t *testing.T) {
 func TestCollapseLeavesMarginLinesAroundAChange(t *testing.T) {
 	a := strings.Join(fileLines(20), "\n")
 	b := strings.Replace(a, "l10\n", "L10\n", 1)
-	u := unified(docsSource(a, b, &Collapse{Margin: 3, MinSize: 4}).rows(nil))
+	u := unified(docsSource(a, b, &Collapse{Margin: 3, MinSize: 4}).rows(nil), TwoColumnGutter)
 	if want := "\nl7\nl8\nl9\nl10\nL10\nl11\nl12\nl13\n"; u.text != want {
 		t.Fatalf("text = %q, want %q", u.text, want)
 	}
@@ -180,7 +180,7 @@ func TestCollapseLeavesMarginLinesAroundAChange(t *testing.T) {
 func TestCollapseKeepsARunTooShortToHide(t *testing.T) {
 	a := strings.Join(fileLines(6), "\n")
 	b := strings.Replace(a, "l1\n", "L1\n", 1)
-	u := unified(docsSource(a, b, &Collapse{Margin: 3, MinSize: 4}).rows(nil))
+	u := unified(docsSource(a, b, &Collapse{Margin: 3, MinSize: 4}).rows(nil), TwoColumnGutter)
 	if len(u.gaps) != 0 {
 		t.Fatalf("hid %v, but only 2 lines would go", u.gaps)
 	}
@@ -189,11 +189,11 @@ func TestCollapseKeepsARunTooShortToHide(t *testing.T) {
 func TestAnUnchangedDocumentCollapsesWhole(t *testing.T) {
 	a := strings.Join(fileLines(10), "\n")
 	src := docsSource(a, a, &Collapse{Margin: 3, MinSize: 4})
-	u := unified(src.rows(nil))
+	u := unified(src.rows(nil), TwoColumnGutter)
 	if g := u.gaps[0]; u.text != "" || g == nil || g.From != 1 || g.To != 10 {
 		t.Fatalf("text %q, gap %+v; want one separator for 1..10", u.text, g)
 	}
-	if whole := unified(src.rows(map[int][]string{1: fileLines(10)})); whole.text != a {
+	if whole := unified(src.rows(map[int][]string{1: fileLines(10)}), TwoColumnGutter); whole.text != a {
 		t.Fatalf("filled in whole it reads %q", whole.text)
 	}
 }
