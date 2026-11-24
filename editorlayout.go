@@ -64,6 +64,12 @@ func (e *Editor) Layout(gtx layout.Context) (layout.Dimensions, error) {
 // takes keys and text from the next frame on, and shows its carets.
 func (e *Editor) Focus(gtx layout.Context) { gtx.Execute(key.FocusCmd{Tag: e.view}) }
 
+// HasFocus reports whether the editor has the keyboard in gtx, as
+// @codemirror/view 6.43.15's EditorView.hasFocus. It answers before the
+// editor's Layout in a frame as well as after, so an app that reads its own
+// shortcuts first can leave the keys to a focused editor.
+func (e *Editor) HasFocus(gtx layout.Context) bool { return gtx.Focused(e.view) }
+
 // place lays the rows of what the view shows out in f.
 func (e *Editor) place(f frame) {
 	v := e.view

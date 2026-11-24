@@ -97,3 +97,21 @@ func TestOnKeyTakesTabFromFocusMoving(t *testing.T) {
 		t.Fatalf("OnKey saw %v, want Tab and Shift+Tab", *seen)
 	}
 }
+
+func TestHasFocusAnswersBeforeTheEditorsLayout(t *testing.T) {
+	h := newEditorHarness(t, EditorStateConfig{Doc: "ab"})
+	gtx := layout.Context{Source: h.router.Source()}
+	if h.ed.HasFocus(gtx) {
+		t.Fatal("an editor nobody focused has the keyboard")
+	}
+	h.router.Source().Execute(key.FocusCmd{Tag: h.v})
+	h.frame()
+	if !h.ed.HasFocus(layout.Context{Source: h.router.Source()}) {
+		t.Fatal("the focused editor says it lacks the keyboard before its Layout")
+	}
+	h.router.Source().Execute(key.FocusCmd{})
+	h.frame()
+	if h.ed.HasFocus(layout.Context{Source: h.router.Source()}) {
+		t.Fatal("the editor still says it has the keyboard after focus left it")
+	}
+}
