@@ -45,7 +45,7 @@ func (v *View) paintSpans(gtx layout.Context, f frame, rows []visibleRow, code i
 			base = over(bg, base)
 		}
 		segFrom, segTo := v.segmentSpan(r.line, r.segment)
-		x := f.g.textX - segFrom*f.cw
+		x := f.g.textX + (v.hang(r.line, r.segment)-segFrom)*f.cw
 		if !v.Wrap {
 			x -= v.scroll.X
 		}

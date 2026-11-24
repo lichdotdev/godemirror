@@ -63,7 +63,7 @@ func (v *View) paintWidgets(gtx layout.Context, f frame, rows []visibleRow, code
 			at.X = code.Max.X - gtx.Dp(rightEdgeInset) - dims.Size.X
 		} else {
 			segFrom, _ := v.segmentSpan(r.line, r.segment)
-			at.X = f.g.textX + (len(v.doc.lines[r.line])-segFrom+1)*f.cw
+			at.X = f.g.textX + (v.hang(r.line, r.segment)+len(v.doc.lines[r.line])-segFrom+1)*f.cw
 			if !v.Wrap {
 				at.X -= v.scroll.X
 			}

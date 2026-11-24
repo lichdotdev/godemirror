@@ -31,7 +31,7 @@ func (e *Editor) coordsAt(pos, assoc int) (x, y int) {
 	p := e.cellAt(pos)
 	line, cell := p.line, p.col
 	seg := e.rowOf(line, cell, assoc)
-	return (cell - v.wraps[line][seg]) * f.cw, v.tops[line] + seg*f.ch
+	return (cell - v.wraps[line][seg] + v.hang(line, seg)) * f.cw, v.tops[line] + seg*f.ch
 }
 
 // posAtCoords is the position nearest the point x, y (as coordsAt gives
@@ -50,6 +50,11 @@ func (e *Editor) posAtCoords(x, y int) (offset, assoc int) {
 	}
 	from, to := v.segmentSpan(line, seg)
 	want := float64(from) + float64(x)/float64(f.cw)
+	if hang := v.hang(line, seg); hang > 0 {
+		// The indent is not text: a point in it is before the row's first
+		// cell, on its own row, not past the end of the row above.
+		want = max(want-float64(hang), float64(from))
+	}
 	cell, best := to, float64(to)-want
 	if best < 0 {
 		best = -best

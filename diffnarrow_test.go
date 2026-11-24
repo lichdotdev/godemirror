@@ -139,8 +139,12 @@ func laidOutHeight(h *harness, d *DiffView, width int) int {
 
 func TestHeightIsTheHeightLayoutTakes(t *testing.T) {
 	long := strings.Repeat("word ", 30)
-	old := "a\n\tindent " + long + "\n日本語日本語日本語日本語日本語日本語日本語日本語 " + long + "\nc\n" + strings.Repeat("x", 90) + "\n"
-	updated := "a\nB\n\tindent " + long + "\nc\n" + long + long + "\n"
+	// Continuation rows hang by the line's own indentation, so lines
+	// indented differently on the two sides, and one indented past half a
+	// row, wrap into different row counts.
+	deep := strings.Repeat(" ", 60)
+	old := "a\n\tindent " + long + "\n日本語日本語日本語日本語日本語日本語日本語日本語 " + long + "\nc\n" + strings.Repeat("x", 90) + "\n    " + long + "\n" + deep + long + "\n"
+	updated := "a\nB\n\tindent " + long + "\nc\n" + long + long + "\n" + long + "\n" + deep + deep + long + "\n"
 	for _, tc := range []struct {
 		name        string
 		split, wrap bool

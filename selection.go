@@ -142,7 +142,7 @@ func (v *View) hit(f frame, p image.Point) pos {
 	case segment < 0:
 		return pos{line, len(v.doc.lines[line])}
 	}
-	x := p.X - f.g.textX + f.cw/2
+	x := p.X - f.g.textX + f.cw/2 - v.hang(line, segment)*f.cw
 	if !v.Wrap {
 		x += v.scroll.X
 	}
@@ -157,6 +157,15 @@ func (v *View) hit(f frame, p image.Point) pos {
 		}
 	}
 	return pos{line, col}
+}
+
+// hang is how many cells the row segment of line is indented by: none for
+// its first row, and for any when the view does not wrap.
+func (v *View) hang(line, segment int) int {
+	if segment == 0 {
+		return 0
+	}
+	return hangOf(v.doc.lines[line], v.wrapCols)
 }
 
 // segmentSpan is the cells [from, to) the row segment of line shows. A row
@@ -256,7 +265,7 @@ func (v *View) paintRange(gtx layout.Context, f frame, rows []visibleRow, code i
 		if start >= end {
 			continue
 		}
-		x := f.g.textX - segFrom*f.cw
+		x := f.g.textX + (v.hang(r.line, r.segment)-segFrom)*f.cw
 		if !v.Wrap {
 			x -= v.scroll.X
 		}

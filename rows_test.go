@@ -13,14 +13,37 @@ func TestWrapLineBreaksAfterSpacesAndSplitsLongWords(t *testing.T) {
 	}{
 		{"short", 10, []int{0}},
 		{"aaa bbb ccc", 8, []int{0, 8}},
-		{"aaa bbbbbbbbbbbb", 6, []int{0, 4, 10}},
-		{"abcdefghij", 4, []int{0, 4, 8}},
+		// A continuation row is indented by hangOf, so it has less room.
+		{"aaa bbbbbbbbbbbb", 6, []int{0, 4, 8, 12}},
+		{"abcdefghij", 4, []int{0, 4, 6, 8}},
+		{"    aaaa bbbb cccc", 12, []int{0, 9, 14}},
+		{"            abcdefgh", 8, []int{0, 8, 12, 16}},
+		{"abcdef", 1, []int{0, 1, 2, 3, 4, 5}},
 		{"", 4, []int{0}},
 		{"aaa bbb ccc", 0, []int{0}},
 	}
 	for _, c := range cases {
 		if got := wrapLine([]rune(c.line), c.cols); !slices.Equal(got, c.want) {
 			t.Fatalf("wrapLine(%q, %d) = %v, want %v", c.line, c.cols, got, c.want)
+		}
+	}
+}
+
+func TestHangOfIndentsByTheLinesOwnWhitespaceAndTwoCappedAtHalfARow(t *testing.T) {
+	for _, c := range []struct {
+		line string
+		cols int
+		want int
+	}{
+		{"text", 20, 2},
+		{"    text", 20, 6},
+		{"                    text", 20, 10},
+		{"    text", 3, 1},
+		{"    text", 1, 0},
+		{"    text", 0, 0},
+	} {
+		if got := hangOf([]rune(c.line), c.cols); got != c.want {
+			t.Errorf("hangOf(%q, %d) = %d, want %d", c.line, c.cols, got, c.want)
 		}
 	}
 }

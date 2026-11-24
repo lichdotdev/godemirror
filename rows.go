@@ -9,14 +9,16 @@ const tabSize = 4
 // cells, breaking after a space when the row has one, as CSS pre-wrap does,
 // and mid-word only when a word is longer than a row, never inside a wide
 // character: one that cannot fit a row of one cell takes the row alone.
-// cols <= 0 never wraps.
+// cols <= 0 never wraps. Every row after the first is indented by hangOf, so
+// it has that many cells less room.
 func wrapLine(l []rune, cols int) []int {
 	segments := []int{0}
 	if cols <= 0 {
 		return segments
 	}
-	for start := 0; len(l)-start > cols; {
-		end := start + cols
+	room, continued := cols, cols-hangOf(l, cols)
+	for start := 0; len(l)-start > room; {
+		end := start + room
 		for p := end; p > start; p-- {
 			if l[p-1] == ' ' {
 				end = p
@@ -33,9 +35,28 @@ func wrapLine(l []rune, cols int) []int {
 			break
 		}
 		segments = append(segments, end)
-		start = end
+		start, room = end, continued
 	}
 	return segments
+}
+
+// hangingIndent is how many cells past the line's own indentation a wrapped
+// row starts, so a continuation reads as part of the line above it.
+const hangingIndent = 2
+
+// hangOf is the cells a continuation row of l is indented by when l wraps at
+// cols cells: its leading spaces and hangingIndent, but no more than half a
+// row, so a deeply indented line keeps room for its text. It is virtual: the
+// row's cells are still the line's own, from the break on.
+func hangOf(l []rune, cols int) int {
+	if cols <= 0 {
+		return 0
+	}
+	lead := 0
+	for lead < len(l) && l[lead] == ' ' {
+		lead++
+	}
+	return min(lead+hangingIndent, cols/2)
 }
 
 // rowStarts is, per line, the first visual row it occupies, plus one final

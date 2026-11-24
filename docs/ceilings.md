@@ -130,6 +130,15 @@ file is the trap alone.
   changes a row's pixels (a per-cell style, a ligature) must join the key or drop the cache, or the old image
   keeps being drawn. The three bugs this has caused (wrap, resize, theme) showed only after a toggle or a
   resize, never on first paint.
+- **A wrapped row hangs by a virtual indent, which CodeMirror's `lineWrapping` does not do**: a continuation
+  row starts `hangOf` cells in, the line's leading spaces (a tab counts its cells) plus 2, capped at half the
+  columns so a deeply indented line keeps room, and breaks at the columns left. The indent is not text: the row's
+  cells, the selection, search spans, copy and positions are the line's own, and the pointer, `coordsAt` and
+  `posAtCoords` add or take the hang off at the edge. A point in the indent is the row's first cell. The editor
+  keeps the column it moves vertically on in pixels, so Up from a continuation row lands `hang` cells further
+  into a row without one. A rectangular selection's column past a line's end is still counted from the pointer's
+  place, hang not included, as it never took a wrapped row's start into account. A `LineWidget` after the text
+  of a continuation row is placed past the hang.
 - **A diff past 10,000 edits is one chunk** (`maxDiffEdits`): `SetDocs` runs Myers' diff, which costs
   O((N+M)·D). A stretch of the two documents that needs more edits than that shows as all of it deleted and all
   of it inserted, not as its smallest diff.

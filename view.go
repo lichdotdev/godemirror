@@ -316,7 +316,7 @@ func (v *View) paintRows(gtx layout.Context, f frame) {
 	}
 	for _, r := range rows {
 		img := v.row(r.line, r.segment, firstCol, page)
-		v.paintImage(gtx, img, image.Pt(x, r.y), code)
+		v.paintImage(gtx, img, image.Pt(x+v.hang(r.line, r.segment)*cw, r.y), code)
 	}
 	v.paintWidgets(gtx, f, rows, code)
 	v.paintBlocks(gtx, blocks, code)

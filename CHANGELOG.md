@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **A wrapped row now hangs under its line's own indentation**, two cells in, up to half the width,
+  in a `View`, an `Editor` and a `DiffView`, unified and split, instead of starting flush left. The
+  indent is only drawn: selection, search, copy and `Pos` see the line's own text, and the gutter stays
+  empty on continuation rows. A line breaks into more rows than before, and `DiffView.Height`
+  counts them.
+
 ### Added
 
 - **`DiffOptions.UnifiedGutter`**, how a unified diff numbers its rows: `TwoColumnGutter`, the

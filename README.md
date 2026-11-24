@@ -46,8 +46,9 @@ godemirror lets you:
   `Dracula`, `GitHubLight`, `GitHubDark`, `Nord`) or a theme of your own. Highlighting runs off the UI
   goroutine: a 13,000-line file shows at once and takes its colors when they are
   ready.
-- **Wrap, or don't.** Lines break after spaces the way CSS `pre-wrap` does, or
-  scroll sideways with Shift and the wheel.
+- **Wrap, or don't.** Lines break after spaces the way CSS `pre-wrap` does, each
+  continuation row hanging under its line's own indentation, or scroll sideways
+  with Shift and the wheel.
 - **Decorate lines.** Tint a line and its gutter cell, put a strip down the
   gutter, rule a separator, hatch a filler row, and replace the line numbers
   with labels of your own: everything a diff needs.
