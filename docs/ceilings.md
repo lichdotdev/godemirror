@@ -213,7 +213,16 @@ file is the trap alone.
   next occurrence and Ctrl+Shift+L every occurrence. There is no search panel, so none of its other keys. Ctrl is Gio's `ModShortcut`, Cmd on macOS,
   so macOS gets these bindings and none of CodeMirror's macOS ones (Cmd+arrows, Alt+arrows, the Emacs keys).
   Nothing else of `defaultKeymap` is bound yet: no syntax motion, moving or copying lines, commenting,
-  bracket matching or indenting a selection, and Tab moves focus away, as without `indentWithTab`.
+  bracket matching or indenting a selection, and Tab moves focus away, as without `indentWithTab`, unless
+  `OnKey` is set.
+- **With `OnKey` set, the editor takes every key read after it, and a key's text comes apart**: Gio gives a key to the first
+  `gtx.Event` call of the frame whose filters match it, so while `OnKey` is set the editor's catch-all filter
+  takes every key read after it, whatever `key.Filter`'s godoc says of an empty `Name` yielding to named
+  filters (Gio v0.10.3). An app shortcut reaches the app only when it is read before the editor's `Layout`,
+  and returning false from `OnKey` does not give the key back. A key's text comes as its own `key.EditEvent`,
+  which taking the `key.Event` does not stop, where a browser's `preventDefault` on keydown stops the input:
+  a caller typing for itself takes both. After a taken edit the window's text input believes the text was
+  typed until the frame ends, and the editor drops the selection it reports for it.
 - **Enter indents as CodeMirror does with no language**: the new line takes the column of its line's
   indentation, written in `IndentUnit` (two spaces by default, so a tab-indented line goes on in spaces unless
   `IndentUnit` is `"\t"`), and between `()`, `[]` or `{}` it breaks twice. No grammar indents by its syntax,

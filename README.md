@@ -154,6 +154,7 @@ The deliberate limits, and what they mean for a caller, are in
 | `changeByRange`, `replaceSelection` | `ChangeByRange`, `ReplaceSelection` |
 | `standardKeymap`, `drawSelection`, `indentUnit`, `view.focus()` | built into `Editor`, `Theme.Cursor`, `EditorStateConfig.IndentUnit`, `Focus` |
 | `addCursorAbove`, `addCursorBelow`, `simplifySelection` | built into `Editor` (Ctrl+Alt+Up/Down, Escape) |
+| `EditorView.domEventHandlers({keydown})`, `coordsAtPos` | `Editor.OnKey`, `Editor.CoordsAtPos` |
 | `rectangularSelection()`, `crosshairCursor()` | `Editor.RectangularSelection`, `Editor.CrosshairCursor` |
 | `selectNextOccurrence`, `selectSelectionMatches` | built into `Editor` (Ctrl+D, Ctrl+Shift+L) |
 | `history()`, `undo`, `redo`, `undoDepth`, `redoDepth` | built into `Editor`, `Undo`, `Redo`, `UndoDepth`, `RedoDepth` |

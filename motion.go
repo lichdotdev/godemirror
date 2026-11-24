@@ -26,9 +26,11 @@ func (e *Editor) rowOf(line, cell, assoc int) int {
 // coordsAt is where pos shows, as CodeMirror's coordsAtPos with side assoc:
 // x in pixels from the start of the text, and the top of its row in pixels
 // from the top of the document.
-func (e *Editor) coordsAt(pos, assoc int) (x, y int) {
+func (e *Editor) coordsAt(pos, assoc int) (x, y int) { return e.coordsOf(e.cellAt(pos), assoc) }
+
+// coordsOf is coordsAt of p, a place between the view's cells.
+func (e *Editor) coordsOf(p pos, assoc int) (x, y int) {
 	v, f := e.view, e.f
-	p := e.cellAt(pos)
 	line, cell := p.line, p.col
 	seg := e.rowOf(line, cell, assoc)
 	return (cell - v.wraps[line][seg] + v.hang(line, seg)) * f.cw, v.tops[line] + seg*f.ch

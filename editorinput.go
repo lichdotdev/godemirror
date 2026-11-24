@@ -106,6 +106,13 @@ func (e *Editor) keyFilters() []event.Filter {
 		key.Filter{Focus: v, Name: keyPaste, Required: key.ModShortcut},
 		key.Filter{Focus: v, Name: key.NameAlt, Optional: key.ModAlt | key.ModShift | key.ModShortcut | key.ModCtrl | key.ModSuper},
 	}
+	if e.OnKey != nil {
+		filters = append(filters,
+			key.Filter{Focus: v, Optional: key.ModCtrl | key.ModCommand | key.ModShift | key.ModAlt | key.ModSuper},
+			// Gio's window moves focus on Tab and Shift+Tab unless a filter names them.
+			key.Filter{Focus: v, Name: key.NameTab, Optional: key.ModShift},
+		)
+	}
 	for _, b := range keymap {
 		f := key.Filter{Focus: v, Name: b.name, Required: b.mods}
 		if b.shift != nil {
@@ -123,6 +130,9 @@ func (e *Editor) handleInput(gtx layout.Context) {
 		ev, ok := gtx.Event(e.keyFilters()...)
 		if !ok {
 			return
+		}
+		if e.takenByOnKey(gtx, ev) {
+			continue
 		}
 		switch ev := ev.(type) {
 		case key.FocusEvent:
@@ -144,6 +154,28 @@ func (e *Editor) handleInput(gtx layout.Context) {
 			e.onPaste(ev)
 		}
 	}
+}
+
+// takenByOnKey reports whether OnKey took ev from the editor. Gio's window
+// moved its text input's selection past a taken edit as if it were typed:
+// the SelectionEvent saying so is dropped, and the window takes the editor's
+// selection back after the frame.
+func (e *Editor) takenByOnKey(gtx layout.Context, ev event.Event) bool {
+	if e.OnKey == nil {
+		return false
+	}
+	switch ev := ev.(type) {
+	case key.Event:
+		return e.OnKey(gtx, ev)
+	case key.EditEvent:
+		if !e.OnKey(gtx, ev) {
+			return false
+		}
+		at := min(ev.Range.Start, ev.Range.End) + utf8.RuneCountInString(ev.Text)
+		e.ime.echo = &key.Range{Start: at, End: at}
+		return true
+	}
+	return false
 }
 
 func (e *Editor) onKey(gtx layout.Context, ev key.Event) {
@@ -218,11 +250,14 @@ func (e *Editor) onPaste(ev transfer.DataEvent) {
 
 // imeState is what the editor last told Gio's text input of its document:
 // the main range and the snippet around it, in runes of the whole document,
-// as Gio counts them. composing is whether an input method is composing.
+// as Gio counts them. composing is whether an input method is composing, and
+// echo, when set, the selection Gio's window moved to after an edit OnKey
+// took.
 type imeState struct {
 	sel       key.Range
 	snippet   key.Snippet
 	composing bool
+	echo      *key.Range
 }
 
 // runeIndex is the number of runes of the document before pos.
@@ -253,6 +288,11 @@ func (e *Editor) onEdit(ev key.EditEvent) {
 
 // onIMESelection takes a selection an input method set as the main range.
 func (e *Editor) onIMESelection(r key.Range) {
+	echo := e.ime.echo
+	e.ime.echo = nil
+	if echo != nil && r == *echo {
+		return
+	}
 	main := e.state.sel.Main()
 	if r == (key.Range{Start: e.runeIndex(main.Anchor()), End: e.runeIndex(main.Head())}) {
 		return

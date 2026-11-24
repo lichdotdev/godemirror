@@ -1,5 +1,7 @@
 package godemirror
 
+import "image"
+
 // The geometry below answers, for a View or an Editor laid out on its own,
 // what @codemirror/view 6.43.15's EditorView answers with
 // scrollDOM.scrollTop, lineBlockAt, lineBlockAtHeight and contentHeight:
@@ -95,6 +97,27 @@ func (e *Editor) SetScrollTop(y int) { e.view.SetScrollTop(y) }
 // Layout showed, which a Dispatch since does not change.
 func (e *Editor) LineBlockAt(pos int) (top, bottom int) {
 	return e.view.LineBlock(e.shown.LineAt(pos).Number - 1)
+}
+
+// CoordsAtPos is where pos shows, as CodeMirror's coordsAtPos: a rectangle
+// of no width from the top to the bottom of its row, in pixels from the
+// editor's top left, as the last Layout placed it with its gutter and
+// scrolling. A negative side puts pos with the character before it, any
+// other with the one after, which tells where a line breaks under Wrap: at
+// the end of the row above or the start of the next. pos is a position in
+// the document the last Layout showed, which a Dispatch since does not
+// change. It reports false, where CodeMirror returns null, before the first
+// Layout, for a state set since, and for pos outside the document or inside
+// a character. Scrolled away, the rectangle lies outside the editor.
+func (e *Editor) CoordsAtPos(pos, side int) (image.Rectangle, bool) {
+	v, f, s := e.view, e.f, e.shown
+	if v.laid != v.doc || pos < 0 || pos > len(s.doc) || s.checkBoundary(pos) != nil {
+		return image.Rectangle{}, false
+	}
+	x, top := e.coordsOf(e.cellIn(s, pos), side)
+	x += f.g.textX - v.scrollX()
+	y := top - v.scroll.Y
+	return image.Rect(x, y, x, y+f.ch), true
 }
 
 // LineBlockAtHeight is the line at y pixels from the top of the document,

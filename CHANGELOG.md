@@ -28,6 +28,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`DiffView.Height(gtx, width)`**, the height of the diff's rows laid out `width` pixels wide, in
   the mode the view is in (`Split`, `Wrap`), to size a `DiffView` from outside without laying it
   out. With `Wrap` it counts the rows each line wraps into; `BlockWidget`s are not counted.
+- **`Editor.OnKey`, every key and typed text before the editor acts on it**, as a keydown
+  handler of CodeMirror's `EditorView.domEventHandlers`: it gets each `key.Event`, pressed and
+  released, and each `key.EditEvent`, and returning true keeps the editor from acting (no
+  keymap command, no Ctrl+C, X or V, no typed text). While it is set the focused editor takes
+  every key, Tab and Shift+Tab included, which then stop moving focus. With it unset nothing
+  changes.
+- **`Editor.CoordsAtPos(pos, side)`**, as CodeMirror's `coordsAtPos`: the zero-width rectangle,
+  a row high, where a position shows, in pixels from the editor's top left as the last Layout
+  placed it, wrapping and scrolling counted; false before a Layout and for a position outside
+  the document or inside a character.
 
 ## [0.11.0] - 2026-11-23
 

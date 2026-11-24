@@ -4,6 +4,7 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"gioui.org/io/event"
 	"gioui.org/io/key"
 	"gioui.org/layout"
 	"gioui.org/op"
@@ -39,6 +40,19 @@ type Editor struct {
 	// updateListener: never while the editor paints, so it may dispatch
 	// again, and that transaction is reported after the next frame.
 	OnUpdate func(Update)
+	// OnKey, when set, sees every key the editor takes, pressed or
+	// released, and every text Gio's text input types into it, before the
+	// editor acts on it, as a keydown handler of @codemirror/view 6.43.15's
+	// EditorView.domEventHandlers: returning true keeps the editor from
+	// acting (no keymap command, no clipboard key, no typed text), as the
+	// handler's true prevents the default. ev is a key.Event or a
+	// key.EditEvent, and Gio sends a key's text apart from the key: taking
+	// the key does not take the text, so a caller that types for itself
+	// takes both. While OnKey is set the focused editor takes every key, Tab
+	// and Shift+Tab included, which then stop moving focus; a key the app
+	// binds for itself reaches the app only when the app reads it before
+	// the editor's Layout. OnKey may Dispatch.
+	OnKey func(gtx layout.Context, ev event.Event) bool
 
 	view  *View
 	state EditorState
@@ -232,8 +246,11 @@ func (e *Editor) report(gtx layout.Context) {
 
 // cellAt is the place between the view's cells that offset, a position in
 // the editor's state, names.
-func (e *Editor) cellAt(offset int) pos {
-	l := e.state.LineAt(offset)
+func (e *Editor) cellAt(offset int) pos { return e.cellIn(e.state, offset) }
+
+// cellIn is cellAt of offset, a position in s.
+func (e *Editor) cellIn(s EditorState, offset int) pos {
+	l := s.LineAt(offset)
 	return e.view.cellPos(Pos{Line: l.Number - 1, Col: utf8.RuneCountInString(l.Text[:offset-l.From])})
 }
 
