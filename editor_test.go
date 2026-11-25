@@ -2,6 +2,7 @@ package godemirror
 
 import (
 	"image"
+	"strconv"
 	"testing"
 	"time"
 
@@ -139,5 +140,33 @@ func TestAnEditKeepsTheColorsOfTheLinesItLeftAlone(t *testing.T) {
 	waitForHighlight(h)
 	if h.v.doc.tags[2][8] == nil {
 		t.Fatal("the edited line was never highlighted")
+	}
+}
+
+func TestFormatNumberSpellsTheGutterFromTheShownState(t *testing.T) {
+	h := newEditorHarness(t, EditorStateConfig{Doc: "a\nb\nc\nd"})
+	h.ed.FormatNumber = func(lineNo int, s EditorState) string {
+		cursor := s.LineAt(s.Selection().Main().Head()).Number
+		if lineNo == cursor {
+			return strconv.Itoa(lineNo)
+		}
+		return strconv.Itoa(max(lineNo-cursor, cursor-lineNo))
+	}
+	h.frame()
+	if got := []string{h.v.label(0), h.v.label(1), h.v.label(3)}; got[0] != "1" || got[1] != "1" || got[2] != "3" {
+		t.Fatalf("labels %q, want the cursor's line absolute and the rest counted from it", got)
+	}
+	dispatch(t, h.ed, TransactionSpec{Selection: SingleSelection(4, 4)})
+	h.frame()
+	if got := []string{h.v.label(0), h.v.label(2), h.v.label(3)}; got[0] != "2" || got[1] != "3" || got[2] != "1" {
+		t.Fatalf("after the cursor moved, labels %q", got)
+	}
+	if _, ok := h.v.gutter[gutterKey{3, "1"}]; !ok {
+		t.Fatal("the label drawn is not the one cached for its new text")
+	}
+	h.ed.FormatNumber = nil
+	h.frame()
+	if got := h.v.label(0); got != "1" {
+		t.Fatalf("without FormatNumber line 1 reads %q", got)
 	}
 }

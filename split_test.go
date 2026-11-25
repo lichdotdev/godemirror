@@ -104,9 +104,9 @@ func TestSplitRedrawsBothSidesAtANewScale(t *testing.T) {
 				t.Fatalf("%s row %v is %dpx tall, want %d", side, k, img.size.Y, v.r.CellH())
 			}
 		}
-		for line, img := range v.gutter {
+		for k, img := range v.gutter {
 			if img.size.Y != v.r.CellH() {
-				t.Fatalf("%s gutter label %d is %dpx tall, want %d", side, line, img.size.Y, v.r.CellH())
+				t.Fatalf("%s gutter label %d is %dpx tall, want %d", side, k.line, img.size.Y, v.r.CellH())
 			}
 		}
 	}

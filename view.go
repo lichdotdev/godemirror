@@ -134,7 +134,16 @@ type View struct {
 	frameNo uint64
 	hatches map[hatchKey]*rowImage
 	rows    map[rowKey]*rowImage
-	gutter  map[int]*rowImage
+	gutter  map[gutterKey]*rowImage
+	// formatNumber, set by an Editor with FormatNumber, spells line's number.
+	formatNumber func(line int) string
+}
+
+// gutterKey names a gutter label's image: its line and its text, which an
+// Editor's FormatNumber may change while the line stays.
+type gutterKey struct {
+	line int
+	text string
 }
 
 // rowKey names the cells a row image holds: span cells of line from col, cut
@@ -174,7 +183,7 @@ func newView(r *glyphs.Rasterizer, size unit.Sp) *View {
 
 func (v *View) dropRows() {
 	v.rows = map[rowKey]*rowImage{}
-	v.gutter = map[int]*rowImage{}
+	v.gutter = map[gutterKey]*rowImage{}
 	v.hatches = map[hatchKey]*rowImage{}
 }
 
@@ -358,10 +367,11 @@ func (v *View) paintImage(gtx layout.Context, img *rowImage, at image.Point, are
 }
 
 func (v *View) paintGutterLabel(gtx layout.Context, line, y int, g geometry, cw int) {
-	img, ok := v.gutter[line]
+	k := gutterKey{line, v.label(line)}
+	img, ok := v.gutter[k]
 	if !ok {
-		img = v.compose(textCells(v.label(line)), nil)
-		v.gutter[line] = img
+		img = v.compose(textCells(k.text), nil)
+		v.gutter[k] = img
 	}
 	img.used = v.frameNo
 	at := image.Pt(g.gutterW-cw-img.size.X, y)

@@ -177,13 +177,13 @@ func TestLineTextIsTheLineAsWritten(t *testing.T) {
 
 func TestChangingTheThemeRecolorsTheRowsOnScreen(t *testing.T) {
 	h := newHarness(t, "package main")
-	row, label := h.drawnRow(0), h.v.gutter[0]
+	row, label := h.drawnRow(0), h.v.gutter[gutterKey{0, "1"}]
 	h.v.Theme = LightTheme
 	h.frame()
 	if h.drawnRow(0) == row {
 		t.Fatal("line 0 is still the image composed in the old theme's colors")
 	}
-	if h.v.gutter[0] == label {
+	if h.v.gutter[gutterKey{0, "1"}] == label {
 		t.Fatal("line 0's label is still the image composed in the old theme's colors")
 	}
 }

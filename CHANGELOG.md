@@ -34,6 +34,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   keymap command, no Ctrl+C, X or V, no typed text). While it is set the focused editor takes
   every key, Tab and Shift+Tab included, which then stop moving focus. With it unset nothing
   changes.
+- **`Editor.FormatNumber`**, as `lineNumbers`' `formatNumber`: spells each gutter number from the state on
+  screen, so a caller can number lines relative to the cursor.
 - **`Editor.HasFocus(gtx)`**, as CodeMirror's `hasFocus`: whether the editor has the keyboard,
   answered before the editor's Layout in a frame as well as after.
 - **`Editor.CoordsAtPos(pos, side)`**, as CodeMirror's `coordsAtPos`: the zero-width rectangle,

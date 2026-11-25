@@ -35,6 +35,12 @@ type Editor struct {
 	CrosshairCursor bool
 	// OnScroll is View.OnScroll of the editor.
 	OnScroll func()
+	// FormatNumber, when set, spells the gutter's number of line lineNo
+	// (counted from 1) in state, the one on screen, as the formatNumber
+	// option of @codemirror/view 6.43.15's lineNumbers: relative numbers
+	// read the cursor's line from it. The gutter stays as wide as the line
+	// count's own number, so a longer text is cut.
+	FormatNumber func(lineNo int, state EditorState) string
 	// OnUpdate, when set, is called at the end of Layout with the
 	// transactions dispatched since the last call, if any, as CodeMirror's
 	// updateListener: never while the editor paints, so it may dispatch

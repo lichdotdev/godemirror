@@ -97,14 +97,14 @@ func TestAGutterWidgetHidesTheLabelItCovers(t *testing.T) {
 		}}},
 	})
 	h.pointer(pointer.Move, f32.Pt(2, h.at(1, 0).Y), 0)
-	if _, ok := h.v.gutter[0]; ok {
+	if _, ok := h.v.gutter[gutterKey{0, "1"}]; ok {
 		t.Fatal("the number under the widget was drawn")
 	}
-	if _, ok := h.v.gutter[1]; !ok {
+	if _, ok := h.v.gutter[gutterKey{1, "2"}]; !ok {
 		t.Fatal("the number beside it was not")
 	}
 	h.pointer(pointer.Leave, f32.Pt(2, h.at(1, 0).Y), 0)
-	if _, ok := h.v.gutter[0]; !ok {
+	if _, ok := h.v.gutter[gutterKey{0, "1"}]; !ok {
 		t.Fatal("the number did not come back with the pointer gone")
 	}
 }
