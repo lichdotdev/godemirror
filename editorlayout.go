@@ -57,6 +57,7 @@ func (e *Editor) Layout(gtx layout.Context) (layout.Dimensions, error) {
 	e.trackLink()
 	e.takeCompletions(gtx)
 	e.takeSignature(gtx)
+	e.takeRename(gtx)
 	dims := v.paint(gtx, e.f)
 	e.paintDiagnostics(gtx)
 	e.paintLink(gtx)
@@ -74,6 +75,7 @@ func (e *Editor) Layout(gtx layout.Context) (layout.Dimensions, error) {
 	e.report(gtx)
 	e.runLater()
 	e.reportDefinitions()
+	e.reportWorkspaceEdits()
 	return dims, nil
 }
 
@@ -84,6 +86,7 @@ func (e *Editor) paintPopups(gtx layout.Context) {
 	e.paintHover(gtx)
 	e.paintSignature(gtx)
 	e.paintCompletion(gtx)
+	e.paintRename(gtx)
 }
 
 // Focus gives the editor the keyboard, as CodeMirror's EditorView.focus: it

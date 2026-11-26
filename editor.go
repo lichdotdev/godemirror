@@ -120,6 +120,17 @@ type Editor struct {
 	// transaction, trigger empty, while it answers; ok false, past the call
 	// say, closes the popup it shows above the cursor, as Escape does.
 	SignatureHelp func(ctx context.Context, s EditorState, pos int, trigger string) (sig Signature, ok bool)
+	// Rename, when set, makes the edits that rename the symbol at pos, a
+	// position in s, to name, on a goroutine of its own. F2 opens an input
+	// over the name at the cursor, holding it; Enter renames to what is
+	// typed there, Escape closes it. The edits to the editor's own document
+	// (URI empty) are made as one transaction, if it has not changed since;
+	// those to other documents go to OnWorkspaceEdit at the end of Layout.
+	// An error shows at the symbol until the next transaction.
+	Rename func(ctx context.Context, s EditorState, pos int, name string) ([]DocumentEdit, error)
+	// OnWorkspaceEdit, when set, gets the edits a rename or a code action
+	// makes to documents other than the editor's, for the app to apply.
+	OnWorkspaceEdit func([]DocumentEdit)
 	// SignatureTriggers are the characters that ask SignatureHelp when
 	// typed, "(" and "," say.
 	SignatureTriggers []string
@@ -182,6 +193,10 @@ type Editor struct {
 	elsewhere  []Location
 	completion completion
 	signature  signatureState
+	rename     renameState
+	// workspaceEdits are edits to other documents, for OnWorkspaceEdit
+	// after the frame.
+	workspaceEdits []DocumentEdit
 	// snippet is the snippet whose fields Tab visits, nil for none.
 	snippet *snippetSession
 	popups  popupPointer
@@ -271,6 +286,8 @@ func (e *Editor) SetState(c EditorStateConfig) error {
 	e.clearHover()
 	e.closeCompletion()
 	e.closeSignature()
+	e.rename.call.stop()
+	e.rename = renameState{}
 	e.unshown = emptyChangeSet(len(s.doc))
 	e.view.SetContent(s.content())
 	return nil
@@ -328,6 +345,10 @@ func (e *Editor) Dispatch(spec TransactionSpec) error {
 	e.unshown = e.unshown.compose(t.Changes)
 	e.mapDiagnostics(t.Changes)
 	e.mapSnippet(t)
+	e.rename.err = ""
+	if t.DocChanged() {
+		e.rename.input = nil
+	}
 	e.signature.stale = e.signature.open
 	e.jumped = false
 	if c := &e.completion; c.open {

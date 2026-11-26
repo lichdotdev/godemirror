@@ -147,6 +147,7 @@ var clientCapabilities = map[string]any{
 	"workspace": map[string]any{
 		"configuration":    true,
 		"workspaceFolders": true,
+		"workspaceEdit":    map[string]any{"documentChanges": true},
 	},
 	"textDocument": map[string]any{
 		"synchronization":    map[string]any{"didSave": true},
@@ -165,6 +166,7 @@ var clientCapabilities = map[string]any{
 		"typeDefinition": map[string]any{"linkSupport": true},
 		"implementation": map[string]any{"linkSupport": true},
 		"references":     map[string]any{},
+		"rename":         map[string]any{},
 		"signatureHelp": map[string]any{
 			"signatureInformation": map[string]any{
 				"documentationFormat":    []string{"markdown", "plaintext"},

@@ -184,3 +184,30 @@ func (d *Document) signatureHelp(ctx context.Context, s godemirror.EditorState, 
 	}
 	return out, true
 }
+
+func (d *Document) rename(ctx context.Context, s godemirror.EditorState, pos int, name string) ([]godemirror.DocumentEdit, error) {
+	w, err := d.c.Rename(ctx, d.uri, d.position(s, pos), name)
+	if err != nil {
+		return nil, err
+	}
+	return d.workspaceEdit(s, w), nil
+}
+
+// workspaceEdit is w as the editor takes it: the document's edits read in
+// s, with an empty URI; the others in their own files.
+func (d *Document) workspaceEdit(s godemirror.EditorState, w WorkspaceEdit) []godemirror.DocumentEdit {
+	files := map[string][]string{}
+	var out []godemirror.DocumentEdit
+	for _, de := range w.documentEdits() {
+		edit := godemirror.DocumentEdit{}
+		if de.uri != d.uri {
+			edit.URI = de.uri
+		}
+		for _, t := range de.edits {
+			loc := d.location(s, Location{URI: de.uri, Range: t.Range}, files)
+			edit.Edits = append(edit.Edits, godemirror.TextEdit{Start: loc.Start, End: loc.End, Text: t.NewText})
+		}
+		out = append(out, edit)
+	}
+	return out
+}

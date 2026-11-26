@@ -315,7 +315,12 @@ file is the trap alone.
 - **Signature help asks again on every transaction while it shows** (`SignatureHelp`): a keystroke, a click
   or a move of the cursor is a request, with no debounce; only the active signature shows, with no way to
   page through overloads. It follows one cursor: with several, it does not open.
-- **Out of the LSP client for now**: rename, code actions, formatting, document
+- **Rename asks no server first and edits only text** (`Rename`): the input holds the word at the cursor, with
+  no `prepareRename` to check the symbol can be renamed or to pick its range; a `WorkspaceEdit`'s file
+  operations (create, rename, delete a file) are dropped. The input takes typed text, Backspace, Enter and
+  Escape, with the cursor at its end and no selection but the whole old name. The edits to the editor's
+  document are dropped when it changed while the server worked.
+- **Out of the LSP client for now**: code actions, formatting, document
   symbols (an outline), pull diagnostics (`textDocument/diagnostic`), workspace edits, progress and
   `window/showMessage` are not asked for or are dropped. A server's dynamic registrations are acknowledged and
   ignored, so a capability a server only registers later is never used.

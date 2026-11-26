@@ -88,12 +88,16 @@ var keymap = []binding{
 	{"L", key.ModShortcut, nil, stateCommand(EditorState.selectSelectionMatches)},
 	// godemirror's own: F8 and Shift+F8 go to the next and the previous
 	// diagnostic, as in @codemirror/lint's keymap and VS Code, Ctrl+Space
-	// asks for completions, as @codemirror/autocomplete's keymap, and F12
-	// goes to the definition of the name at the cursor.
+	// asks for completions, as @codemirror/autocomplete's keymap, F2
+	// renames the name at the cursor and F12 goes to its definition.
 	{key.NameF8, 0, func(e *Editor) (TransactionSpec, bool) { e.NextDiagnostic(0); return TransactionSpec{}, false },
 		func(e *Editor) (TransactionSpec, bool) { e.PrevDiagnostic(0); return TransactionSpec{}, false }},
 	{key.NameSpace, key.ModShortcut, func(e *Editor) (TransactionSpec, bool) {
 		e.askCompletion("", true)
+		return TransactionSpec{}, false
+	}, nil},
+	{key.NameF2, 0, func(e *Editor) (TransactionSpec, bool) {
+		e.startRename()
 		return TransactionSpec{}, false
 	}, nil},
 	{key.NameF12, 0, func(e *Editor) (TransactionSpec, bool) {
@@ -167,6 +171,10 @@ func (e *Editor) handleInput(gtx layout.Context) {
 				e.onKey(gtx, ev)
 			}
 		case key.EditEvent:
+			if e.renameTyped(ev.Text) {
+				e.echoEdit(ev)
+				continue
+			}
 			e.onEdit(ev)
 		case key.SnippetEvent:
 			e.sendSnippet(gtx, key.Range(ev))
@@ -195,15 +203,21 @@ func (e *Editor) takenByOnKey(gtx layout.Context, ev event.Event) bool {
 		if !e.OnKey(gtx, ev) {
 			return false
 		}
-		at := min(ev.Range.Start, ev.Range.End) + utf8.RuneCountInString(ev.Text)
-		e.ime.echo = &key.Range{Start: at, End: at}
+		e.echoEdit(ev)
 		return true
 	}
 	return false
 }
 
+// echoEdit drops the selection Gio's window moves past ev, an edit the
+// editor took without applying it, as if it were typed.
+func (e *Editor) echoEdit(ev key.EditEvent) {
+	at := min(ev.Range.Start, ev.Range.End) + utf8.RuneCountInString(ev.Text)
+	e.ime.echo = &key.Range{Start: at, End: at}
+}
+
 func (e *Editor) onKey(gtx layout.Context, ev key.Event) {
-	if e.completionKey(ev) || e.snippetKey(ev) || e.signatureKey(ev) || e.goToKey(ev) {
+	if e.renameKey(ev) || e.completionKey(ev) || e.snippetKey(ev) || e.signatureKey(ev) || e.goToKey(ev) {
 		return
 	}
 	if ev.Name == key.NameEscape {

@@ -292,3 +292,25 @@ func TestSignatureHelpReadsLabelsAndOffsets(t *testing.T) {
 		t.Fatalf("context %s", p["context"])
 	}
 }
+
+func TestRenameReadsBothShapesOfAWorkspaceEdit(t *testing.T) {
+	h, s, _ := attached(t, "var é = 1", map[string]any{"renameProvider": map[string]any{"prepareProvider": false}})
+	edit := `{"range":{"start":{"line":0,"character":4},"end":{"line":0,"character":5}},"newText":"x"}`
+	for _, a := range []string{
+		`{"changes":{"file:///a.go":[` + edit + `],"file:///nowhere/b.go":[` + edit + `]}}`,
+		`{"documentChanges":[{"textDocument":{"uri":"file:///a.go","version":1},"edits":[` + edit + `]},{"kind":"create","uri":"file:///c.go"},{"textDocument":{"uri":"file:///nowhere/b.go","version":null},"edits":[` + edit + `]}]}`,
+	} {
+		s.handlers["textDocument/rename"] = func(json.RawMessage) any { return json.RawMessage(a) }
+		got, err := h.e.Rename(context.Background(), h.e.State(), 4, "x")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(got) != 2 || got[0].URI != "" || got[0].Edits[0].End != (godemirror.LineColumn{Line: 0, Column: 6}) || got[1].URI != "file:///nowhere/b.go" {
+			t.Fatalf("%s read as %+v", a, got)
+		}
+	}
+	p := unmarshal[map[string]any](t, s.wait("textDocument/rename"))
+	if p["newName"] != "x" {
+		t.Fatalf("rename params %v", p)
+	}
+}

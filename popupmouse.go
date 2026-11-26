@@ -17,6 +17,7 @@ const (
 	docPopup
 	hoverPopup
 	signaturePopup
+	renamePopup
 	popupKinds
 )
 

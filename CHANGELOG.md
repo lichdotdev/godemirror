@@ -14,7 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   indent is only drawn: selection, search, copy and `Pos` see the line's own text, and the gutter stays
   empty on continuation rows. A line breaks into more rows than before, and `DiffView.Height`
   counts them.
-- **A focused `Editor` takes F8, Shift+F8, F12, Ctrl+F12, Shift+F12, Ctrl+Shift+F12 and Ctrl+Space**, for the diagnostics, the definition and the
+- **A focused `Editor` takes F2, F8, Shift+F8, F12, Ctrl+F12, Shift+F12, Ctrl+Shift+F12 and Ctrl+Space**, for the diagnostics, the definition and the
   completions below; an app that binds them for itself reads them before the editor's `Layout`. F12 and
   Ctrl+Space do nothing while no `Definition` or `Complete` is set.
 - **`Theme` has two more fields, `Diagnostics` and `Popup`**: a theme built field by field rather than copied
@@ -58,6 +58,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   shows its label as code, the active parameter bold, and its documentation, and closes when the hook
   answers none (past the call) or on Escape. `lsp` asks the server's signatureHelp
   (`Client.SignatureHelp`, `SignatureTriggers`), parameters given as substrings or offsets.
+- **Rename in an `Editor`**: F2 opens an input over the name at the cursor; Enter asks `Rename` for the
+  `DocumentEdit`s (`TextEdit`s by document), applies those to the editor's document as one transaction and
+  hands the others to `OnWorkspaceEdit`; an error the hook returns shows at the symbol. `lsp` asks the
+  server's rename (`Client.Rename`) and reads a `WorkspaceEdit` either way the server writes it.
 - **The mouse in an `Editor`'s popups**: a click on a completion takes it, the wheel scrolls a long menu, the
   pointer over the hover keeps it open, and a click in the code closes the menu and the hover. The code
   under a popup no longer sees the pointer over it.

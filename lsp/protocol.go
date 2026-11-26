@@ -3,6 +3,7 @@ package lsp
 import (
 	"bytes"
 	"encoding/json"
+	"slices"
 	"strings"
 )
 
@@ -241,6 +242,41 @@ func (m *Markup) UnmarshalJSON(b []byte) error {
 type Hover struct {
 	Contents Markup `json:"contents"`
 	Range    *Range `json:"range,omitempty"`
+}
+
+// WorkspaceEdit is edits to documents, as a rename or a code action makes
+// them: by URI in Changes, or in order in DocumentChanges, whose file
+// operations (create, rename, delete) the client does not make.
+type WorkspaceEdit struct {
+	Changes         map[string][]TextEdit `json:"changes"`
+	DocumentChanges []json.RawMessage     `json:"documentChanges"`
+}
+
+// documentEdits are the text edits of w, by document, in order.
+func (w WorkspaceEdit) documentEdits() []documentEdit {
+	var out []documentEdit
+	for _, raw := range w.DocumentChanges {
+		var d struct {
+			TextDocument textDocument `json:"textDocument"`
+			Edits        []TextEdit   `json:"edits"`
+		}
+		if json.Unmarshal(raw, &d) == nil && d.TextDocument.URI != "" {
+			out = append(out, documentEdit{d.TextDocument.URI, d.Edits})
+		}
+	}
+	if len(w.DocumentChanges) > 0 {
+		return out
+	}
+	for uri, edits := range w.Changes {
+		out = append(out, documentEdit{uri, edits})
+	}
+	slices.SortFunc(out, func(a, b documentEdit) int { return strings.Compare(a.uri, b.uri) })
+	return out
+}
+
+type documentEdit struct {
+	uri   string
+	edits []TextEdit
 }
 
 // SignatureHelp is what textDocument/signatureHelp answers: the

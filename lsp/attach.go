@@ -63,8 +63,8 @@ type versioned struct {
 // two: every edit goes to the server (incrementally when it accepts that,
 // whole otherwise), the server's diagnostics show in the editor, and the
 // editor's hooks (Complete, ResolveCompletion, CompletionTriggers, Hover,
-// Definition, TypeDefinition, Implementation, References, SignatureHelp)
-// ask the server,
+// Definition, TypeDefinition, Implementation, References, SignatureHelp,
+// Rename) ask the server,
 // for what it offers. The editor's OnUpdate, if
 // set, is still called after the server hears of each update. Attach runs
 // on the goroutine that lays the editor out; Close undoes it.
@@ -98,6 +98,9 @@ func Attach(c *Client, e *godemirror.Editor, uri string, opts Options) (*Documen
 	if c.HasReferences() {
 		e.References = d.references
 	}
+	if c.HasRename() {
+		e.Rename = d.rename
+	}
 	if c.HasSignatureHelp() {
 		e.SignatureHelp, e.SignatureTriggers = d.signatureHelp, c.SignatureTriggers()
 	}
@@ -123,7 +126,7 @@ func (d *Document) Close() error {
 	e.OnUpdate = d.onUpdate
 	e.Complete, e.ResolveCompletion, e.CompletionTriggers = nil, nil, nil
 	e.Hover, e.Definition, e.TypeDefinition, e.Implementation, e.References = nil, nil, nil, nil, nil
-	e.SignatureHelp, e.SignatureTriggers = nil, nil
+	e.SignatureHelp, e.SignatureTriggers, e.Rename = nil, nil, nil
 	e.SetDiagnostics(nil)
 	return d.c.DidClose(d.uri)
 }

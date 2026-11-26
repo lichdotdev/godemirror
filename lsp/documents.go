@@ -33,6 +33,7 @@ type capabilities struct {
 	TypeDefinitionProvider json.RawMessage `json:"typeDefinitionProvider"`
 	ImplementationProvider json.RawMessage `json:"implementationProvider"`
 	ReferencesProvider     json.RawMessage `json:"referencesProvider"`
+	RenameProvider         json.RawMessage `json:"renameProvider"`
 	SignatureHelpProvider  *struct {
 		TriggerCharacters   []string `json:"triggerCharacters"`
 		RetriggerCharacters []string `json:"retriggerCharacters"`
@@ -128,6 +129,18 @@ func (c *Client) SignatureHelp(ctx context.Context, uri string, pos Position, tr
 		"textDocument": textDocument{uri}, "position": pos, "context": how,
 	}, &h)
 	return h, err
+}
+
+// HasRename reports whether the server answers textDocument/rename.
+func (c *Client) HasRename() bool { return enabled(c.caps.RenameProvider) }
+
+// Rename asks for the edits renaming the symbol at pos to name.
+func (c *Client) Rename(ctx context.Context, uri string, pos Position, name string) (WorkspaceEdit, error) {
+	var w WorkspaceEdit
+	err := c.conn.call(ctx, "textDocument/rename", map[string]any{
+		"textDocument": textDocument{uri}, "position": pos, "newName": name,
+	}, &w)
+	return w, err
 }
 
 // HasReferences reports whether the server answers textDocument/references.
