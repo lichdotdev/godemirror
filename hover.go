@@ -32,19 +32,6 @@ type HoverInfo struct {
 	Code, Text string
 }
 
-// LineColumn is a place in a document: Line counted from 0, and Column in
-// UTF-8 bytes from the start of the line.
-type LineColumn struct {
-	Line, Column int
-}
-
-// Location is a span of a document: URI names the document, empty for the
-// editor's own, and Start and End are its ends.
-type Location struct {
-	URI        string
-	Start, End LineColumn
-}
-
 // hoverState is what the pointer rests over.
 type hoverState struct {
 	at    image.Point
@@ -56,12 +43,6 @@ type hoverState struct {
 	diags []Diagnostic
 	info  HoverInfo
 	call  *call[HoverInfo]
-}
-
-// definitionAnswer is what a Definition call found.
-type definitionAnswer struct {
-	loc Location
-	ok  bool
 }
 
 // trackHover follows the pointer resting over the text: after hoverDelay in
@@ -273,67 +254,5 @@ func (e *Editor) onShortcutKey(ev key.Event) {
 		e.shortcutDown = isShortcut || ev.Modifiers.Contain(key.ModShortcut)
 	case isShortcut || !ev.Modifiers.Contain(key.ModShortcut):
 		e.shortcutDown = false
-	}
-}
-
-// goToDefinition asks Definition where the name at pos is defined; the
-// answer moves the cursor, or goes to OnDefinition, in a later frame.
-func (e *Editor) goToDefinition(pos int) {
-	hook := e.Definition
-	if hook == nil {
-		return
-	}
-	e.definition.stop()
-	e.definition = nil
-	s := e.state
-	e.later(func() {
-		e.definition.stop()
-		e.definition = startCall(func(ctx context.Context) definitionAnswer {
-			loc, ok := hook(ctx, s, pos)
-			return definitionAnswer{loc, ok}
-		})
-	})
-}
-
-// takeDefinition acts on Definition's answer once it comes: a place in the
-// document moves the cursor there, another document goes to OnDefinition
-// after the frame.
-func (e *Editor) takeDefinition(gtx layout.Context) {
-	if e.definition == nil {
-		return
-	}
-	a, ok := e.definition.poll(gtx)
-	if !ok {
-		return
-	}
-	e.definition = nil
-	switch {
-	case !a.ok:
-	case a.loc.URI == "":
-		pos := e.posOfLineColumn(a.loc.Start)
-		e.mustDispatch(TransactionSpec{Selection: SingleSelection(pos, pos), ScrollIntoView: true, UserEvent: "select"})
-	default:
-		e.elsewhere = append(e.elsewhere, a.loc)
-	}
-}
-
-// posOfLineColumn is the position of p in the editor's document, clamped
-// to it.
-func (e *Editor) posOfLineColumn(p LineColumn) int {
-	s := e.state
-	line := s.Line(min(max(p.Line+1, 1), s.Lines()))
-	return e.clampPos(line.From + min(max(p.Column, 0), len(line.Text)))
-}
-
-// reportDefinitions hands the definitions found in other documents to
-// OnDefinition, after the frame.
-func (e *Editor) reportDefinitions() {
-	found := e.elsewhere
-	e.elsewhere = nil
-	if e.OnDefinition == nil {
-		return
-	}
-	for _, loc := range found {
-		e.OnDefinition(loc)
 	}
 }

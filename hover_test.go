@@ -144,3 +144,48 @@ func TestCtrlClickWithoutDefinitionStillAddsACursor(t *testing.T) {
 		t.Fatalf("%d ranges, want 2", n)
 	}
 }
+
+func TestTheGoToKeysRunTheirHooks(t *testing.T) {
+	h, _ := focusedEditor(t, EditorStateConfig{Doc: "type T int\nvar x T"}, SingleSelection(18, 18))
+	h.ed.TypeDefinition = func(context.Context, EditorState, int) (Location, bool) {
+		return Location{Start: LineColumn{0, 5}}, true
+	}
+	h.ed.Implementation = func(context.Context, EditorState, int) (Location, bool) {
+		return Location{URI: "file:///impl.go", Start: LineColumn{2, 0}}, true
+	}
+	var got []Location
+	h.ed.OnDefinition = func(l Location) { got = append(got, l) }
+	h.press(key.NameF12, key.ModShortcut|key.ModShift)
+	h.until("moved", func() bool { _, hd := h.mainRange(); return hd == 5 })
+	h.press(key.NameF12, key.ModShortcut)
+	h.until("reported", func() bool { return len(got) == 1 })
+	if got[0].URI != "file:///impl.go" {
+		t.Fatalf("OnDefinition got %+v", got)
+	}
+	h.ed.ImplementationKey = Shortcut{Name: "I", Modifiers: key.ModAlt}
+	h.frame() // Gio routes a key by the filters of the frame before it.
+	h.press("I", key.ModAlt)
+	h.until("reported again", func() bool { return len(got) == 2 })
+}
+
+func TestReferencesAreHighlightedAndHandedOver(t *testing.T) {
+	h, _ := focusedEditor(t, EditorStateConfig{Doc: "a := 1\nb := a + a"}, SingleSelection(0, 0))
+	h.ed.References = func(context.Context, EditorState, int) []Location {
+		return []Location{
+			{Start: LineColumn{0, 0}, End: LineColumn{0, 1}},
+			{Start: LineColumn{1, 5}, End: LineColumn{1, 6}},
+			{URI: "file:///other.go", Start: LineColumn{3, 1}, End: LineColumn{3, 2}},
+		}
+	}
+	var got []Location
+	h.ed.OnReferences = func(l []Location) { got = l }
+	h.press(key.NameF12, key.ModShift)
+	h.until("reported", func() bool { return len(got) == 3 })
+	if spans := h.ed.occurrenceSpans(1); len(spans) != 1 || spans[0].From != 5 || spans[0].To != 6 {
+		t.Fatalf("line 2 highlights %+v, want a at 5..6", spans)
+	}
+	h.press(key.NameEscape, 0)
+	if len(h.ed.occurrenceSpans(0)) != 0 {
+		t.Fatal("Escape left the references highlighted")
+	}
+}

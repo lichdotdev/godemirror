@@ -14,7 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   indent is only drawn: selection, search, copy and `Pos` see the line's own text, and the gutter stays
   empty on continuation rows. A line breaks into more rows than before, and `DiffView.Height`
   counts them.
-- **A focused `Editor` takes F8, Shift+F8, F12 and Ctrl+Space**, for the diagnostics, the definition and the
+- **A focused `Editor` takes F8, Shift+F8, F12, Ctrl+F12, Shift+F12, Ctrl+Shift+F12 and Ctrl+Space**, for the diagnostics, the definition and the
   completions below; an app that binds them for itself reads them before the editor's `Layout`. F12 and
   Ctrl+Space do nothing while no `Definition` or `Complete` is set.
 - **`Theme` has two more fields, `Diagnostics` and `Popup`**: a theme built field by field rather than copied
@@ -38,6 +38,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   name the pointer rests on (a `HoverInfo`'s code over its text). With `Definition` set, Ctrl shows the
   name under the pointer as a link, and Ctrl+click or F12 go to its definition: in the document, the cursor
   moves; in another, `OnDefinition` gets its `Location`. `DefinitionHint` is the hint under a hover.
+- **Type definition, implementation and references in an `Editor`**: `TypeDefinition` and `Implementation`
+  (both `GoTo`, as `Definition` now is) go where they find as a definition goes, on `TypeDefinitionKey`
+  (Ctrl+Shift+F12) and `ImplementationKey` (Ctrl+F12). `References` runs on `ReferencesKey` (Shift+F12):
+  the references in the document are highlighted in the new `Theme.Occurrence` until an edit or Escape, and
+  all of them go to `OnReferences` for the app to list. The keys are `Shortcut`s a caller may change. `lsp`
+  asks the server's typeDefinition, implementation and references (`Client.TypeDefinition`,
+  `Implementation`, `References`), and `Attach` sets the three hooks.
 - **`Editor.Post(f)`**, safe from any goroutine: runs `f` at the start of the editor's next `Layout`.
 
 - **`lsp`, a Language Server Protocol client**: `lsp.Start` runs a server from a command and root

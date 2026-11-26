@@ -235,3 +235,29 @@ func TestAttachNeedsALanguage(t *testing.T) {
 		t.Fatal("attached with no LanguageID")
 	}
 }
+
+func TestTheOtherGoTosAndReferencesAskTheServer(t *testing.T) {
+	h, s, _ := attached(t, "var x T", map[string]any{
+		"typeDefinitionProvider": true, "implementationProvider": true, "referencesProvider": true,
+	})
+	r := Range{Position{0, 4}, Position{0, 5}}
+	for _, m := range []string{"textDocument/typeDefinition", "textDocument/implementation", "textDocument/references"} {
+		s.handlers[m] = func(json.RawMessage) any {
+			return []Location{{URI: "file:///a.go", Range: r}, {URI: "file:///nowhere/b.go", Range: r}}
+		}
+	}
+	ctx := context.Background()
+	for _, hook := range []godemirror.GoTo{h.e.TypeDefinition, h.e.Implementation} {
+		if loc, ok := hook(ctx, h.e.State(), 4); !ok || loc.URI != "" || loc.Start.Column != 4 {
+			t.Fatalf("went to %+v %v", loc, ok)
+		}
+	}
+	refs := h.e.References(ctx, h.e.State(), 4)
+	if len(refs) != 2 || refs[0].URI != "" || refs[1].URI != "file:///nowhere/b.go" {
+		t.Fatalf("references %+v", refs)
+	}
+	p := unmarshal[map[string]json.RawMessage](t, s.wait("textDocument/references"))
+	if string(p["context"]) != `{"includeDeclaration":true}` {
+		t.Fatalf("references context %s", p["context"])
+	}
+}

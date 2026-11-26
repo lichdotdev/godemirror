@@ -27,8 +27,11 @@ type capabilities struct {
 		TriggerCharacters []string `json:"triggerCharacters"`
 		ResolveProvider   bool     `json:"resolveProvider"`
 	} `json:"completionProvider"`
-	HoverProvider      json.RawMessage `json:"hoverProvider"`
-	DefinitionProvider json.RawMessage `json:"definitionProvider"`
+	HoverProvider          json.RawMessage `json:"hoverProvider"`
+	DefinitionProvider     json.RawMessage `json:"definitionProvider"`
+	TypeDefinitionProvider json.RawMessage `json:"typeDefinitionProvider"`
+	ImplementationProvider json.RawMessage `json:"implementationProvider"`
+	ReferencesProvider     json.RawMessage `json:"referencesProvider"`
 }
 
 // enabled reads a capability that is a boolean or an options object.
@@ -84,6 +87,17 @@ func (c *Client) HasHover() bool { return enabled(c.caps.HoverProvider) }
 
 // HasDefinition reports whether the server answers textDocument/definition.
 func (c *Client) HasDefinition() bool { return enabled(c.caps.DefinitionProvider) }
+
+// HasTypeDefinition reports whether the server answers
+// textDocument/typeDefinition.
+func (c *Client) HasTypeDefinition() bool { return enabled(c.caps.TypeDefinitionProvider) }
+
+// HasImplementation reports whether the server answers
+// textDocument/implementation.
+func (c *Client) HasImplementation() bool { return enabled(c.caps.ImplementationProvider) }
+
+// HasReferences reports whether the server answers textDocument/references.
+func (c *Client) HasReferences() bool { return enabled(c.caps.ReferencesProvider) }
 
 type textDocument struct {
 	URI string `json:"uri"`
@@ -163,8 +177,32 @@ func (c *Client) Hover(ctx context.Context, uri string, pos Position) (*Hover, e
 
 // Definition asks where the symbol at pos is defined.
 func (c *Client) Definition(ctx context.Context, uri string, pos Position) ([]Location, error) {
+	return c.locations(ctx, "textDocument/definition", positionParams{textDocument{uri}, pos})
+}
+
+// TypeDefinition asks where the type of the symbol at pos is defined.
+func (c *Client) TypeDefinition(ctx context.Context, uri string, pos Position) ([]Location, error) {
+	return c.locations(ctx, "textDocument/typeDefinition", positionParams{textDocument{uri}, pos})
+}
+
+// Implementation asks where the symbol at pos, an interface or a method of
+// one say, is implemented.
+func (c *Client) Implementation(ctx context.Context, uri string, pos Position) ([]Location, error) {
+	return c.locations(ctx, "textDocument/implementation", positionParams{textDocument{uri}, pos})
+}
+
+// References asks for the references to the symbol at pos, its
+// declaration among them when withDeclaration is set.
+func (c *Client) References(ctx context.Context, uri string, pos Position, withDeclaration bool) ([]Location, error) {
+	return c.locations(ctx, "textDocument/references", map[string]any{
+		"textDocument": textDocument{uri}, "position": pos,
+		"context": map[string]bool{"includeDeclaration": withDeclaration},
+	})
+}
+
+func (c *Client) locations(ctx context.Context, method string, params any) ([]Location, error) {
 	var raw json.RawMessage
-	if err := c.conn.call(ctx, "textDocument/definition", positionParams{textDocument{uri}, pos}, &raw); err != nil {
+	if err := c.conn.call(ctx, method, params, &raw); err != nil {
 		return nil, err
 	}
 	return locations(raw)

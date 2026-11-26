@@ -42,6 +42,10 @@ type Theme struct {
 	// Popup draws the boxes an Editor shows over its text: a diagnostic's
 	// message, a hover, the completions.
 	Popup PopupColors
+	// Occurrence tints the references an Editor's References found in its
+	// document, as CodeMirror's selectionMatch tints a selection's
+	// matches. Like Selection it may be translucent.
+	Occurrence color.NRGBA
 }
 
 // DiagnosticColors are the colors of a diagnostic of each severity.
@@ -152,6 +156,7 @@ var DarkTheme = Theme{
 		AffordanceHover: zinc800,
 	},
 	Diagnostics: DiagnosticColors{Error: red400, Warning: amber400, Info: blue400, Hint: rgb(0x9f9fa9)},
+	Occurrence:  percent(blue400, 22),
 	Popup: PopupColors{
 		Background: zinc900, Border: over(percent(rgb(0xffffff), 10), zinc900),
 		Foreground: rgb(0xfafafa), Muted: rgb(0x9f9fa9),
@@ -192,6 +197,7 @@ var LightTheme = Theme{
 		AffordanceHover: rgb(0xdedee0),
 	},
 	Diagnostics: DiagnosticColors{Error: rgb(0xe7000b), Warning: amber600, Info: blue600, Hint: rgb(0x64636e)},
+	Occurrence:  percent(blue600, 15),
 	Popup: PopupColors{
 		Background: rgb(0xfafafa), Border: rgb(0xdadadd),
 		Foreground: zinc900, Muted: rgb(0x64636e),

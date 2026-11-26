@@ -44,6 +44,7 @@ func (e *Editor) Layout(gtx layout.Context) (layout.Dimensions, error) {
 	}
 	e.place(f)
 	e.takeDefinition(gtx)
+	e.takeReferences(gtx)
 	e.handleInput(gtx)
 	v.handlePointer(gtx, e.f)
 	if e.show() {

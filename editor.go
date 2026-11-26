@@ -73,10 +73,28 @@ type Editor struct {
 	// moves the cursor there; one in another goes to OnDefinition. While it
 	// is set, the name under the pointer shows as a link with Ctrl held,
 	// and Ctrl+click goes to its definition instead of adding a cursor.
-	Definition func(ctx context.Context, s EditorState, pos int) (loc Location, ok bool)
-	// OnDefinition, when set, is called at the end of Layout with a
-	// definition Definition found in another document, for the app to open.
+	Definition GoTo
+	// TypeDefinition and Implementation, when set, find where the type of
+	// the name at pos is defined, and an implementation of it, for their
+	// keys (TypeDefinitionKey, ImplementationKey); they go where they find
+	// as Definition goes.
+	TypeDefinition, Implementation GoTo
+	// OnDefinition, when set, is called at the end of Layout with a place
+	// Definition, TypeDefinition or Implementation found in another
+	// document, for the app to open.
 	OnDefinition func(Location)
+	// References, when set, finds the references to the name at pos, a
+	// position in s, for ReferencesKey, on a goroutine of its own. Those in
+	// the editor's own document (URI empty) are highlighted in the Theme's
+	// Occurrence color until the document changes or Escape is pressed, and
+	// all of them go to OnReferences at the end of Layout, for the app to
+	// list.
+	References   func(ctx context.Context, s EditorState, pos int) []Location
+	OnReferences func([]Location)
+	// TypeDefinitionKey, ImplementationKey and ReferencesKey run
+	// TypeDefinition, Implementation and References at the cursor; they
+	// start as the Default ones, and the zero Shortcut binds none.
+	TypeDefinitionKey, ImplementationKey, ReferencesKey Shortcut
 	// DefinitionHint is shown under a hover while Definition is set; it
 	// starts as DefaultDefinitionHint, and empty shows none.
 	DefinitionHint string
@@ -143,6 +161,12 @@ type Editor struct {
 	// link is the name shown as a link, empty for none.
 	link       SelectionRange
 	definition *call[definitionAnswer]
+	// references is a References call, occurrences the references it found
+	// in the document, sorted, and foundRefs all of them, for OnReferences
+	// after the frame.
+	references  *call[[]Location]
+	occurrences []SelectionRange
+	foundRefs   []Location
 	// elsewhere are definitions found in other documents, for OnDefinition
 	// after the frame.
 	elsewhere  []Location
@@ -198,7 +222,10 @@ func NewEditorFromFonts(fonts Fonts, size unit.Sp) (*Editor, error) {
 }
 
 func newEditor(v *View) *Editor {
-	e := &Editor{Theme: v.Theme, view: v, DefinitionHint: DefaultDefinitionHint}
+	e := &Editor{Theme: v.Theme, view: v, DefinitionHint: DefaultDefinitionHint,
+		TypeDefinitionKey: DefaultTypeDefinitionKey, ImplementationKey: DefaultImplementationKey,
+		ReferencesKey: DefaultReferencesKey}
+	v.extraSpans = e.occurrenceSpans
 	e.mouse.e = e
 	v.selecting = &e.mouse
 	if err := e.SetState(EditorStateConfig{}); err != nil {
@@ -219,7 +246,7 @@ func (e *Editor) SetState(c EditorStateConfig) error {
 	}
 	e.state, e.shown, e.reported = s, s, s
 	e.since, e.mark = nil, nil
-	e.diags, e.jumped = nil, false
+	e.diags, e.jumped, e.occurrences = nil, false, nil
 	e.clearHover()
 	e.closeCompletion()
 	e.unshown = emptyChangeSet(len(s.doc))
@@ -285,6 +312,7 @@ func (e *Editor) Dispatch(spec TransactionSpec) error {
 	}
 	if t.DocChanged() {
 		e.clearHover()
+		e.occurrences = nil
 	}
 	e.since = append(e.since, t)
 	e.scrollPending = e.scrollPending || t.ScrollIntoView

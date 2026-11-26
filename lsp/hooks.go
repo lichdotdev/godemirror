@@ -81,18 +81,46 @@ func (d *Document) hover(ctx context.Context, s godemirror.EditorState, pos int)
 	return hoverInfo(h.Contents)
 }
 
-func (d *Document) definition(ctx context.Context, s godemirror.EditorState, pos int) (godemirror.Location, bool) {
-	locs, err := d.c.Definition(ctx, d.uri, d.position(s, pos))
-	if err != nil || len(locs) == 0 {
-		d.fail(err)
-		return godemirror.Location{}, false
+// goTo is an editor's GoTo that asks the server with find, and goes to the
+// first place it answers.
+func (d *Document) goTo(find func(context.Context, string, Position) ([]Location, error)) godemirror.GoTo {
+	return func(ctx context.Context, s godemirror.EditorState, pos int) (godemirror.Location, bool) {
+		locs, err := find(ctx, d.uri, d.position(s, pos))
+		if err != nil || len(locs) == 0 {
+			d.fail(err)
+			return godemirror.Location{}, false
+		}
+		return d.location(s, locs[0], map[string][]string{}), true
 	}
-	l := locs[0]
+}
+
+func (d *Document) references(ctx context.Context, s godemirror.EditorState, pos int) []godemirror.Location {
+	locs, err := d.c.References(ctx, d.uri, d.position(s, pos), true)
+	if err != nil {
+		d.fail(err)
+		return nil
+	}
+	files := map[string][]string{}
+	out := make([]godemirror.Location, len(locs))
+	for i, l := range locs {
+		out[i] = d.location(s, l, files)
+	}
+	return out
+}
+
+// location is l as the editor takes it: in s, with an empty URI, when it is
+// in the document; else in its own file, read once into files.
+func (d *Document) location(s godemirror.EditorState, l Location, files map[string][]string) godemirror.Location {
 	if l.URI == d.uri {
 		start, end := d.offset(s, l.Range.Start), d.offset(s, l.Range.End)
-		return godemirror.Location{Start: lineColumn(s, start), End: lineColumn(s, end)}, true
+		return godemirror.Location{Start: lineColumn(s, start), End: lineColumn(s, end)}
 	}
-	return godemirror.Location{URI: l.URI, Start: d.elsewhere(l.URI, l.Range.Start), End: d.elsewhere(l.URI, l.Range.End)}, true
+	lines, ok := files[l.URI]
+	if !ok {
+		lines = d.fileLines(l.URI)
+		files[l.URI] = lines
+	}
+	return godemirror.Location{URI: l.URI, Start: d.elsewhere(lines, l.Range.Start), End: d.elsewhere(lines, l.Range.End)}
 }
 
 func lineColumn(s godemirror.EditorState, pos int) godemirror.LineColumn {
@@ -100,23 +128,28 @@ func lineColumn(s godemirror.EditorState, pos int) godemirror.LineColumn {
 	return godemirror.LineColumn{Line: l.Number - 1, Column: pos - l.From}
 }
 
-// elsewhere is p, a position in the document uri names, with its column in
-// UTF-8 bytes: read from the file, when the server counts in another unit;
-// as the server gave it when the file cannot be read.
-func (d *Document) elsewhere(uri string, p Position) godemirror.LineColumn {
-	out := godemirror.LineColumn{Line: p.Line, Column: p.Character}
+// fileLines are the lines of the file uri names, when the server counts
+// columns in a unit other than UTF-8 bytes; nil when it does not, or the
+// file cannot be read.
+func (d *Document) fileLines(uri string) []string {
 	if d.c.Encoding() == UTF8 {
-		return out
+		return nil
 	}
 	path, ok := FilePath(uri)
 	if !ok {
-		return out
+		return nil
 	}
 	text, err := os.ReadFile(path)
 	if err != nil {
-		return out
+		return nil
 	}
-	lines := strings.Split(string(text), "\n")
+	return strings.Split(string(text), "\n")
+}
+
+// elsewhere is p, a position in a file of lines, with its column in UTF-8
+// bytes: as the server gave it when there are no lines to read it in.
+func (d *Document) elsewhere(lines []string, p Position) godemirror.LineColumn {
+	out := godemirror.LineColumn{Line: p.Line, Column: p.Character}
 	if p.Line < len(lines) {
 		out.Column = d.c.Encoding().ByteColumn(strings.TrimSuffix(lines[p.Line], "\r"), p.Character)
 	}

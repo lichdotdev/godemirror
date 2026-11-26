@@ -139,6 +139,9 @@ type View struct {
 	hatches map[hatchKey]*rowImage
 	rows    map[rowKey]*rowImage
 	gutter  map[gutterKey]*rowImage
+	// extraSpans, when set, are more spans to tint on a line, an Editor's
+	// highlighted references.
+	extraSpans func(line int) []Span
 	// spans are the images of the text an Editor's popups show.
 	spans map[textSpan]*rowImage
 	// formatNumber, set by an Editor with FormatNumber, spells line's number.

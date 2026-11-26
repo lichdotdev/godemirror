@@ -97,7 +97,7 @@ var keymap = []binding{
 		return TransactionSpec{}, false
 	}, nil},
 	{key.NameF12, 0, func(e *Editor) (TransactionSpec, bool) {
-		e.goToDefinition(e.state.sel.Main().Head())
+		e.goTo(e.Definition, e.state.sel.Main().Head())
 		return TransactionSpec{}, false
 	}, nil},
 }
@@ -124,6 +124,7 @@ func (e *Editor) keyFilters() []event.Filter {
 	if e.completion.open {
 		filters = append(filters, key.Filter{Focus: v, Name: key.NameTab})
 	}
+	filters = append(filters, e.goToFilters()...)
 	if e.OnKey != nil {
 		filters = append(filters,
 			key.Filter{Focus: v, Optional: key.ModCtrl | key.ModCommand | key.ModShift | key.ModAlt | key.ModSuper},
@@ -201,8 +202,11 @@ func (e *Editor) takenByOnKey(gtx layout.Context, ev event.Event) bool {
 }
 
 func (e *Editor) onKey(gtx layout.Context, ev key.Event) {
-	if e.completionKey(ev) {
+	if e.completionKey(ev) || e.goToKey(ev) {
 		return
+	}
+	if ev.Name == key.NameEscape {
+		e.occurrences = nil
 	}
 	mods := ev.Modifiers &^ key.ModShift
 	shift := ev.Modifiers.Contain(key.ModShift)

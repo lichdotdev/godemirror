@@ -62,8 +62,9 @@ type versioned struct {
 // Attach opens the editor's document on the server, as uri, and binds the
 // two: every edit goes to the server (incrementally when it accepts that,
 // whole otherwise), the server's diagnostics show in the editor, and the
-// editor's Complete, ResolveCompletion, CompletionTriggers, Hover and
-// Definition ask the server, for what it offers. The editor's OnUpdate, if
+// editor's hooks (Complete, ResolveCompletion, CompletionTriggers, Hover,
+// Definition, TypeDefinition, Implementation, References) ask the server,
+// for what it offers. The editor's OnUpdate, if
 // set, is still called after the server hears of each update. Attach runs
 // on the goroutine that lays the editor out; Close undoes it.
 func Attach(c *Client, e *godemirror.Editor, uri string, opts Options) (*Document, error) {
@@ -85,7 +86,16 @@ func Attach(c *Client, e *godemirror.Editor, uri string, opts Options) (*Documen
 		e.Hover = d.hover
 	}
 	if c.HasDefinition() {
-		e.Definition = d.definition
+		e.Definition = d.goTo(c.Definition)
+	}
+	if c.HasTypeDefinition() {
+		e.TypeDefinition = d.goTo(c.TypeDefinition)
+	}
+	if c.HasImplementation() {
+		e.Implementation = d.goTo(c.Implementation)
+	}
+	if c.HasReferences() {
+		e.References = d.references
 	}
 	return d, nil
 }
@@ -108,7 +118,7 @@ func (d *Document) Close() error {
 	e := d.e
 	e.OnUpdate = d.onUpdate
 	e.Complete, e.ResolveCompletion, e.CompletionTriggers = nil, nil, nil
-	e.Hover, e.Definition = nil, nil
+	e.Hover, e.Definition, e.TypeDefinition, e.Implementation, e.References = nil, nil, nil, nil, nil
 	e.SetDiagnostics(nil)
 	return d.c.DidClose(d.uri)
 }

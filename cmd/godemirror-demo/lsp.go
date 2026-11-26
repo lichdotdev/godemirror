@@ -24,6 +24,7 @@ var (
 	flagLang = flag.String("lang", "go", "with -lsp, the document's LSP language id")
 	flagAt   = flag.String("at", "", "with -edit, a line:col (from 1) to put the cursor at")
 	flagType = flag.String("type", "", "headless, with -edit: text typed at the cursor, a character a frame, before the shot")
+	flagKey  = flag.String("key", "", "headless, with -edit: a key pressed after -type, as Shift+F12 or Ctrl+Space")
 	flagCtrl = flag.Bool("ctrl", false, "headless: hold Ctrl with the pointer at -hover")
 	flagWait = flag.Duration("wait", 0, "headless: keep drawing frames this long before the shot, for a server's answers")
 )
@@ -76,8 +77,9 @@ func (d *demo) placeCursor() error {
 // waiting is how far the headless demo is in typing -type, a character
 // a frame, and until when it waits for -wait.
 type waiting struct {
-	typed int
-	until time.Time
+	typed   int
+	pressed bool
+	until   time.Time
 }
 
 // typeNext queues the next character of -type as Gio's window types it,
@@ -101,6 +103,11 @@ func (w *waiting) lastFrameWaits(router *input.Router, hover *f32.Point) bool {
 	if w.typeNext(router) {
 		return true
 	}
+	if *flagKey != "" && !w.pressed {
+		w.pressed = true
+		router.Queue(keyPress(*flagKey))
+		return true
+	}
 	if *flagWait == 0 {
 		return false
 	}
@@ -111,6 +118,18 @@ func (w *waiting) lastFrameWaits(router *input.Router, hover *f32.Point) bool {
 		}
 	}
 	return time.Now().Before(w.until)
+}
+
+// keyPress is the press of a key written as Shift+F12: modifiers, then
+// the key's name as Gio names it.
+func keyPress(s string) key.Event {
+	parts := strings.Split(s, "+")
+	ev := key.Event{Name: key.Name(parts[len(parts)-1]), State: key.Press}
+	mods := map[string]key.Modifiers{"Ctrl": key.ModCtrl, "Shift": key.ModShift, "Alt": key.ModAlt}
+	for _, m := range parts[:len(parts)-1] {
+		ev.Modifiers |= mods[m]
+	}
+	return ev
 }
 
 // hoverEvent moves the pointer to at, Ctrl held with -ctrl.

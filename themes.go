@@ -12,7 +12,7 @@ import (
 // the HighlightStyle with its tags, colors and font styles in their order.
 // Where a theme leaves a color unset, it takes the one CodeMirror's own base
 // theme would show (@codemirror/view for the gutter, the cursor and the
-// popups, @codemirror/search for matches, @codemirror/lint 6.9.8 for
+// popups, @codemirror/search for matches and occurrences, @codemirror/lint 6.9.8 for
 // diagnostics, @codemirror/autocomplete 6.20.4 for the chosen completion).
 // What CodeMirror draws and godemirror does
 // not (the active line, a match's outline, a token's background or border)
@@ -33,6 +33,7 @@ var OneDark = cmTheme(true, Theme{
 		Background: rgb(0x353a42), Border: rgb(0x353a42),
 		Selected: rgb(0x2c313a), SelectedForeground: rgb(0xabb2bf),
 	},
+	Occurrence: rgba(0xaafe661a),
 	Highlight: func() *HighlightStyle {
 		chalky, coral, cyan, ivory := rgb(0xe5c07b), rgb(0xe06c75), rgb(0x56b6c2), rgb(0xabb2bf)
 		stone, malibu, sage, whiskey := rgb(0x7d8799), rgb(0x61afef), rgb(0x98c379), rgb(0xd19a66)
@@ -66,6 +67,7 @@ var Dracula = cmTheme(true, Theme{
 	Selection:        rgba(0xffffff1a),
 	GutterBackground: rgb(0x282a36),
 	GutterForeground: rgb(0x6d8a88),
+	Occurrence:       rgba(0xffffff33),
 	Highlight: NewHighlightStyle(
 		TagStyle{Tags: []*tags.Tag{tags.Comment}, Color: rgb(0x6272a4)},
 		TagStyle{Tags: []*tags.Tag{tags.String}, Color: rgb(0xf1fa8c)},
@@ -87,6 +89,7 @@ var GitHubLight = cmTheme(false, Theme{
 	Selection:        rgb(0xbbdfff),
 	GutterBackground: rgb(0xffffff),
 	GutterForeground: rgb(0x6e7781),
+	Occurrence:       rgb(0xbbdfff),
 	Highlight: NewHighlightStyle(
 		TagStyle{Tags: []*tags.Tag{tags.Standard(tags.TagName), tags.TagName}, Color: rgb(0x116329)},
 		TagStyle{Tags: []*tags.Tag{tags.Comment, tags.Bracket}, Color: rgb(0x6a737d)},
@@ -115,6 +118,7 @@ var GitHubDark = cmTheme(true, Theme{
 	Selection:        rgb(0x003d73),
 	GutterBackground: rgb(0x333338),
 	GutterForeground: rgb(0xcccccc),
+	Occurrence:       rgb(0x003d73),
 	Highlight: NewHighlightStyle(
 		TagStyle{Tags: []*tags.Tag{tags.Standard(tags.TagName), tags.TagName}, Color: rgb(0x7ee787)},
 		TagStyle{Tags: []*tags.Tag{tags.Comment, tags.Bracket}, Color: rgb(0x8b949e)},
@@ -142,6 +146,7 @@ var Nord = cmTheme(true, Theme{
 	Selection:        rgba(0x00000073),
 	GutterBackground: rgb(0x2e3440),
 	GutterForeground: rgb(0x4c566a),
+	Occurrence:       rgba(0x00000073),
 	Highlight: NewHighlightStyle(
 		TagStyle{Tags: []*tags.Tag{tags.Keyword}, Color: rgb(0x5e81ac)},
 		TagStyle{Tags: []*tags.Tag{tags.Name, tags.Deleted, tags.Character, tags.PropertyName, tags.MacroName}, Color: rgb(0x88c0d0)},
@@ -193,6 +198,10 @@ var (
 // none.
 var cmCursorLight, cmCursorDark = rgb(0x000000), rgb(0xdddddd)
 
+// The selectionMatch of @codemirror/search 6.7.2's base theme, for a theme
+// that sets none.
+var cmOccurrence = rgba(0x99ff7780)
+
 // The colors of @codemirror/lint 6.9.8's lintRange underlines.
 var cmDiagnostics = DiagnosticColors{Error: rgb(0xff1111), Warning: rgb(0xffa500), Info: rgb(0x999999), Hint: rgb(0x6666dd)}
 
@@ -229,6 +238,7 @@ func cmTheme(dark bool, t Theme) Theme {
 		t.SearchMatch, t.SearchCurrent = searchMatch, searchCurrent
 	}
 	t.Diagnostics = cmDiagnostics
+	t.Occurrence = cmp.Or(t.Occurrence, cmOccurrence)
 	t.Popup = cmPopup(dark, t)
 	t.Border = over(percent(overlay, 10), t.Background)
 	t.Diff = base.Diff

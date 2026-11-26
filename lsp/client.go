@@ -160,8 +160,11 @@ var clientCapabilities = map[string]any{
 			},
 			"contextSupport": true,
 		},
-		"hover":      map[string]any{"contentFormat": []string{"markdown", "plaintext"}},
-		"definition": map[string]any{"linkSupport": true},
+		"hover":          map[string]any{"contentFormat": []string{"markdown", "plaintext"}},
+		"definition":     map[string]any{"linkSupport": true},
+		"typeDefinition": map[string]any{"linkSupport": true},
+		"implementation": map[string]any{"linkSupport": true},
+		"references":     map[string]any{},
 	},
 }
 

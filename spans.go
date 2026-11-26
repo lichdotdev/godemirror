@@ -37,6 +37,9 @@ func (v *View) paintSpans(gtx layout.Context, f frame, rows []visibleRow, code i
 		if found := v.searchSpans(r.line); len(found) > 0 {
 			spans = slices.Concat(spans, found)
 		}
+		if v.extraSpans != nil {
+			spans = slices.Concat(spans, v.extraSpans(r.line))
+		}
 		if len(spans) == 0 {
 			continue
 		}
