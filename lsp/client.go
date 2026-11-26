@@ -153,7 +153,7 @@ var clientCapabilities = map[string]any{
 		"publishDiagnostics": map[string]any{"versionSupport": true},
 		"completion": map[string]any{
 			"completionItem": map[string]any{
-				"snippetSupport":       false,
+				"snippetSupport":       true,
 				"documentationFormat":  []string{"markdown", "plaintext"},
 				"insertReplaceSupport": true,
 				"resolveSupport":       map[string]any{"properties": []string{"documentation", "detail"}},

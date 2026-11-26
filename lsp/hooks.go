@@ -51,9 +51,7 @@ func (d *Document) completionItem(req godemirror.CompletionRequest, it Completio
 		out.From, out.To = d.offset(req.State, it.TextEdit.Range.Start), d.offset(req.State, it.TextEdit.Range.End)
 		out.Insert = it.TextEdit.NewText
 	}
-	if it.InsertTextFormat == Snippet {
-		out.Insert = stripSnippet(out.Insert)
-	}
+	out.Snippet = it.InsertTextFormat == Snippet
 	return out
 }
 

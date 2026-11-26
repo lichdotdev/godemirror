@@ -49,6 +49,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `Documentation` are Markdown (paragraphs, lists, headings, fenced code highlighted by its language, inline
   code, bold, italic, links as text), their prose set through Gio's text stack in the Go font and their code
   in the editor's. A popup grows to 560dp by 420dp and scrolls with the wheel past that.
+- **Snippets in an `Editor`**: `InsertSnippet(from, to, snippet)` inserts LSP's snippet syntax (`$1`,
+  `${1:name}`, `${1|a,b|}`, `$0`), its lines indented as the line it goes on, and selects its first field;
+  Tab and Shift+Tab go from field to field, and `$0`, Escape or a selection out of it end it. A
+  `CompletionItem` with `Snippet` set is inserted so, and `lsp` now tells servers it takes snippets.
 - **The mouse in an `Editor`'s popups**: a click on a completion takes it, the wheel scrolls a long menu, the
   pointer over the hover keeps it open, and a click in the code closes the menu and the hover. The code
   under a popup no longer sees the pointer over it.
@@ -63,7 +67,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`lsp.Attach(client, editor, uri, opts)`**, the editor and the server bound: the document opens on the
   server, every edit follows (incrementally or whole, as the server syncs), published diagnostics show in
   the editor mapped through the edits made since, and the editor's completions, hover and definition ask
-  the server, markdown shown as plain text and snippets inserted without their placeholders.
+  the server.
   `Document.Save` and `Document.Close` send didSave and didClose. The demo's `-lsp gopls` runs it.
 - **`lsp/servers`, an optional catalog of 428 language servers** converted from nvim-lspconfig and
   mason-registry (Apache-2.0): each server's command, filetypes, root markers, default init options

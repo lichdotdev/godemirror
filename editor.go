@@ -172,7 +172,9 @@ type Editor struct {
 	// after the frame.
 	elsewhere  []Location
 	completion completion
-	popups     popupPointer
+	// snippet is the snippet whose fields Tab visits, nil for none.
+	snippet *snippetSession
+	popups  popupPointer
 	// shaper lays out the popups' prose, and proseSizes are the runs of it
 	// measured.
 	shaper     *text.Shaper
@@ -255,7 +257,7 @@ func (e *Editor) SetState(c EditorStateConfig) error {
 	}
 	e.state, e.shown, e.reported = s, s, s
 	e.since, e.mark = nil, nil
-	e.diags, e.jumped, e.occurrences = nil, false, nil
+	e.diags, e.jumped, e.occurrences, e.snippet = nil, false, nil, nil
 	e.clearHover()
 	e.closeCompletion()
 	e.unshown = emptyChangeSet(len(s.doc))
@@ -314,6 +316,7 @@ func (e *Editor) Dispatch(spec TransactionSpec) error {
 	e.state = t.State
 	e.unshown = e.unshown.compose(t.Changes)
 	e.mapDiagnostics(t.Changes)
+	e.mapSnippet(t)
 	e.jumped = false
 	if c := &e.completion; c.open {
 		c.since = c.since.compose(t.Changes)

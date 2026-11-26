@@ -170,7 +170,7 @@ func TestCompletionAsksTheServer(t *testing.T) {
 		t.Fatalf("items %+v, want Println first by sortText", r.Items)
 	}
 	pf := r.Items[1]
-	if pf.From != 4 || pf.To != 6 || pf.Insert != "Printf(format, a)" || pf.Kind != godemirror.CompletionFunction {
+	if pf.From != 4 || pf.To != 6 || pf.Insert != "Printf(${1:format}, ${2:a})$0" || !pf.Snippet || pf.Kind != godemirror.CompletionFunction {
 		t.Fatalf("Printf as %+v", pf)
 	}
 	pl := h.e.ResolveCompletion(ctx, r.Items[0])

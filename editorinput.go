@@ -121,8 +121,8 @@ func (e *Editor) keyFilters() []event.Filter {
 		key.Filter{Focus: v, Name: key.NameAlt, Optional: key.ModAlt | key.ModShift | key.ModShortcut | key.ModCtrl | key.ModSuper},
 		key.Filter{Focus: v, Name: key.NameCtrl, Optional: key.ModAlt | key.ModShift | key.ModShortcut | key.ModCtrl | key.ModSuper},
 	}
-	if e.completion.open {
-		filters = append(filters, key.Filter{Focus: v, Name: key.NameTab})
+	if e.completion.open || e.snippet != nil {
+		filters = append(filters, key.Filter{Focus: v, Name: key.NameTab, Optional: key.ModShift})
 	}
 	filters = append(filters, e.goToFilters()...)
 	if e.OnKey != nil {
@@ -202,7 +202,7 @@ func (e *Editor) takenByOnKey(gtx layout.Context, ev event.Event) bool {
 }
 
 func (e *Editor) onKey(gtx layout.Context, ev key.Event) {
-	if e.completionKey(ev) || e.goToKey(ev) {
+	if e.completionKey(ev) || e.snippetKey(ev) || e.goToKey(ev) {
 		return
 	}
 	if ev.Name == key.NameEscape {

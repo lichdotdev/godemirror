@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
@@ -20,14 +21,18 @@ import (
 )
 
 var (
-	flagLSP  = flag.String("lsp", "", "with -edit, a language server command to attach (gopls), run in -file's directory")
-	flagLang = flag.String("lang", "go", "with -lsp, the document's LSP language id")
-	flagAt   = flag.String("at", "", "with -edit, a line:col (from 1) to put the cursor at")
-	flagType = flag.String("type", "", "headless, with -edit: text typed at the cursor, a character a frame, before the shot")
-	flagKey  = flag.String("key", "", "headless, with -edit: a key pressed after -type, as Shift+F12 or Ctrl+Space")
-	flagCtrl = flag.Bool("ctrl", false, "headless: hold Ctrl with the pointer at -hover")
-	flagWait = flag.Duration("wait", 0, "headless: keep drawing frames this long before the shot, for a server's answers")
+	flagLSP      = flag.String("lsp", "", "with -edit, a language server command to attach (gopls), run in -file's directory")
+	flagSettings = flag.String("settings", "", `with -lsp, the server's settings as JSON, as {"gopls":{"usePlaceholders":true}}`)
+	flagLang     = flag.String("lang", "go", "with -lsp, the document's LSP language id")
+	flagAt       = flag.String("at", "", "with -edit, a line:col (from 1) to put the cursor at")
+	flagType     = flag.String("type", "", "headless, with -edit: text typed at the cursor, a character a frame, before the shot")
+	flagKey      = flag.String("key", "", "headless, with -edit: a key pressed after -type and -wait, as Shift+F12 or Return")
+	flagCtrl     = flag.Bool("ctrl", false, "headless: hold Ctrl with the pointer at -hover")
+	flagWait     = flag.Duration("wait", 0, "headless: keep drawing frames this long before the shot, for a server's answers")
 )
+
+// keySettle is how long the demo draws after -key, for an answer to it.
+const keySettle = time.Second
 
 // lspStart bounds starting the server and its handshake.
 const lspStart = 30 * time.Second
@@ -44,7 +49,11 @@ func (d *demo) attachLSP(invalidate func()) error {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), lspStart)
 	defer cancel()
-	c, err := lsp.Start(ctx, lsp.Config{Command: strings.Fields(*flagLSP), RootDir: filepath.Dir(path), Stderr: os.Stderr})
+	cfg := lsp.Config{Command: strings.Fields(*flagLSP), RootDir: filepath.Dir(path), Stderr: os.Stderr}
+	if *flagSettings != "" {
+		cfg.Settings = json.RawMessage(*flagSettings)
+	}
+	c, err := lsp.Start(ctx, cfg)
 	if err != nil {
 		return err
 	}
@@ -98,18 +107,10 @@ func (w *waiting) typeNext(router *input.Router) bool {
 
 // lastFrameWaits reports whether the frame that would be the last is not
 // yet: -type is typed first, a character a frame, then -wait passes, the
-// pointer resting at hover.
+// pointer resting at hover, then -key is pressed and keySettle passes.
 func (w *waiting) lastFrameWaits(router *input.Router, hover *f32.Point) bool {
 	if w.typeNext(router) {
 		return true
-	}
-	if *flagKey != "" && !w.pressed {
-		w.pressed = true
-		router.Queue(keyPress(*flagKey))
-		return true
-	}
-	if *flagWait == 0 {
-		return false
 	}
 	if w.until.IsZero() {
 		w.until = time.Now().Add(*flagWait)
@@ -117,14 +118,34 @@ func (w *waiting) lastFrameWaits(router *input.Router, hover *f32.Point) bool {
 			router.Queue(hoverEvent(*hover))
 		}
 	}
-	return time.Now().Before(w.until)
+	if time.Now().Before(w.until) {
+		return true
+	}
+	if *flagKey != "" && !w.pressed {
+		w.pressed = true
+		router.Queue(keyPress(*flagKey))
+		w.until = time.Now().Add(keySettle)
+		return true
+	}
+	return false
+}
+
+// keyNames are the keys -key names by a word where Gio names them by a
+// symbol.
+var keyNames = map[string]key.Name{
+	"Return": key.NameReturn, "Tab": key.NameTab, "Escape": key.NameEscape, "Space": key.NameSpace,
+	"Up": key.NameUpArrow, "Down": key.NameDownArrow, "Left": key.NameLeftArrow, "Right": key.NameRightArrow,
 }
 
 // keyPress is the press of a key written as Shift+F12: modifiers, then
 // the key's name as Gio names it.
 func keyPress(s string) key.Event {
 	parts := strings.Split(s, "+")
-	ev := key.Event{Name: key.Name(parts[len(parts)-1]), State: key.Press}
+	name := key.Name(parts[len(parts)-1])
+	if n, ok := keyNames[string(name)]; ok {
+		name = n
+	}
+	ev := key.Event{Name: name, State: key.Press}
 	mods := map[string]key.Modifiers{"Ctrl": key.ModCtrl, "Shift": key.ModShift, "Alt": key.ModAlt}
 	for _, m := range parts[:len(parts)-1] {
 		ev.Modifiers |= mods[m]

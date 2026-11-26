@@ -48,8 +48,10 @@ type CompletionItem struct {
 	// Pos.
 	From, To int
 	// Insert replaces the range when the item is taken; empty inserts
-	// Label.
-	Insert string
+	// Label. With Snippet set it is a snippet, inserted as InsertSnippet
+	// inserts one.
+	Insert  string
+	Snippet bool
 	// Filter is what the text typed is matched against; empty matches
 	// Label.
 	Filter string
@@ -342,6 +344,12 @@ func (e *Editor) acceptCompletion() {
 	from = min(from, head)
 	insert := cmpOr(it.Insert, it.Label)
 	e.closeCompletion()
+	if it.Snippet {
+		if err := e.InsertSnippet(from, to, insert); err != nil {
+			panic("godemirror: a clamped completion range is invalid: " + err.Error())
+		}
+		return
+	}
 	end := from + len(insert)
 	e.mustDispatch(TransactionSpec{
 		Changes:   []ChangeSpec{{From: from, To: to, Insert: insert}},

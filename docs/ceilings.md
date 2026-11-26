@@ -293,9 +293,11 @@ file is the trap alone.
   lists, fenced code (highlighted when godemirror knows the fence's language), rules, and inline code, bold,
   italic and links (as their text). Tables, blockquotes (shown as plain paragraphs), HTML and images (their
   alt text) are not rendered; a lone `*` or `_` with no closing one stays as written.
-- **A snippet completion inserts plain text** (`lsp`): the client tells the server it takes no snippets, and an
-  item that sends one anyway loses its tabstops and placeholders (`${1:x}` becomes `x`, `$0` nothing); the
-  cursor lands at the end of the text, not at the first tabstop.
+- **A snippet's fields are visited, not mirrored** (`InsertSnippet`, `CompletionItem.Snippet`): fields of one
+  number are selected together (with `AllowMultipleSelections`, else the first), but typing in one does not
+  copy into the others while a single cursor edits; variables (`$TM_FILENAME`, `${VAR:default}`) insert their
+  default or nothing, and transforms are not read. Fields are not outlined on screen. Tab inside a snippet
+  goes to the next field, so a Tab is never typed there.
 - **Completions filter as a fuzzy subsequence, in the order given** (`Editor.Complete`): items keep the order
   the hook gives (`lsp` sorts by `sortText`), with no ranking of their own; an `Incomplete` result is asked again
   on each character typed. Only one cursor completes: with several, nothing opens.

@@ -265,8 +265,8 @@ which shows the file in an `Editor`, it selects them all), `-light` uses
 and reports frame times. With `-edit`, `-lsp gopls` attaches a language server
 started in the file's directory; headless, `-at line:col` and `-type text` type
 at a place, `-hover x,y` rests the pointer (with `-ctrl`, Ctrl held), and
-`-key Shift+F12` presses a key after typing, and `-wait 4s` keeps drawing until
-the server has answered.
+`-wait 4s` keeps drawing until the server has answered, and `-key Shift+F12`
+then presses a key.
 
 ## Requirements
 
