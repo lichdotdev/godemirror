@@ -134,3 +134,25 @@ func TestAssetsCarryNoTemplates(t *testing.T) {
 		}
 	}
 }
+
+func TestFileTypeAndLanguageID(t *testing.T) {
+	for path, want := range map[string][2]string{
+		"cmd/main.go":   {"go", "go"},
+		"a/App.tsx":     {"typescriptreact", "typescriptreact"},
+		"run.sh":        {"sh", "shellscript"},
+		"Program.cs":    {"cs", "csharp"},
+		"Dockerfile":    {"dockerfile", "dockerfile"},
+		"x.unknownext":  {"", ""},
+		"lib/script.py": {"python", "python"},
+	} {
+		ft := FileType(path)
+		if ft != want[0] || LanguageID(ft) != want[1] {
+			t.Errorf("%s: filetype %q, languageId %q; want %q, %q", path, ft, LanguageID(ft), want[0], want[1])
+		}
+	}
+	// .m is objc or matlab by its content; the catalog reads an empty file,
+	// so objc's id is checked on its own.
+	if LanguageID("objc") != "objective-c" || LanguageID("") != "" {
+		t.Errorf("objc is %q, and no filetype %q", LanguageID("objc"), LanguageID(""))
+	}
+}

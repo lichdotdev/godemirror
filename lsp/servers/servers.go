@@ -85,6 +85,26 @@ type Asset struct {
 	Bins map[string]string
 }
 
+// languageIDs are the LSP languageIds of the vim filetypes that name a
+// language otherwise, from the table of language identifiers in LSP 3.17's
+// textDocument item (vim's tex is LaTeX, its plaintex plain TeX).
+var languageIDs = map[string]string{
+	"sh": "shellscript", "bash": "shellscript", "cs": "csharp", "objc": "objective-c",
+	"objcpp": "objective-cpp", "make": "makefile", "gitcommit": "git-commit", "gitrebase": "git-rebase",
+	"text": "plaintext", "ps1": "powershell", "raku": "raku", "perl6": "raku", "pug": "jade",
+	"dosbatch": "bat", "coffee": "coffeescript", "tex": "latex", "plaintex": "tex",
+}
+
+// LanguageID is the LSP languageId of a vim filetype, as lsp.Options takes
+// it: the filetype's own name for most, LSP's where the two differ ("sh" is
+// "shellscript", "cs" "csharp", "objc" "objective-c"); "" for "".
+func LanguageID(filetype string) string {
+	if id, ok := languageIDs[filetype]; ok {
+		return id
+	}
+	return filetype
+}
+
 // preferred puts the common server for its language ahead of the others.
 var preferred = []string{
 	"gopls",
@@ -133,10 +153,13 @@ func All() []Server {
 // jdtls), then the servers with a Command, then those whose command
 // lspconfig computes; each group by name.
 func Lookup(path string) []Server {
-	return slices.Clone(byFileType[fileType(path)])
+	return slices.Clone(byFileType[FileType(path)])
 }
 
-func fileType(path string) string {
+// FileType is the vim filetype of the file at path, by its name or
+// extension, as Lookup reads it: "" when its name maps to no filetype a
+// server in the catalog claims.
+func FileType(path string) string {
 	base := filepath.Base(path)
 	if ft, ok := filenameFileTypes[base]; ok {
 		return ft

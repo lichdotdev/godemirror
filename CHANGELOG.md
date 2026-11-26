@@ -107,6 +107,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and settings, and a plain-data install recipe (npm, pypi, golang, cargo, gem, or a GitHub release
   asset per platform) for 252 of them. `Lookup(path)` returns a file's candidates with the common
   server first. The catalog never runs a server nor an install.
+- **`servers.FileType(path)` and `servers.LanguageID(filetype)`**: the vim filetype `Lookup` reads a file
+  as, and the LSP languageId of a filetype for `lsp.Options.LanguageID`, LSP's name where the two differ
+  (`sh` is `shellscript`, `cs` `csharp`, `objc` `objective-c`).
 - **`DiffOptions.UnifiedGutter`**, how a unified diff numbers its rows: `TwoColumnGutter`, the
   default, shows the old and the new number, and `OneColumnGutter` shows one, the line's number in
   the modified file or, for a deleted line, in the original, in about half the width.
