@@ -14,8 +14,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   indent is only drawn: selection, search, copy and `Pos` see the line's own text, and the gutter stays
   empty on continuation rows. A line breaks into more rows than before, and `DiffView.Height`
   counts them.
+- **A focused `Editor` takes F8, Shift+F8, F12 and Ctrl+Space**, for the diagnostics, the definition and the
+  completions below; an app that binds them for itself reads them before the editor's `Layout`. F12 and
+  Ctrl+Space do nothing while no `Definition` or `Complete` is set.
+- **`Theme` has two more fields, `Diagnostics` and `Popup`**: a theme built field by field rather than copied
+  from one of the package's draws its diagnostics and popups in the zero color until it sets them. The ported
+  themes take CodeMirror's base colors for them (`@codemirror/lint`, `@codemirror/view`'s tooltip,
+  `@codemirror/autocomplete`'s chosen item), and `OneDark` its own tooltip and chosen item.
 
 ### Added
+
+- **Diagnostics in an `Editor`**: `SetDiagnostics` takes `Diagnostic`s (a byte range, a `Severity`, a message,
+  its source and code), which follow later edits, and the editor underlines each with a wave in its
+  severity's color, puts a dot in the gutter of its line (the worst one's), and shows the messages in a popup
+  while the pointer rests on one. `NextDiagnostic` and `PrevDiagnostic` move the cursor to the next one, of a
+  severity or any, and show it there; F8 and Shift+F8 run them.
+- **Completions in an `Editor`**: set `Complete` and the editor asks it after a `CompletionTriggers`
+  character, after two word characters, or on Ctrl+Space, off the UI goroutine, and shows the
+  `CompletionItem`s in a menu under the cursor: a badge of the item's `CompletionKind`, the typed part in bold,
+  the detail on the right, and the chosen item's documentation beside the menu, which `ResolveCompletion`
+  may fill in. Up and Down choose, Enter and Tab take, Escape closes; typing on filters the items.
+- **Hover and go to definition in an `Editor`**: `Hover` answers, off the UI goroutine, what shows above a
+  name the pointer rests on (a `HoverInfo`'s code over its text). With `Definition` set, Ctrl shows the
+  name under the pointer as a link, and Ctrl+click or F12 go to its definition: in the document, the cursor
+  moves; in another, `OnDefinition` gets its `Location`. `DefinitionHint` is the hint under a hover.
+- **`Editor.Post(f)`**, safe from any goroutine: runs `f` at the start of the editor's next `Layout`.
 
 - **`lsp`, a Language Server Protocol client**: `lsp.Start` runs a server from a command and root
   directory the caller gives, `lsp.Connect` speaks to one over any stream, and the `Client` keeps

@@ -36,12 +36,14 @@ func (e *Editor) Layout(gtx layout.Context) (layout.Dimensions, error) {
 	}
 	e.now = gtx.Now
 	defer func() { e.now = time.Time{} }()
+	e.runPosted()
 	e.show()
 	f, err := v.prepare(gtx)
 	if err != nil {
 		return layout.Dimensions{}, err
 	}
 	e.place(f)
+	e.takeDefinition(gtx)
 	e.handleInput(gtx)
 	v.handlePointer(gtx, e.f)
 	if e.show() {
@@ -49,11 +51,17 @@ func (e *Editor) Layout(gtx layout.Context) (layout.Dimensions, error) {
 	}
 	e.scrollIntoView(gtx)
 	e.trackCrosshair()
+	e.trackHover(gtx)
+	e.trackLink()
+	e.takeCompletions(gtx)
 	dims := v.paint(gtx, e.f)
+	e.paintDiagnostics(gtx)
+	e.paintLink(gtx)
 	if gtx.Focused(v) {
 		e.paintCarets(gtx)
 		e.tellIME(gtx)
 	}
+	e.paintPopups(gtx)
 	if v.scroll != v.scrolled {
 		v.scrolled = v.scroll
 		if e.OnScroll != nil {
@@ -61,7 +69,16 @@ func (e *Editor) Layout(gtx layout.Context) (layout.Dimensions, error) {
 		}
 	}
 	e.report(gtx)
+	e.runLater()
+	e.reportDefinitions()
 	return dims, nil
+}
+
+// paintPopups draws the popups over everything else, inside the editor.
+func (e *Editor) paintPopups(gtx layout.Context) {
+	defer clip.Rect(image.Rectangle{Max: e.f.size}).Push(gtx.Ops).Pop()
+	e.paintHover(gtx)
+	e.paintCompletion(gtx)
 }
 
 // Focus gives the editor the keyboard, as CodeMirror's EditorView.focus: it

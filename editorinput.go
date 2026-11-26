@@ -86,6 +86,20 @@ var keymap = []binding{
 	{"U", key.ModShortcut, selectionCommand(doneBranch), nil},
 	{"U", key.ModAlt, selectionCommand(undoneBranch), nil},
 	{"L", key.ModShortcut, nil, stateCommand(EditorState.selectSelectionMatches)},
+	// godemirror's own: F8 and Shift+F8 go to the next and the previous
+	// diagnostic, as in @codemirror/lint's keymap and VS Code, Ctrl+Space
+	// asks for completions, as @codemirror/autocomplete's keymap, and F12
+	// goes to the definition of the name at the cursor.
+	{key.NameF8, 0, func(e *Editor) (TransactionSpec, bool) { e.NextDiagnostic(0); return TransactionSpec{}, false },
+		func(e *Editor) (TransactionSpec, bool) { e.PrevDiagnostic(0); return TransactionSpec{}, false }},
+	{key.NameSpace, key.ModShortcut, func(e *Editor) (TransactionSpec, bool) {
+		e.askCompletion("", true)
+		return TransactionSpec{}, false
+	}, nil},
+	{key.NameF12, 0, func(e *Editor) (TransactionSpec, bool) {
+		e.goToDefinition(e.state.sel.Main().Head())
+		return TransactionSpec{}, false
+	}, nil},
 }
 
 // Clipboard keys, which a browser turns into the copy, cut and paste events
@@ -105,6 +119,10 @@ func (e *Editor) keyFilters() []event.Filter {
 		key.Filter{Focus: v, Name: keyCut, Required: key.ModShortcut},
 		key.Filter{Focus: v, Name: keyPaste, Required: key.ModShortcut},
 		key.Filter{Focus: v, Name: key.NameAlt, Optional: key.ModAlt | key.ModShift | key.ModShortcut | key.ModCtrl | key.ModSuper},
+		key.Filter{Focus: v, Name: key.NameCtrl, Optional: key.ModAlt | key.ModShift | key.ModShortcut | key.ModCtrl | key.ModSuper},
+	}
+	if e.completion.open {
+		filters = append(filters, key.Filter{Focus: v, Name: key.NameTab})
 	}
 	if e.OnKey != nil {
 		filters = append(filters,
@@ -137,8 +155,12 @@ func (e *Editor) handleInput(gtx layout.Context) {
 		switch ev := ev.(type) {
 		case key.FocusEvent:
 			e.ime = imeState{}
+			if !ev.Focus {
+				e.closeCompletion()
+			}
 		case key.Event:
 			e.onAltKey(ev)
+			e.onShortcutKey(ev)
 			if ev.State == key.Press {
 				e.onKey(gtx, ev)
 			}
@@ -179,6 +201,9 @@ func (e *Editor) takenByOnKey(gtx layout.Context, ev event.Event) bool {
 }
 
 func (e *Editor) onKey(gtx layout.Context, ev key.Event) {
+	if e.completionKey(ev) {
+		return
+	}
 	mods := ev.Modifiers &^ key.ModShift
 	shift := ev.Modifiers.Contain(key.ModShift)
 	switch {
@@ -284,6 +309,9 @@ func (e *Editor) onEdit(ev key.EditEvent) {
 	// Gio's text input puts the cursor after what it inserted.
 	newSel := from + len(normalizeBreaks(ev.Text, e.state.conf.LineSeparator))
 	e.mustDispatch(e.state.applyDefaultInsert(change, newSel, e.ime.composing))
+	if !e.ime.composing {
+		e.afterTyping(ev.Text)
+	}
 }
 
 // onIMESelection takes a selection an input method set as the main range.

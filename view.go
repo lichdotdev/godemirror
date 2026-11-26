@@ -122,6 +122,10 @@ type View struct {
 	// mods are the modifiers the last pointer event had held: a Nested view
 	// reads Shift before the wheel arrives to know whether to claim it.
 	mods key.Modifiers
+	// pointerAt is where the pointer last was over the view, and pointerIn
+	// whether it still is.
+	pointerAt image.Point
+	pointerIn bool
 	// cursor is the pointer's shape over the code.
 	cursor pointer.Cursor
 	// widgetAreas are where last frame's widgets were drawn, which a press
@@ -135,6 +139,8 @@ type View struct {
 	hatches map[hatchKey]*rowImage
 	rows    map[rowKey]*rowImage
 	gutter  map[gutterKey]*rowImage
+	// spans are the images of the text an Editor's popups show.
+	spans map[textSpan]*rowImage
 	// formatNumber, set by an Editor with FormatNumber, spells line's number.
 	formatNumber func(line int) string
 }
@@ -185,6 +191,7 @@ func (v *View) dropRows() {
 	v.rows = map[rowKey]*rowImage{}
 	v.gutter = map[gutterKey]*rowImage{}
 	v.hatches = map[hatchKey]*rowImage{}
+	v.spans = map[textSpan]*rowImage{}
 }
 
 // Layout draws the view into the whole of gtx.Constraints.Max, takes the
@@ -419,14 +426,22 @@ func (v *View) compose(cells []rune, cellTags []*lezer.TagSet) *rowImage {
 }
 
 func (v *View) rasterize(cells []rune, cellTags []*lezer.TagSet) *image.RGBA {
+	return v.rasterizeStyled(cells, func(i int) TagStyle {
+		if cellTags == nil {
+			return TagStyle{Color: v.Theme.GutterForeground}
+		}
+		return v.Theme.Highlight.style(cellTags[i], v.Theme.Foreground)
+	})
+}
+
+// rasterizeStyled draws cells into a transparent image a row high, cell i
+// in styleOf(i).
+func (v *View) rasterizeStyled(cells []rune, styleOf func(i int) TagStyle) *image.RGBA {
 	cw, ch := v.r.CellW(), v.r.CellH()
 	dst := image.NewRGBA(image.Rect(0, 0, len(cells)*cw, ch))
 	for i, c := range cells {
 		x := i * cw
-		style := TagStyle{Color: v.Theme.GutterForeground}
-		if cellTags != nil {
-			style = v.Theme.Highlight.style(cellTags[i], v.Theme.Foreground)
-		}
+		style := styleOf(i)
 		v.decorate(dst, x, style)
 		if isTail(c) {
 			if i > 0 {
@@ -479,6 +494,13 @@ func (v *View) evict() {
 	for k, img := range v.hatches {
 		if img.used != v.frameNo {
 			delete(v.hatches, k)
+		}
+	}
+	// Popups are painted after the rows, past this eviction: a span the
+	// last frame drew is kept.
+	for k, img := range v.spans {
+		if img.used+1 < v.frameNo {
+			delete(v.spans, k)
 		}
 	}
 }

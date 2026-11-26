@@ -1,6 +1,8 @@
 package godemirror
 
 import (
+	"context"
+	"sync"
 	"time"
 	"unicode/utf8"
 
@@ -59,6 +61,40 @@ type Editor struct {
 	// binds for itself reaches the app only when the app reads it before
 	// the editor's Layout. OnKey may Dispatch.
 	OnKey func(gtx layout.Context, ev event.Event) bool
+	// Hover, when set, tells what to show over the name at pos, a position
+	// in s, once the pointer has rested on it for half a second: the popup
+	// shows it above the name, with the diagnostics there. It runs on a
+	// goroutine of its own, and ctx is cancelled when the pointer leaves
+	// first; a zero HoverInfo shows nothing.
+	Hover func(ctx context.Context, s EditorState, pos int) HoverInfo
+	// Definition, when set, finds where the name at pos, a position in s,
+	// is defined, for Ctrl+click and F12; ok false finds nothing. It runs on
+	// a goroutine of its own. A Location in the editor's own document
+	// moves the cursor there; one in another goes to OnDefinition. While it
+	// is set, the name under the pointer shows as a link with Ctrl held,
+	// and Ctrl+click goes to its definition instead of adding a cursor.
+	Definition func(ctx context.Context, s EditorState, pos int) (loc Location, ok bool)
+	// OnDefinition, when set, is called at the end of Layout with a
+	// definition Definition found in another document, for the app to open.
+	OnDefinition func(Location)
+	// DefinitionHint is shown under a hover while Definition is set; it
+	// starts as DefaultDefinitionHint, and empty shows none.
+	DefinitionHint string
+	// Complete, when set, offers completions: the editor asks it after one
+	// of CompletionTriggers is typed, after two characters of a word typed
+	// in a row, and on Ctrl+Space, and shows the items it answers in a
+	// menu under the cursor, filtered by what is typed on. Up and Down
+	// choose, Enter and Tab take the chosen item, Escape closes the menu.
+	// It runs on a goroutine of its own, with ctx cancelled when its answer
+	// is no longer wanted.
+	Complete func(ctx context.Context, req CompletionRequest) CompletionResult
+	// ResolveCompletion, when set, fills in a chosen item that has no
+	// Documentation, on a goroutine of its own; the menu shows what it
+	// gives back beside the item.
+	ResolveCompletion func(ctx context.Context, item CompletionItem) CompletionItem
+	// CompletionTriggers are the characters that ask Complete for
+	// completions when typed, "." say.
+	CompletionTriggers []string
 
 	view  *View
 	state EditorState
@@ -94,6 +130,28 @@ type Editor struct {
 	// and pointerMods the modifiers of the last pointer event seen.
 	altDown     bool
 	pointerMods key.Modifiers
+	// shortcutDown is whether Ctrl, the shortcut modifier, is held, as
+	// altDown is for Alt.
+	shortcutDown bool
+
+	// diags are the diagnostics, sorted, mapped through every change, and
+	// jumped whether the last transaction was a jump to one of them, whose
+	// message then shows at the cursor.
+	diags  []Diagnostic
+	jumped bool
+	hover  hoverState
+	// link is the name shown as a link, empty for none.
+	link       SelectionRange
+	definition *call[definitionAnswer]
+	// elsewhere are definitions found in other documents, for OnDefinition
+	// after the frame.
+	elsewhere  []Location
+	completion completion
+	// afterReport is what runs after the frame's updates are reported.
+	afterReport []func()
+	// posted is what Post queued for the next Layout.
+	postMu sync.Mutex
+	posted []func()
 }
 
 // Update is what an Editor reports after a frame, as CodeMirror's
@@ -140,7 +198,7 @@ func NewEditorFromFonts(fonts Fonts, size unit.Sp) (*Editor, error) {
 }
 
 func newEditor(v *View) *Editor {
-	e := &Editor{Theme: v.Theme, view: v}
+	e := &Editor{Theme: v.Theme, view: v, DefinitionHint: DefaultDefinitionHint}
 	e.mouse.e = e
 	v.selecting = &e.mouse
 	if err := e.SetState(EditorStateConfig{}); err != nil {
@@ -161,6 +219,9 @@ func (e *Editor) SetState(c EditorStateConfig) error {
 	}
 	e.state, e.shown, e.reported = s, s, s
 	e.since, e.mark = nil, nil
+	e.diags, e.jumped = nil, false
+	e.clearHover()
+	e.closeCompletion()
 	e.unshown = emptyChangeSet(len(s.doc))
 	e.view.SetContent(s.content())
 	return nil
@@ -172,6 +233,26 @@ func (s EditorState) content() Content {
 	c := Content{Filename: s.conf.Filename, Text: s.doc + "\n", StyleTags: s.conf.StyleTags}
 	c.Decorations, c.Widgets = s.lineDecorations()
 	return c
+}
+
+// Post runs f on the goroutine that lays the editor out, at the start of
+// its next Layout, where f may call any of the editor's methods. It may be
+// called from any goroutine, a language client's say; the caller asks the
+// window for that frame (app.Window.Invalidate).
+func (e *Editor) Post(f func()) {
+	e.postMu.Lock()
+	e.posted = append(e.posted, f)
+	e.postMu.Unlock()
+}
+
+func (e *Editor) runPosted() {
+	e.postMu.Lock()
+	fs := e.posted
+	e.posted = nil
+	e.postMu.Unlock()
+	for _, f := range fs {
+		f()
+	}
 }
 
 // State is the editor's current state, with every transaction dispatched so
@@ -196,6 +277,15 @@ func (e *Editor) Dispatch(spec TransactionSpec) error {
 	}
 	e.state = t.State
 	e.unshown = e.unshown.compose(t.Changes)
+	e.mapDiagnostics(t.Changes)
+	e.jumped = false
+	if c := &e.completion; c.open {
+		c.since = c.since.compose(t.Changes)
+		c.from = t.Changes.MapPos(c.from, -1)
+	}
+	if t.DocChanged() {
+		e.clearHover()
+	}
 	e.since = append(e.since, t)
 	e.scrollPending = e.scrollPending || t.ScrollIntoView
 	if t.scrollTo != nil {

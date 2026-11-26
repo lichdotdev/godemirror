@@ -112,9 +112,11 @@ func (v *View) pointerEvent(gtx layout.Context, f frame, e pointer.Event) (press
 	at := e.Position.Round()
 	v.hover = v.lineUnder(f, at)
 	v.mods = e.Modifiers
+	v.pointerAt, v.pointerIn = at, true
 	switch e.Kind {
 	case pointer.Leave:
 		v.hover = -1
+		v.pointerIn = false
 	case pointer.Scroll:
 		delta := image.Pt(int(e.Scroll.X), int(e.Scroll.Y))
 		if e.Modifiers.Contain(key.ModShift) && delta.X == 0 {

@@ -284,3 +284,17 @@ file is the trap alone.
   aligns two editors in one scroller with block-widget spacers before each unchanged stretch and places its
   revert buttons at `lineBlockAt(chunk.fromA).top`, with no connectors between the sides; an `Editor` has no
   block widgets for such spacers, so panes beside it follow its scroll instead.
+- **An Editor's popups draw in its code font** (diagnostics, hover, completion): their text is rasterized cell by
+  cell as code is, never through Gio's text stack, so prose shows monospaced, a popup is at most 72 cells wide
+  and 24 rows tall, and what runs past is cut, not scrolled. A popup is clipped to the editor: one taller than
+  the room above and below its anchor loses its last rows. The menu and the popups take no pointer: a click
+  on the menu is a click on the code under it (which closes the menu), and the wheel scrolls the code.
+- **Completions filter as a fuzzy subsequence, in the order given** (`Editor.Complete`): items keep the order
+  the hook gives, with no ranking of their own; an `Incomplete` result is asked again
+  on each character typed. Only one cursor completes: with several, nothing opens.
+- **Diagnostics are mapped, not recomputed** (`Editor.SetDiagnostics`): between an edit and the server's next
+  publish they move with the text around them, and one whose whole range was deleted is gone. A dot marks the line
+  a diagnostic starts on only, and the popup opens on a rest of half a second, the time hover takes too.
+- **Ctrl+click goes to the definition while a `Definition` is set**, over a word: it no longer adds a cursor
+  there (`AllowMultipleSelections`); Ctrl+click off a word still does. A definition with several locations
+  goes to the first.
