@@ -328,8 +328,9 @@ file is the trap alone.
   `OnWorkspaceEdit`.
 - **`Document.Format` blocks the goroutine that lays the editor out** until the server answers, and formats
   the whole document only (no range or on-type formatting); a tab indent asks for tabs four wide.
-- **Out of the LSP client for now**: document
-  symbols (an outline), pull diagnostics (`textDocument/diagnostic`), workspace edits, progress and
+- **`Document.Symbols` blocks the goroutine that lays the editor out** until the server answers, as `Format`
+  does; the editor draws no outline of its own.
+- **Out of the LSP client for now**: pull diagnostics (`textDocument/diagnostic`), workspace edits, progress and
   `window/showMessage` are not asked for or are dropped. A server's dynamic registrations are acknowledged and
   ignored, so a capability a server only registers later is never used.
 - **An edit reaches the server from the UI goroutine** (`lsp.Attach`): `didChange` is written to the server's

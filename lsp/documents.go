@@ -36,6 +36,7 @@ type capabilities struct {
 	RenameProvider         json.RawMessage `json:"renameProvider"`
 	CodeActionProvider     json.RawMessage `json:"codeActionProvider"`
 	FormattingProvider     json.RawMessage `json:"documentFormattingProvider"`
+	SymbolProvider         json.RawMessage `json:"documentSymbolProvider"`
 	SignatureHelpProvider  *struct {
 		TriggerCharacters   []string `json:"triggerCharacters"`
 		RetriggerCharacters []string `json:"retriggerCharacters"`

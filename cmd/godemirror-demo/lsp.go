@@ -23,6 +23,7 @@ import (
 var (
 	flagLSP      = flag.String("lsp", "", "with -edit, a language server command to attach (gopls), run in -file's directory")
 	flagSettings = flag.String("settings", "", `with -lsp, the server's settings as JSON, as {"gopls":{"usePlaceholders":true}}`)
+	flagSymbols  = flag.Bool("symbols", false, "with -lsp, print the file's outline the server lists")
 	flagFormat   = flag.Bool("format", false, "with -lsp, format the file through the server once it is open")
 	flagLang     = flag.String("lang", "go", "with -lsp, the document's LSP language id")
 	flagAt       = flag.String("at", "", "with -edit, a line:col (from 1) to put the cursor at")
@@ -69,10 +70,25 @@ func (d *demo) attachLSP(invalidate func()) error {
 	d.editor.OnDefinition = func(l godemirror.Location) {
 		log.Printf("definition in %s at %d:%d", l.URI, l.Start.Line+1, l.Start.Column+1)
 	}
+	if *flagSymbols {
+		syms, err := doc.Symbols(ctx)
+		if err != nil {
+			return err
+		}
+		printSymbols(syms, "")
+	}
 	if *flagFormat {
 		return doc.Format(ctx)
 	}
 	return nil
+}
+
+// printSymbols prints an outline, a symbol a line, nested by indent.
+func printSymbols(syms []lsp.Symbol, indent string) {
+	for _, s := range syms {
+		fmt.Printf("%s%s %s (kind %d, line %d)\n", indent, s.Name, s.Detail, s.Kind, s.Selection.Start.Line+1)
+		printSymbols(s.Children, indent+"  ")
+	}
 }
 
 // placeCursor puts the editor's cursor at -at.

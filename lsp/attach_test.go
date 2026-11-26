@@ -398,3 +398,25 @@ func TestFormatMakesTheServersEditsOneUndoableTransaction(t *testing.T) {
 		t.Fatalf("undo left %q", got)
 	}
 }
+
+func TestSymbolsReadATreeOrAFlatList(t *testing.T) {
+	_, s, d := attached(t, "type é struct{ f int }", map[string]any{"documentSymbolProvider": true})
+	r := func(a, b int) Range { return Range{Position{0, a}, Position{0, b}} }
+	for i, answer := range []any{
+		[]map[string]any{{"name": "é", "kind": int(SymbolStruct), "range": r(0, 21), "selectionRange": r(5, 6),
+			"children": []map[string]any{{"name": "f", "kind": int(SymbolField), "range": r(15, 20), "selectionRange": r(15, 16)}}}},
+		[]map[string]any{{"name": "é", "kind": int(SymbolStruct), "location": map[string]any{"uri": "file:///a.go", "range": r(5, 6)}}},
+	} {
+		s.handlers["textDocument/documentSymbol"] = func(json.RawMessage) any { return answer }
+		syms, err := d.Symbols(context.Background())
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(syms) != 1 || syms[0].Name != "é" || syms[0].Selection.Start.Column != 5 || syms[0].Selection.End.Column != 7 {
+			t.Fatalf("answer %d read as %+v", i, syms)
+		}
+		if i == 0 && (len(syms[0].Children) != 1 || syms[0].Children[0].Kind != SymbolField || syms[0].Range.End.Column != 22) {
+			t.Fatalf("tree read as %+v", syms)
+		}
+	}
+}

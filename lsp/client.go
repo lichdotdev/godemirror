@@ -174,6 +174,7 @@ var clientCapabilities = map[string]any{
 		"references":     map[string]any{},
 		"rename":         map[string]any{},
 		"formatting":     map[string]any{},
+		"documentSymbol": map[string]any{"hierarchicalDocumentSymbolSupport": true},
 		"codeAction": map[string]any{
 			"codeActionLiteralSupport": map[string]any{"codeActionKind": map[string]any{"valueSet": []string{
 				"", "quickfix", "refactor", "refactor.extract", "refactor.inline", "refactor.rewrite",

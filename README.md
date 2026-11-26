@@ -267,7 +267,8 @@ started in the file's directory; headless, `-at line:col` and `-type text` type
 at a place, `-hover x,y` rests the pointer (with `-ctrl`, Ctrl held), and
 `-wait 4s` keeps drawing until the server has answered, and `-key Shift+F12`
 then presses a key; `-format` formats the file through the server, and
-`-settings '{"gopls":{...}}'` gives the server its settings.
+`-settings '{"gopls":{...}}'` gives the server its settings, and `-symbols`
+prints the file's outline.
 
 ## Requirements
 
