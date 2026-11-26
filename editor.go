@@ -171,6 +171,9 @@ type Editor struct {
 	// after the frame.
 	elsewhere  []Location
 	completion completion
+	popups     popupPointer
+	// menuRowH is the height of a completion's row as last drawn.
+	menuRowH int
 	// afterReport is what runs after the frame's updates are reported.
 	afterReport []func()
 	// posted is what Post queued for the next Layout.
@@ -226,6 +229,7 @@ func newEditor(v *View) *Editor {
 		TypeDefinitionKey: DefaultTypeDefinitionKey, ImplementationKey: DefaultImplementationKey,
 		ReferencesKey: DefaultReferencesKey}
 	v.extraSpans = e.occurrenceSpans
+	e.popups.over = -1
 	e.mouse.e = e
 	v.selecting = &e.mouse
 	if err := e.SetState(EditorStateConfig{}); err != nil {

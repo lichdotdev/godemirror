@@ -68,12 +68,14 @@ func (e *Editor) paintCompletion(gtx layout.Context) {
 		return
 	}
 	m := e.menuLayout(gtx)
+	e.menuRowH = m.rowH
 	e.paintPopupBox(gtx, m.box)
 	typed, _ := e.typedSince()
 	for row := range min(completionRows, len(c.shown)-c.top) {
 		i := c.top + row
 		e.paintCompletionRow(gtx, m, row, c.items[c.shown[i]], typed, i == c.sel)
 	}
+	e.popupHandler(gtx, menuPopup, m.box)
 	e.paintCompletionDoc(gtx, m.box)
 }
 
@@ -190,4 +192,5 @@ func (e *Editor) paintCompletionDoc(gtx layout.Context, menu image.Rectangle) {
 		return
 	}
 	e.paintTextPopup(gtx, rows, r)
+	e.popupHandler(gtx, docPopup, r)
 }

@@ -287,8 +287,9 @@ file is the trap alone.
 - **An Editor's popups draw in its code font** (diagnostics, hover, completion): their text is rasterized cell by
   cell as code is, never through Gio's text stack, so prose shows monospaced, a popup is at most 72 cells wide
   and 24 rows tall, and what runs past is cut, not scrolled. A popup is clipped to the editor: one taller than
-  the room above and below its anchor loses its last rows. The menu and the popups take no pointer: a click
-  on the menu is a click on the code under it (which closes the menu), and the wheel scrolls the code.
+  the room above and below its anchor loses its last rows. A popup takes the pointer over its last frame's box: a
+  click on a completion takes it and the wheel scrolls the menu, while over the hover and the documentation
+  beside the menu the wheel does nothing yet; a popup's box is a frame late after it moves.
 - **Markdown from a server shows as plain text** (`lsp`): a hover's first fenced block is its code and the rest
   its text, fences, links' targets, backticks, `**`, `__`, `#` and rules dropped; lists, tables and a lone `*`
   or `_` stay as written, and nothing is bold or italic.

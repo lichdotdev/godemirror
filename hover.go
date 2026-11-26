@@ -50,6 +50,9 @@ type hoverState struct {
 // about the name; it keeps them while the pointer stays over them.
 func (e *Editor) trackHover(gtx layout.Context) {
 	v, h := e.view, &e.hover
+	if h.fired && e.popups.over == hoverPopup {
+		return
+	}
 	if !v.pointerIn || v.press.dragging || v.pointerAt.X < e.f.g.gutterW {
 		e.clearHover()
 		return
@@ -167,6 +170,7 @@ func (e *Editor) paintHover(gtx layout.Context) {
 	}
 	rows, r := e.fitPopup(gtx, rows, footer, anchor, above)
 	e.paintTextPopup(gtx, rows, r)
+	e.popupHandler(gtx, hoverPopup, r)
 }
 
 // hoverAnchor is what the hover popup points at: the name under the

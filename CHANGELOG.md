@@ -45,6 +45,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   all of them go to `OnReferences` for the app to list. The keys are `Shortcut`s a caller may change. `lsp`
   asks the server's typeDefinition, implementation and references (`Client.TypeDefinition`,
   `Implementation`, `References`), and `Attach` sets the three hooks.
+- **The mouse in an `Editor`'s popups**: a click on a completion takes it, the wheel scrolls a long menu, the
+  pointer over the hover keeps it open, and a click in the code closes the menu and the hover. The code
+  under a popup no longer sees the pointer over it.
 - **`Editor.Post(f)`**, safe from any goroutine: runs `f` at the start of the editor's next `Layout`.
 
 - **`lsp`, a Language Server Protocol client**: `lsp.Start` runs a server from a command and root

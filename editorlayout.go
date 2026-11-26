@@ -46,6 +46,7 @@ func (e *Editor) Layout(gtx layout.Context) (layout.Dimensions, error) {
 	e.takeDefinition(gtx)
 	e.takeReferences(gtx)
 	e.handleInput(gtx)
+	e.handlePopupPointer(gtx)
 	v.handlePointer(gtx, e.f)
 	if e.show() {
 		e.place(e.f)
@@ -78,6 +79,7 @@ func (e *Editor) Layout(gtx layout.Context) (layout.Dimensions, error) {
 // paintPopups draws the popups over everything else, inside the editor.
 func (e *Editor) paintPopups(gtx layout.Context) {
 	defer clip.Rect(image.Rectangle{Max: e.f.size}).Push(gtx.Ops).Pop()
+	e.popups.boxes = [popupKinds]image.Rectangle{}
 	e.paintHover(gtx)
 	e.paintCompletion(gtx)
 }

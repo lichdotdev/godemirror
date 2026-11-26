@@ -40,6 +40,7 @@ func (m *mouseSelection) press(f frame, at image.Point, clicks int, mods key.Mod
 	m.rect = nil
 	m.toDefinition = false
 	e.closeCompletion()
+	e.clearHover()
 	if e.Definition != nil && mods.Contain(key.ModShortcut) && clicks == 1 {
 		if name, ok := e.nameAt(at); ok {
 			m.toDefinition = true
