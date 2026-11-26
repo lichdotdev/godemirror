@@ -17,6 +17,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **`lsp`, a Language Server Protocol client**: `lsp.Start` runs a server from a command and root
+  directory the caller gives, `lsp.Connect` speaks to one over any stream, and the `Client` keeps
+  documents in step (`DidOpen`, `DidChange`, incremental or full as the server asks, `DidSave`,
+  `DidClose`) and asks for `Completion`, `ResolveCompletion`, `Hover` and `Definition`;
+  `WatchDiagnostics` hands over what the server publishes. It offers UTF-8 positions and falls back
+  to UTF-16, which `PositionEncoding` converts. Standard library only.
 - **`DiffOptions.UnifiedGutter`**, how a unified diff numbers its rows: `TwoColumnGutter`, the
   default, shows the old and the new number, and `OneColumnGutter` shows one, the line's number in
   the modified file or, for a deleted line, in the original, in about half the width.
