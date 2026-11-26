@@ -38,7 +38,7 @@ func TestLineBlockCoversALinesRowsAndNotTheBlocksUnderIt(t *testing.T) {
 	}
 }
 
-func TestOnScrollHearsOfEveryScrollOnce(t *testing.T) {
+func TestOnScrollHearsOfTheUsersScrollsOnce(t *testing.T) {
 	h := newHarness(t, manyLines(200))
 	calls := 0
 	h.v.OnScroll = func() { calls++ }
@@ -51,13 +51,13 @@ func TestOnScrollHearsOfEveryScrollOnce(t *testing.T) {
 		t.Fatal("a frame that did not scroll called OnScroll")
 	}
 	h.v.SetScrollTop(1 << 20)
-	h.frame()
-	if calls != 2 || h.v.ScrollTop() != h.v.ContentHeight()-h.size.Y {
+	h.settle()
+	if calls != 1 || h.v.ScrollTop() != h.v.ContentHeight()-h.size.Y {
 		t.Fatalf("SetScrollTop past the end: %d calls, scrolled to %d", calls, h.v.ScrollTop())
 	}
 }
 
-func TestAnEditorsGeometryIsTheLastFramesAndItsScrollIsHeard(t *testing.T) {
+func TestAnEditorsGeometryIsTheLastFramesAndOnlyTheWheelIsHeard(t *testing.T) {
 	h, _ := focusedEditor(t, EditorStateConfig{Doc: manyLines(200)}, SingleSelection(0, 0))
 	ch := h.v.r.CellH()
 	scrolled := 0
@@ -76,13 +76,18 @@ func TestAnEditorsGeometryIsTheLastFramesAndItsScrollIsHeard(t *testing.T) {
 		t.Fatalf("height %d is line %d, want 3", 2*ch+1, l.Number)
 	}
 	h.press(key.NameEnd, key.ModShortcut)
-	if scrolled != 1 || h.ed.ScrollTop() == 0 {
-		t.Fatalf("Ctrl+End scrolled to %d with %d OnScroll calls", h.ed.ScrollTop(), scrolled)
+	h.advance(glideDuration)
+	if scrolled != 0 || h.ed.ScrollTop() == 0 {
+		t.Fatalf("Ctrl+End scrolled to %d with %d OnScroll calls, want none", h.ed.ScrollTop(), scrolled)
 	}
-	h.ed.SetScrollTop(0)
+	h.send(pointer.Event{Kind: pointer.Scroll, Source: pointer.Mouse, Position: f32.Pt(100, 100), Scroll: f32.Pt(0, -40)})
+	if scrolled != 1 {
+		t.Fatalf("the wheel: %d OnScroll calls, want 1", scrolled)
+	}
+	h.ed.SnapScrollTop(0)
 	h.frame()
-	if scrolled != 2 || h.ed.ScrollTop() != 0 {
-		t.Fatalf("SetScrollTop(0): at %d, %d calls", h.ed.ScrollTop(), scrolled)
+	if scrolled != 1 || h.ed.ScrollTop() != 0 {
+		t.Fatalf("SnapScrollTop(0): at %d, %d calls", h.ed.ScrollTop(), scrolled)
 	}
 }
 

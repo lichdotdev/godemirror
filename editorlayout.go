@@ -29,7 +29,7 @@ const (
 // View.Layout's.
 func (e *Editor) Layout(gtx layout.Context) (layout.Dimensions, error) {
 	v := e.view
-	v.Wrap, v.Theme = e.Wrap, e.Theme
+	v.Wrap, v.Theme, v.ReduceMotion = e.Wrap, e.Theme, e.ReduceMotion
 	v.formatNumber = nil
 	if format := e.FormatNumber; format != nil {
 		v.formatNumber = func(line int) string { return format(line, e.shown) }
@@ -52,6 +52,7 @@ func (e *Editor) Layout(gtx layout.Context) (layout.Dimensions, error) {
 		e.place(e.f)
 	}
 	e.scrollIntoView(gtx)
+	v.stepGlide(gtx, e.f)
 	e.trackCrosshair()
 	e.trackHover(gtx)
 	e.trackLink()
@@ -66,12 +67,7 @@ func (e *Editor) Layout(gtx layout.Context) (layout.Dimensions, error) {
 		e.tellIME(gtx)
 	}
 	e.paintPopups(gtx)
-	if v.scroll != v.scrolled {
-		v.scrolled = v.scroll
-		if e.OnScroll != nil {
-			e.OnScroll()
-		}
-	}
+	v.reportScroll(e.OnScroll)
 	e.report(gtx)
 	e.runLater()
 	e.reportDefinitions()
@@ -150,8 +146,9 @@ func (e *Editor) show() (edited bool) {
 }
 
 // scrollIntoView scrolls the main range's head into view, as CodeMirror's
-// scrollIntoView does by default, revealMargin clear of the edges; after a
-// page motion, it keeps the head's row where it was on screen instead.
+// scrollIntoView does by default, revealMargin clear of the edges, judged
+// where a glide lands; after a page motion, it keeps the head's row where it
+// was on screen instead. It glides down or up and moves sideways at once.
 func (e *Editor) scrollIntoView(gtx layout.Context) {
 	if !e.scrollPending {
 		return
@@ -165,7 +162,7 @@ func (e *Editor) scrollIntoView(gtx layout.Context) {
 		e.scrollTarget = nil
 	}
 	margin := gtx.Dp(revealMargin)
-	y := v.scroll.Y
+	y := v.heading()
 	switch {
 	case e.keepOnScreen != nil:
 		y = top - *e.keepOnScreen
@@ -175,7 +172,7 @@ func (e *Editor) scrollIntoView(gtx layout.Context) {
 	case top+f.ch+margin > y+f.size.Y:
 		y = top + f.ch + margin - f.size.Y
 	}
-	v.scroll.Y = min(max(y, 0), max(v.tops[len(v.tops)-1]-f.size.Y, 0))
+	v.glideTo(min(max(y, 0), max(v.tops[len(v.tops)-1]-f.size.Y, 0)))
 	if v.Wrap {
 		return
 	}

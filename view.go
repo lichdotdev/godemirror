@@ -53,12 +53,18 @@ type View struct {
 	// Theme colors the view; it starts as DarkTheme. A change shows on the
 	// next Layout, which composes the rows on screen again.
 	Theme Theme
-	// OnScroll, when set, is called at the end of a Layout that leaves the
-	// view scrolled elsewhere than the last call saw it, whatever moved it
-	// (the wheel, a drag, ScrollToLine, SetScrollTop), so that other views
-	// can follow; never while the view paints. A Split or a DiffView does
-	// not call it.
+	// OnScroll, when set, is called at the end of a Layout in which the
+	// user scrolled the view, with the wheel, the touchpad or a selection
+	// dragged past an edge; never while the view paints. What the program
+	// scrolls (SetScrollTop, SnapScrollTop, ScrollToLine, an Editor keeping
+	// its cursor in view) and every frame of a glide does not call it, so a
+	// caller that mirrors the scroll elsewhere hears no echo of its own:
+	// ScrollTarget says where a glide lands, and ScrollTop, read after each
+	// Layout, where the view is. A Split or a DiffView does not call it.
 	OnScroll func()
+	// ReduceMotion makes every scroll the program asks for land at once
+	// instead of gliding there; Gio reports no platform preference for it.
+	ReduceMotion bool
 
 	// r may be shared with the other side of a Split; px and composedIn are
 	// the size and the theme this view's row images were composed at.
@@ -95,11 +101,14 @@ type View struct {
 	extra    []int
 	wrapCols int
 	scroll   image.Point
-	// target is a ScrollToLine waiting for the next Layout.
+	// target is a ScrollToLine waiting for the next Layout, and glide the
+	// slide to where the program last scrolled the view.
 	target *scrollTarget
+	glide  glide
 
-	// scrolled is the scroll position OnScroll was last told of.
-	scrolled image.Point
+	// userScrolled is whether the user scrolled the view since OnScroll was
+	// last called.
+	userScrolled bool
 
 	sel selection
 	// selecting is what a press and a drag select: the view's own selection,
@@ -219,17 +228,28 @@ func (v *View) Layout(gtx layout.Context) (layout.Dimensions, error) {
 	v.starts = rowStarts(v.wraps, nil)
 	v.tops = lineTops(v.starts, f.ch, v.extra)
 	v.laid = v.doc
-	v.scrollToTarget(gtx, f)
+	if from := v.scroll.Y; v.scrollToTarget(gtx, f) {
+		to := v.scroll.Y
+		v.scroll.Y = from
+		v.glideTo(to)
+	}
 	v.handlePointer(gtx, f)
 	v.handleKeys(gtx)
+	v.stepGlide(gtx, f)
 	dims := v.paint(gtx, f)
-	if v.scroll != v.scrolled {
-		v.scrolled = v.scroll
-		if v.OnScroll != nil {
-			v.OnScroll()
+	v.reportScroll(v.OnScroll)
+	return dims, nil
+}
+
+// reportScroll calls onScroll, when set, if the user scrolled the view since
+// the last call.
+func (v *View) reportScroll(onScroll func()) {
+	if v.userScrolled {
+		v.userScrolled = false
+		if onScroll != nil {
+			onScroll()
 		}
 	}
-	return dims, nil
 }
 
 // frame is one frame's measurements, carried between the phases of a layout.

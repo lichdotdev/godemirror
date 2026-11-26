@@ -36,8 +36,12 @@ type Editor struct {
 	// as CodeMirror's crosshairCursor does, a hint that a drag selects a
 	// rectangle.
 	CrosshairCursor bool
-	// OnScroll is View.OnScroll of the editor.
+	// OnScroll is View.OnScroll of the editor: a cursor kept in view is the
+	// program's scroll, and does not call it.
 	OnScroll func()
+	// ReduceMotion is View.ReduceMotion of the editor: page motions and far
+	// cursor moves scroll at once instead of gliding.
+	ReduceMotion bool
 	// FormatNumber, when set, spells the gutter's number of line lineNo
 	// (counted from 1) in state, the one on screen, as the formatNumber
 	// option of @codemirror/view 6.43.15's lineNumbers: relative numbers

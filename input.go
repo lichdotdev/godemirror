@@ -68,13 +68,30 @@ func (s viewSelector) drag(f frame, at image.Point) { s.v.sel.head = s.v.hit(f, 
 // reports whether a press started a new selection, which a split uses to
 // clear the other side's.
 func (v *View) handlePointer(gtx layout.Context, f frame) (pressed bool) {
-	maxY := max(v.tops[len(v.tops)-1]-f.size.Y, 0)
-	maxX := 0
+	pressed = v.takePointer(gtx, f)
+	limit := v.scrollLimit(gtx, f)
+	v.scroll.X = min(max(v.scroll.X, 0), limit.X)
+	v.scroll.Y = min(max(v.scroll.Y, 0), limit.Y)
+	v.autoScroll(gtx, f, limit)
+	v.hot = v.decoration(v.hover).HoverGroup
+	return pressed
+}
+
+// scrollLimit is how far the view can scroll down and sideways.
+func (v *View) scrollLimit(gtx layout.Context, f frame) image.Point {
+	limit := image.Pt(0, max(v.tops[len(v.tops)-1]-f.size.Y, 0))
 	if !v.Wrap {
-		maxX = max(v.longest*f.cw+gtx.Dp(scrollEndMargin)-(f.size.X-f.g.textX), 0)
+		limit.X = max(v.longest*f.cw+gtx.Dp(scrollEndMargin)-(f.size.X-f.g.textX), 0)
 	}
-	sideways := pointer.ScrollRange{Min: -v.scroll.X, Max: maxX - v.scroll.X}
-	down := pointer.ScrollRange{Min: -v.scroll.Y, Max: maxY - v.scroll.Y}
+	return limit
+}
+
+// takePointer takes the pointer events addressed to the view, and tells Gio
+// how far a wheel may scroll it from where it is now.
+func (v *View) takePointer(gtx layout.Context, f frame) (pressed bool) {
+	limit := v.scrollLimit(gtx, f)
+	sideways := pointer.ScrollRange{Min: -v.scroll.X, Max: limit.X - v.scroll.X}
+	down := pointer.ScrollRange{Min: -v.scroll.Y, Max: limit.Y - v.scroll.Y}
 	// Shift turns a vertical wheel sideways, which Gio leaves to the handler:
 	// it clamps the wheel by the vertical range first, so that range also
 	// admits what the sideways one would. A nested view does so only while
@@ -91,7 +108,7 @@ func (v *View) handlePointer(gtx layout.Context, f frame) (pressed bool) {
 			ScrollY: vertical,
 		})
 		if !ok {
-			break
+			return pressed
 		}
 		e, ok := ev.(pointer.Event)
 		if !ok {
@@ -101,11 +118,6 @@ func (v *View) handlePointer(gtx layout.Context, f frame) (pressed bool) {
 			pressed = true
 		}
 	}
-	v.scroll.X = min(max(v.scroll.X, 0), maxX)
-	v.scroll.Y = min(max(v.scroll.Y, 0), maxY)
-	v.autoScroll(gtx, f, image.Pt(maxX, maxY))
-	v.hot = v.decoration(v.hover).HoverGroup
-	return pressed
 }
 
 func (v *View) pointerEvent(gtx layout.Context, f frame, e pointer.Event) (pressed bool) {
@@ -122,7 +134,9 @@ func (v *View) pointerEvent(gtx layout.Context, f frame, e pointer.Event) (press
 		if e.Modifiers.Contain(key.ModShift) && delta.X == 0 {
 			delta = image.Pt(delta.Y, 0)
 		}
-		v.scroll = v.scroll.Add(delta)
+		if delta != (image.Point{}) {
+			v.scroll, v.glide, v.userScrolled = v.scroll.Add(delta), glide{}, true
+		}
 	case pointer.Press:
 		if !e.Buttons.Contain(pointer.ButtonPrimary) || at.X < f.g.gutterW || v.onWidget(at) {
 			return false

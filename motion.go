@@ -214,7 +214,7 @@ func (e *Editor) cursorByPage(forward bool) (TransactionSpec, bool) {
 	}
 	main := e.state.sel.Main()
 	_, top := e.coordsAt(main.Head(), main.Assoc())
-	if onScreen := top - e.view.scroll.Y; onScreen > 0 && onScreen+e.f.ch < e.f.size.Y {
+	if onScreen := top - e.view.heading(); onScreen > 0 && onScreen+e.f.ch < e.f.size.Y {
 		e.keepOnScreen = &onScreen
 	}
 	return setSel(sel), true

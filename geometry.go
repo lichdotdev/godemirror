@@ -26,13 +26,25 @@ type Geometry struct {
 func (v *View) Geometry() Geometry { return v.laidOut }
 
 // ScrollTop is how far the view is scrolled down, in pixels from the top of
-// the document, as CodeMirror's scrollDOM.scrollTop.
+// the document, as CodeMirror's scrollDOM.scrollTop: where the last Layout
+// drew it, partway through a glide.
 func (v *View) ScrollTop() int { return v.scroll.Y }
 
+// ScrollTarget is where the view lands once its glide is over, ScrollTop
+// when it is not gliding. A target SetScrollTop set since the last Layout
+// is not yet kept within the document.
+func (v *View) ScrollTarget() int { return v.heading() }
+
 // SetScrollTop scrolls the view to y pixels from the top of the document,
-// as setting CodeMirror's scrollDOM.scrollTop does. The next Layout keeps it
-// within the document.
-func (v *View) SetScrollTop(y int) { v.scroll.Y = y }
+// as setting CodeMirror's scrollDOM.scrollTop does, but glides there over
+// the next frames, eased out, unless the jump is a few rows or ReduceMotion
+// is set. The next Layout keeps it within the document. A wheel during the
+// glide stops it where the view is.
+func (v *View) SetScrollTop(y int) { v.glideTo(y) }
+
+// SnapScrollTop is SetScrollTop without the glide: the next Layout draws the
+// view at y, within the document, and stops any glide.
+func (v *View) SnapScrollTop(y int) { v.scroll.Y, v.glide = y, glide{} }
 
 // LineBlock is where line (0-based) shows, as CodeMirror's lineBlockAt: the
 // top and bottom of its rows, wrapped ones included, in pixels from the top
@@ -89,8 +101,14 @@ func (v *View) placed() (tops, starts []int) {
 // ScrollTop is View.ScrollTop of the editor.
 func (e *Editor) ScrollTop() int { return e.view.ScrollTop() }
 
+// ScrollTarget is View.ScrollTarget of the editor.
+func (e *Editor) ScrollTarget() int { return e.view.ScrollTarget() }
+
 // SetScrollTop is View.SetScrollTop of the editor.
 func (e *Editor) SetScrollTop(y int) { e.view.SetScrollTop(y) }
+
+// SnapScrollTop is View.SnapScrollTop of the editor.
+func (e *Editor) SnapScrollTop(y int) { e.view.SnapScrollTop(y) }
 
 // LineBlockAt is where the line pos is on shows, as View.LineBlock and
 // CodeMirror's lineBlockAt. pos is a position in the document the last

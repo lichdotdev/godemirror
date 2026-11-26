@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **`SetScrollTop`, `ScrollToLine` and an `Editor`'s scroll into view now glide** to their target over 140 ms,
+  eased out, instead of snapping, unless the jump is three rows or less: PageDown, Ctrl+End, `NextDiagnostic`
+  and a definition in the same file slide there. Right after the call, `ScrollTop` still answers where the
+  view is; `ScrollTarget` answers where it lands. Call `SnapScrollTop` for the old behaviour.
+- **`OnScroll` hears only the user's scrolls** (wheel, touchpad, a selection dragged past an edge), no longer
+  `SetScrollTop`, `ScrollToLine`, an `Editor`'s cursor kept in view, nor any frame of a glide: an app that
+  mirrors the scroll elsewhere hears no echo of its own. A pane that followed every scroll through `OnScroll`
+  reads `ScrollTop` after each `Layout` instead.
 - **A wrapped row now hangs under its line's own indentation**, two cells in, up to half the width,
   in a `View`, an `Editor` and a `DiffView`, unified and split, instead of starting flush left. The
   indent is only drawn: selection, search, copy and `Pos` see the line's own text, and the gutter stays
@@ -24,6 +32,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **`SnapScrollTop`, `ScrollTarget` and `ReduceMotion`** on `View` and `Editor`: scroll without the glide,
+  read where a glide lands, and turn every glide off (Gio reports no platform preference for it).
 - **Diagnostics in an `Editor`**: `SetDiagnostics` takes `Diagnostic`s (a byte range, a `Severity`, a message,
   its source and code), which follow later edits, and the editor underlines each with a wave in its
   severity's color, puts a dot in the gutter of its line (the worst one's), and shows the messages in a popup

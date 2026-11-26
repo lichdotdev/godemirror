@@ -86,6 +86,11 @@ godemirror lets you:
   for a word, triple click for a line, Shift+click to extend, Ctrl+A and
   Ctrl+C. Copying gives back the text as it was, tabs included, and
   `SelectedLines` turns the selection into the line span an action works on.
+- **Jumps glide.** A scroll the program makes (`SetScrollTop`, `ScrollToLine`,
+  PageDown, a far cursor move in an `Editor`) slides there in 140 ms, eased
+  out; a jump of a few rows, the wheel and the touchpad stay direct.
+  `SnapScrollTop` and `ReduceMotion` land at once, and `OnScroll` hears only
+  the user's own scrolls.
 
 ## Getting started
 
@@ -197,7 +202,7 @@ The deliberate limits, and what they mean for a caller, are in
 | `state.selection`, `dispatch({selection})` | `Selection`, `Select`, `SelectLines` |
 | `SearchQuery`, `findNext`, `findPrevious` | `SearchQuery`, `SetSearch`, `FindNext`, `FindPrevious`, `Matches` (no panel: draw your own search box) |
 | `EditorView.scrollIntoView` | `ScrollToLine` |
-| `scrollDOM.scrollTop`, `lineBlockAt`, `lineBlockAtHeight`, `contentHeight` | `ScrollTop`, `SetScrollTop`, `LineBlock` (`LineBlockAt` on an `Editor`), `LineAtHeight` (`LineBlockAtHeight`), `ContentHeight`, and `OnScroll` |
+| `scrollDOM.scrollTop`, `lineBlockAt`, `lineBlockAtHeight`, `contentHeight` | `ScrollTop`, `SetScrollTop` (`SnapScrollTop`, `ScrollTarget`), `LineBlock` (`LineBlockAt` on an `Editor`), `LineAtHeight` (`LineBlockAtHeight`), `ContentHeight`, and `OnScroll` |
 | `state.doc.lines`, `doc.line(n)` | `LineCount`, `LineText` |
 | `MergeView`, `unifiedMergeView` | `DiffView` (`Split` on or off) |
 | `collapseUnchanged` | `DiffOptions.Collapse`, or the gaps of a patch |

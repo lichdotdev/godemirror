@@ -161,6 +161,7 @@ func TestPageDownMovesAPageAndKeepsTheCursorWhereItWasOnScreen(t *testing.T) {
 	_, before := h.ed.coordsAt(10, 0)
 	onScreen := before - h.v.scroll.Y
 	h.press(key.NamePageDown, 0)
+	h.settle()
 	_, head := h.mainRange()
 	_, after := h.ed.coordsAt(head, h.ed.State().Selection().Main().Assoc())
 	if rows := (after - before) / h.v.r.CellH(); rows < h.size.Y/h.v.r.CellH()-1 {
@@ -320,6 +321,7 @@ func TestTypingAtTheEndScrollsTheCursorIntoView(t *testing.T) {
 	h, _ := focusedEditor(t, EditorStateConfig{Doc: manyLines(200)}, SingleSelection(0, 0))
 	h.press(key.NameEnd, key.ModShortcut)
 	h.typeText("x")
+	h.settle()
 	_, top := h.ed.coordsAt(len(h.ed.State().Doc()), -1)
 	if top < h.v.scroll.Y || top+h.v.r.CellH() > h.v.scroll.Y+h.size.Y {
 		t.Fatalf("the cursor's row at %d is off screen, scrolled to %d", top, h.v.scroll.Y)

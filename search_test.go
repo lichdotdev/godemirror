@@ -186,7 +186,7 @@ func TestFindScrollsTheMatchIntoView(t *testing.T) {
 	if _, ok := h.v.FindNext(); !ok {
 		t.Fatal("FindNext found nothing")
 	}
-	h.frame()
+	h.settle()
 	ch := h.v.r.CellH()
 	if top, bottom := h.v.scroll.Y, h.v.scroll.Y+h.size.Y; 200*ch < top || 201*ch > bottom {
 		t.Fatalf("view shows y [%d,%d), the match is at [%d,%d)", top, bottom, 200*ch, 201*ch)
@@ -201,7 +201,7 @@ func TestFindPreviousScrollsUpToTheMatch(t *testing.T) {
 	if _, ok := h.v.FindPrevious(); !ok {
 		t.Fatal("FindPrevious found nothing")
 	}
-	h.frame()
+	h.settle()
 	if h.v.scroll.Y != 0 {
 		t.Fatalf("scroll = %d after FindPrevious, want the match at the top in view", h.v.scroll.Y)
 	}

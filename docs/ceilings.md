@@ -277,13 +277,21 @@ file is the trap alone.
   the last `Layout` (`SetContent`, `SetState`) is estimated, as CodeMirror's height map estimates lines it has
   not measured, but more crudely: a row a line, wrapping and blocks left out, until the next frame places it. A line's block
   covers its rows, not the block widgets under it, which CodeMirror makes blocks of their own. `OnScroll`
-  is ours: CodeMirror has a DOM scroll event, godemirror calls back after the frame that left the view
-  scrolled elsewhere, the scroll a caller set included, so views that follow each other must stop where the
-  position they set is the one they were told of. Views inside a `Split` or a `DiffView` neither call it nor
+  is ours: CodeMirror has a DOM scroll event, godemirror calls back after a frame in which the user scrolled
+  (wheel, touchpad, a selection dragged past an edge), never for what the program scrolled: `SetScrollTop`,
+  `ScrollToLine`, an `Editor` keeping its cursor in view. A pane that follows an `Editor` scrolled by the
+  keyboard hears nothing, and reads `ScrollTop` after each `Layout` instead. Views inside a `Split` or a `DiffView` neither call it nor
   answer for their place in it. CodeMirror has no three-pane view: `@codemirror/merge` 6.12.3's `MergeView`
   aligns two editors in one scroller with block-widget spacers before each unchanged stretch and places its
   revert buttons at `lineBlockAt(chunk.fromA).top`, with no connectors between the sides; an `Editor` has no
   block widgets for such spacers, so panes beside it follow its scroll instead.
+- **A jump the program makes glides; the wheel never does**: `SetScrollTop`, `ScrollToLine` and an `Editor`'s
+  scroll into view slide down or up over 140 ms, eased out, unless the jump is three rows or less. Each frame of
+  the glide reads `gtx.Now`, so a caller that lays out with a fixed `Now` sees the glide stand still and asking
+  for frames forever; a zero `Now` lands at once. `ScrollTop` is where the frame drew the view, partway
+  through; `ScrollTarget` is where it lands. A wheel stops it where it is; a press or a selection does not.
+  Sideways scrolling, a `Split` and a `DiffView` never glide. Gio reports no reduced-motion preference from the
+  platform, so `ReduceMotion` (off, so gliding, by default) is the caller's to set from its own setting.
 - **An Editor's popups set prose in Gio's Go font, not the app's** (diagnostics, hover, the documentation beside the
   completions): prose goes through Gio's text stack in the Go typeface shipped with Gio, whatever font the app
   uses elsewhere, while code (inline, fenced, a signature) goes through glyphs in the editor's font. A popup
