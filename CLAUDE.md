@@ -1,9 +1,11 @@
 # godemirror
 
-`godemirror` is an **open-source Go library that brings CodeMirror to native Go**, on [Gio](https://gioui.org):
-the code view (`View`, `Split`), the diff view (`DiffView`, unified and side by side) and, opt-in, the editor
-(`Editor`). Read-only stays the default; editing exists only where a caller builds an `Editor`. That is the goal
-every decision answers to: when in doubt, ask what CodeMirror gives a caller and how a Go caller would want it.
+`godemirror` is an **open-source Go library for code views and editing, native to Go**, on [Gio](https://gioui.org):
+the code view (`View`, `Split`), the diff view (`DiffView`, unified and side by side), opt-in, the editor
+(`Editor`), and the language-server client (`lsp`). Read-only stays the default; editing exists only where a
+caller builds an `Editor`. It started as a CodeMirror port and keeps what was ported, but CodeMirror is a
+reference, not a ceiling: when in doubt, ask how a Go caller would want it, and build what CodeMirror lacks
+when a caller needs it.
 [lich](https://github.com/lichdotdev/lich) is its first user, not its purpose: docs, errors and defaults answer
 to a stranger, and nothing about lich belongs in the public docs. Linux first, since fonts resolve through
 fontconfig.
@@ -51,12 +53,13 @@ lives in the code, its godoc, `README.md` and `docs/`; never restate any of it h
   `RicherJavaTags`), checked against goldens the real Lezer writes configured with the same `styleTags`. A
   `StyleRule.Names` rule reads a node's text, which Lezer cannot, so it lives in its own set (`GoBuiltinTags`
   and its siblings), checked by Go tests alone, and never enters a set checked by goldens.
-- **Editing does what CodeMirror 6 does, port by port.** The editor's state, commands and history port
-  `@codemirror/state`, `@codemirror/view` and `@codemirror/commands` at the exact version their godoc names. Each
-  behaviour is checked against the real thing: CodeMirror's own tests ported to Go, and goldens the real packages
-  write in node (`internal/cmgen`). A behaviour CodeMirror lacks is left out, and a CodeMirror behaviour left out
-  goes into `docs/ceilings.md`. An `Editor` counts positions in UTF-8 bytes where the read-only views' `Pos`
-  counts runes: code where the two meet converts explicitly, and says which unit it takes.
+- **What was ported stays checked against its source.** The editor's state, commands and history port
+  `@codemirror/state`, `@codemirror/view` and `@codemirror/commands` at the exact version their godoc names, and
+  keep CodeMirror's own tests ported to Go and the goldens the real packages write in node (`internal/cmgen`).
+  A change to a ported behaviour is deliberate: its test changes with it, and the diff says why ours is better.
+  A feature CodeMirror lacks is designed here, checked by Go tests alone, and needs no port behind it.
+  An `Editor` counts positions in UTF-8 bytes where the read-only views' `Pos` counts runes: code where the two
+  meet converts explicitly, and says which unit it takes.
 - **A chroma token takes the tag the language's lezer grammar gives the same construct** (`tagmap.go`). Where
   chroma cannot tell two constructs apart, that goes into `docs/ceilings.md`.
 - Bug fixes start with a test that reproduces the bug, and the test is seen failing without the fix.
