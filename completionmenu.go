@@ -24,10 +24,10 @@ const (
 	completionBadgeGap  = unit.Dp(8)
 	completionDetailGap = unit.Dp(24)
 	// completionMaxDetail is how many cells of an item's detail the menu
-	// shows, and completionDocCols how wide the documentation beside it
+	// shows, and completionDocWidth how wide the documentation beside it
 	// runs.
 	completionMaxDetail = 40
-	completionDocCols   = 48
+	completionDocWidth  = unit.Dp(360)
 )
 
 // kindTags are the highlighting tags whose color a kind's badge takes.
@@ -167,30 +167,27 @@ func truncate(s string, cols int) string {
 func (e *Editor) paintCompletionDoc(gtx layout.Context, menu image.Rectangle) {
 	c := &e.completion
 	it := c.items[c.shown[c.sel]]
-	cols := min(completionDocCols, e.popupCols(gtx))
-	var rows []popupRow
-	code := e.Theme.tagColor(tags.Function(tags.VariableName))
-	for _, l := range wrapText(it.Detail, cols) {
-		if l != "" {
-			rows = append(rows, popupRow{spans: []textSpan{{text: l, color: code}}})
-		}
-	}
-	if doc := strings.TrimSpace(it.Documentation); doc != "" {
-		rows = append(rows, textRows(doc, cols, e.Theme.Popup.Muted)...)
-	}
-	if it.Documentation == "" || len(rows) == 0 {
+	if strings.TrimSpace(it.Documentation) == "" {
 		return
 	}
-	rows = rows[:min(len(rows), popupMaxRows)]
-	size := e.popupSize(gtx, rows)
+	var blocks []mdBlock
+	if it.Detail != "" {
+		blocks = append(blocks, mdBlock{kind: codeBlock, code: it.Detail})
+	}
+	blocks = append(blocks, parseMarkdown(it.Documentation)...)
 	gap := gtx.Dp(popupGap)
-	r := image.Rectangle{Min: image.Pt(menu.Max.X+gap, menu.Min.Y), Max: image.Pt(menu.Max.X+gap+size.X, menu.Min.Y+size.Y)}
-	if r.Max.X > e.f.size.X {
-		r = r.Sub(image.Pt(r.Min.X-(menu.Min.X-gap-size.X), 0))
-	}
-	if r.Min.X < e.f.g.gutterW {
-		return
-	}
-	e.paintTextPopup(gtx, rows, r)
-	e.popupHandler(gtx, docPopup, r)
+	maxW := min(gtx.Dp(completionDocWidth), e.maxProseWidth(gtx))
+	e.proseBox(gtx, docPopup, blocks, maxW, func(size image.Point) image.Rectangle {
+		r := image.Rectangle{Min: image.Pt(menu.Max.X+gap, menu.Min.Y), Max: image.Pt(menu.Max.X+gap+size.X, menu.Min.Y+size.Y)}
+		if r.Max.X > e.f.size.X {
+			r = r.Sub(image.Pt(r.Min.X-(menu.Min.X-gap-size.X), 0))
+		}
+		if r.Max.Y > e.f.size.Y {
+			r = r.Sub(image.Pt(0, r.Max.Y-e.f.size.Y))
+		}
+		if r.Min.X < e.f.g.gutterW {
+			return image.Rectangle{}
+		}
+		return r
+	})
 }

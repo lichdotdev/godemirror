@@ -18,12 +18,11 @@ func TestSnippetsLoseTheirPlaceholders(t *testing.T) {
 	}
 }
 
-func TestPlainTextDropsMarkdown(t *testing.T) {
-	got := plainText(Markup{Kind: "markdown", Value: "# Title\n\nUse `x` and [docs](http://a).\n\n```go\ncode()\n```\n---\nescaped \\*star\\*"})
-	if want := "Title\n\nUse x and docs.\n\ncode()\n\nescaped *star*"; got != want {
-		t.Fatalf("got %q, want %q", got, want)
+func TestPlaintextIsEscapedAsMarkdown(t *testing.T) {
+	if got := markdown(Markup{Kind: "plaintext", Value: "a*b `c` [d] _e_ #f"}); got != "a\\*b \\`c\\` \\[d\\] \\_e\\_ \\#f" {
+		t.Fatalf("got %q", got)
 	}
-	if got := plainText(Markup{Kind: "plaintext", Value: "`kept`"}); got != "`kept`" {
-		t.Fatalf("plaintext changed to %q", got)
+	if got := markdown(Markup{Kind: "markdown", Value: "**kept**"}); got != "**kept**" {
+		t.Fatalf("markdown changed to %q", got)
 	}
 }

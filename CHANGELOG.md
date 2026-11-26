@@ -34,8 +34,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `CompletionItem`s in a menu under the cursor: a badge of the item's `CompletionKind`, the typed part in bold,
   the detail on the right, and the chosen item's documentation beside the menu, which `ResolveCompletion`
   may fill in. Up and Down choose, Enter and Tab take, Escape closes; typing on filters the items.
-- **Hover and go to definition in an `Editor`**: `Hover` answers, off the UI goroutine, what shows above a
-  name the pointer rests on (a `HoverInfo`'s code over its text). With `Definition` set, Ctrl shows the
+- **Hover and go to definition in an `Editor`**: `Hover` answers, off the UI goroutine, the Markdown that
+  shows above a name the pointer rests on. With `Definition` set, Ctrl shows the
   name under the pointer as a link, and Ctrl+click or F12 go to its definition: in the document, the cursor
   moves; in another, `OnDefinition` gets its `Location`. `DefinitionHint` is the hint under a hover.
 - **Type definition, implementation and references in an `Editor`**: `TypeDefinition` and `Implementation`
@@ -45,6 +45,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   all of them go to `OnReferences` for the app to list. The keys are `Shortcut`s a caller may change. `lsp`
   asks the server's typeDefinition, implementation and references (`Client.TypeDefinition`,
   `Implementation`, `References`), and `Attach` sets the three hooks.
+- **Popups render Markdown, their prose in a proportional font**: the hover and a completion's
+  `Documentation` are Markdown (paragraphs, lists, headings, fenced code highlighted by its language, inline
+  code, bold, italic, links as text), their prose set through Gio's text stack in the Go font and their code
+  in the editor's. A popup grows to 560dp by 420dp and scrolls with the wheel past that.
 - **The mouse in an `Editor`'s popups**: a click on a completion takes it, the wheel scrolls a long menu, the
   pointer over the hover keeps it open, and a click in the code closes the menu and the hover. The code
   under a popup no longer sees the pointer over it.

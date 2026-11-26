@@ -1,89 +1,18 @@
 package lsp
 
-import (
-	"regexp"
-	"strings"
+import "strings"
 
-	"github.com/lichdotdev/godemirror"
+// markdownEscapes are the characters Markdown reads as markup.
+var markdownEscapes = strings.NewReplacer(
+	`\`, `\\`, "`", "\\`", "*", `\*`, "_", `\_`, "[", `\[`, "]", `\]`, "<", `\<`, "#", `\#`,
 )
 
-// mdLink is a markdown link, whose text is kept.
-var mdLink = regexp.MustCompile(`\[([^\]]*)\]\([^)]*\)`)
-
-// hoverInfo splits m into the code it opens with, the first fenced block
-// of markdown, and the rest as plain text.
-func hoverInfo(m Markup) godemirror.HoverInfo {
-	if m.Kind != "markdown" {
-		return godemirror.HoverInfo{Text: m.Value}
-	}
-	var code, text []string
-	fence, first := false, true
-	for l := range strings.SplitSeq(m.Value, "\n") {
-		if strings.HasPrefix(strings.TrimSpace(l), "```") {
-			if fence {
-				first = false
-			}
-			fence = !fence
-			continue
-		}
-		if fence && first && len(text) == 0 {
-			code = append(code, l)
-			continue
-		}
-		text = append(text, l)
-	}
-	return godemirror.HoverInfo{Code: strings.Join(code, "\n"), Text: markdownText(strings.Join(text, "\n"))}
-}
-
-// plainText is m as plain text: markdown with its fences, links and marks
-// dropped, the text they hold kept.
-func plainText(m Markup) string {
-	if m.Kind != "markdown" {
+// markdown is m as Markdown: plaintext with its markup characters escaped.
+func markdown(m Markup) string {
+	if m.Kind == "markdown" {
 		return m.Value
 	}
-	var keep []string
-	for l := range strings.SplitSeq(m.Value, "\n") {
-		if !strings.HasPrefix(strings.TrimSpace(l), "```") {
-			keep = append(keep, l)
-		}
-	}
-	return markdownText(strings.Join(keep, "\n"))
-}
-
-// markdownText drops markdown's inline marks: links keep their text, and
-// backticks, strong emphasis, heading marks and escapes go. A lone * or _
-// stays, being as often code (a pointer, a name) as emphasis.
-func markdownText(s string) string {
-	s = mdLink.ReplaceAllString(s, "$1")
-	s = strings.NewReplacer("`", "", "**", "", "__", "").Replace(s)
-	var out []string
-	for l := range strings.SplitSeq(s, "\n") {
-		if thematicBreak(l) {
-			l = ""
-		}
-		l = strings.TrimLeft(l, "#")
-		out = append(out, strings.TrimSpace(unescape(l)))
-	}
-	return strings.TrimSpace(strings.Join(out, "\n"))
-}
-
-// thematicBreak reports whether l is a markdown rule: three or more of -,
-// * or _ alone.
-func thematicBreak(l string) bool {
-	l = strings.ReplaceAll(strings.TrimSpace(l), " ", "")
-	return len(l) >= 3 && (strings.Trim(l, "-") == "" || strings.Trim(l, "*") == "" || strings.Trim(l, "_") == "")
-}
-
-// unescape drops the backslash of a markdown escape.
-func unescape(s string) string {
-	var b strings.Builder
-	for i := 0; i < len(s); i++ {
-		if s[i] == '\\' && i+1 < len(s) && strings.IndexByte("\\`*_{}[]()#+-.!<>", s[i+1]) >= 0 {
-			i++
-		}
-		b.WriteByte(s[i])
-	}
-	return b.String()
+	return markdownEscapes.Replace(m.Value)
 }
 
 // stripSnippet is an LSP snippet as plain text: $1 and $0 dropped,

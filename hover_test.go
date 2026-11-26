@@ -33,9 +33,9 @@ func (h *harness) until(what string, cond func() bool) {
 func TestHoverAsksAboutTheNameThePointerRestsOn(t *testing.T) {
 	h := newEditorHarness(t, EditorStateConfig{Doc: "foo barbaz qux"})
 	asked := make(chan int, 4)
-	h.ed.Hover = func(_ context.Context, s EditorState, pos int) HoverInfo {
+	h.ed.Hover = func(_ context.Context, s EditorState, pos int) string {
 		asked <- pos
-		return HoverInfo{Code: "func barbaz()", Text: s.Doc()[pos : pos+6]}
+		return s.Doc()[pos : pos+6]
 	}
 	h.move(h.at(0, 6), 0)
 	h.advance(hoverDelay / 2)
@@ -43,15 +43,15 @@ func TestHoverAsksAboutTheNameThePointerRestsOn(t *testing.T) {
 		t.Fatal("Hover was asked before the pointer rested")
 	}
 	h.advance(hoverDelay / 2)
-	h.until("answered", func() bool { return h.ed.hover.info.Text != "" })
+	h.until("answered", func() bool { return h.ed.hover.info != "" })
 	if pos := <-asked; pos != 4 {
 		t.Fatalf("Hover asked at %d, want 4, the start of barbaz", pos)
 	}
-	if h.ed.hover.info.Text != "barbaz" {
+	if h.ed.hover.info != "barbaz" {
 		t.Fatalf("hover shows %+v", h.ed.hover.info)
 	}
 	h.move(h.at(0, 8), 0)
-	if h.ed.hover.info.Text == "" {
+	if h.ed.hover.info == "" {
 		t.Fatal("the hover went away while the pointer stayed on its name")
 	}
 	h.move(h.at(0, 12), 0)
@@ -62,9 +62,9 @@ func TestHoverAsksAboutTheNameThePointerRestsOn(t *testing.T) {
 
 func TestHoverOverSpaceAsksNothing(t *testing.T) {
 	h := newEditorHarness(t, EditorStateConfig{Doc: "foo   bar"})
-	h.ed.Hover = func(context.Context, EditorState, int) HoverInfo {
+	h.ed.Hover = func(context.Context, EditorState, int) string {
 		t.Error("Hover asked over spaces")
-		return HoverInfo{}
+		return ""
 	}
 	h.move(h.at(0, 4), 0)
 	h.advance(hoverDelay)

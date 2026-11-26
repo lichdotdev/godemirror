@@ -31,8 +31,10 @@ type popupPointer struct {
 	// boxes are where the popups were drawn in the last frame, empty for
 	// one not drawn.
 	boxes [popupKinds]image.Rectangle
-	// over is the popup the pointer is over, -1 for none.
-	over int
+	// over is the popup the pointer is over, -1 for none, and scroll how
+	// far down each prose popup is scrolled, in pixels.
+	over   int
+	scroll [popupKinds]int
 }
 
 // popupHandler takes the pointer over r, where popup kind is drawn.
@@ -99,9 +101,14 @@ func (e *Editor) pressMenu(at image.Point) {
 	e.acceptCompletion()
 }
 
-// scrollPopup scrolls popup kind by dy pixels, a row at least.
+// scrollPopup scrolls popup kind by dy pixels, the menu a row at least;
+// drawing the popup keeps it within its content.
 func (e *Editor) scrollPopup(kind, dy int) {
-	if dy == 0 || kind != menuPopup {
+	if kind != menuPopup {
+		e.popups.scroll[kind] += dy
+		return
+	}
+	if dy == 0 {
 		return
 	}
 	c := &e.completion

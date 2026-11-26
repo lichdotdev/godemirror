@@ -44,7 +44,7 @@ func (d *Document) complete(ctx context.Context, req godemirror.CompletionReques
 // the word being typed; its text with a snippet's placeholders taken out.
 func (d *Document) completionItem(req godemirror.CompletionRequest, it CompletionItem) godemirror.CompletionItem {
 	out := godemirror.CompletionItem{
-		Label: it.Label, Kind: kinds[it.Kind], Detail: it.Detail, Documentation: plainText(it.Documentation),
+		Label: it.Label, Kind: kinds[it.Kind], Detail: it.Detail, Documentation: markdown(it.Documentation),
 		From: req.From, To: req.Pos, Insert: cmp.Or(it.InsertText, it.Label), Filter: it.FilterText, Data: it,
 	}
 	if it.TextEdit != nil {
@@ -68,17 +68,17 @@ func (d *Document) resolve(ctx context.Context, item godemirror.CompletionItem) 
 		return item
 	}
 	item.Detail = cmp.Or(resolved.Detail, item.Detail)
-	item.Documentation = plainText(resolved.Documentation)
+	item.Documentation = markdown(resolved.Documentation)
 	return item
 }
 
-func (d *Document) hover(ctx context.Context, s godemirror.EditorState, pos int) godemirror.HoverInfo {
+func (d *Document) hover(ctx context.Context, s godemirror.EditorState, pos int) string {
 	h, err := d.c.Hover(ctx, d.uri, d.position(s, pos))
 	if err != nil || h == nil {
 		d.fail(err)
-		return godemirror.HoverInfo{}
+		return ""
 	}
-	return hoverInfo(h.Contents)
+	return markdown(h.Contents)
 }
 
 // goTo is an editor's GoTo that asks the server with find, and goes to the

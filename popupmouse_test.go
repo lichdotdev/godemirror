@@ -50,13 +50,13 @@ func TestTheWheelScrollsALongMenu(t *testing.T) {
 
 func TestThePointerOverAHoverKeepsIt(t *testing.T) {
 	h := newEditorHarness(t, EditorStateConfig{Doc: "\n\n\n\nfoo barbaz qux"})
-	h.ed.Hover = func(context.Context, EditorState, int) HoverInfo { return HoverInfo{Text: "docs of barbaz"} }
+	h.ed.Hover = func(context.Context, EditorState, int) string { return "docs of barbaz" }
 	h.move(h.at(4, 6), 0)
 	h.advance(hoverDelay)
 	h.until("shown", func() bool { return !h.ed.popups.boxes[hoverPopup].Empty() })
 	h.move(centre(h.ed.popups.boxes[hoverPopup]), 0)
 	h.advance(time.Second)
-	if !h.ed.hover.fired || h.ed.hover.info.Text == "" {
+	if !h.ed.hover.fired || h.ed.hover.info == "" {
 		t.Fatal("the hover closed as the pointer went into it")
 	}
 	h.click(h.at(4, 12), 0)

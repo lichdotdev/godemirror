@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"image"
-	"strings"
 	"testing"
 	"time"
 
@@ -175,7 +174,7 @@ func TestCompletionAsksTheServer(t *testing.T) {
 		t.Fatalf("Printf as %+v", pf)
 	}
 	pl := h.e.ResolveCompletion(ctx, r.Items[0])
-	if pl.Documentation != "Println formats." {
+	if pl.Documentation != "Println **formats**." {
 		t.Fatalf("resolved docs %q", pl.Documentation)
 	}
 	p := unmarshal[positionParams](t, s.wait("textDocument/completion"))
@@ -184,18 +183,14 @@ func TestCompletionAsksTheServer(t *testing.T) {
 	}
 }
 
-func TestHoverSplitsTheSignatureFromTheDocs(t *testing.T) {
+func TestHoverHandsTheServersMarkdownOver(t *testing.T) {
 	h, s, _ := attached(t, "x", map[string]any{"hoverProvider": true})
+	md := "```go\nfunc vimBufOf(gen int) int\n```\n\nvimBufOf is the buffer."
 	s.handlers["textDocument/hover"] = func(json.RawMessage) any {
-		return map[string]any{"contents": map[string]string{"kind": "markdown",
-			"value": "```go\nfunc vimBufOf(gen int) int\n```\n\nvimBufOf is the buffer. See [`Nvim`](https://pkg.go.dev/x).\n\n```go\nexample()\n```"}}
+		return map[string]any{"contents": map[string]string{"kind": "markdown", "value": md}}
 	}
-	info := h.e.Hover(context.Background(), h.e.State(), 0)
-	if info.Code != "func vimBufOf(gen int) int" {
-		t.Fatalf("code %q", info.Code)
-	}
-	if !strings.Contains(info.Text, "vimBufOf is the buffer. See Nvim.") || !strings.Contains(info.Text, "example()") || strings.Contains(info.Text, "```") {
-		t.Fatalf("text %q", info.Text)
+	if got := h.e.Hover(context.Background(), h.e.State(), 0); got != md {
+		t.Fatalf("hover %q, want the server's markdown", got)
 	}
 }
 

@@ -40,7 +40,7 @@ type CompletionItem struct {
 	Label string
 	Kind  CompletionKind
 	// Detail, a type or a signature, shows at the right of the menu and
-	// over Documentation beside it, while the item is chosen.
+	// over Documentation, Markdown, beside it, while the item is chosen.
 	Detail, Documentation string
 	// From and To are the range Insert replaces, positions in the state
 	// the completions were asked in; To grows to the cursor as the user
@@ -209,6 +209,7 @@ func (e *Editor) refilterCompletion() {
 		return
 	}
 	c.sel, c.top = 0, 0
+	e.popups.scroll[docPopup] = 0
 	e.resolveChosen()
 }
 
@@ -325,6 +326,7 @@ func (e *Editor) chooseCompletion(i int) {
 	} else if c.sel >= c.top+completionRows {
 		c.top = c.sel - completionRows + 1
 	}
+	e.popups.scroll[docPopup] = 0
 	e.resolveChosen()
 }
 

@@ -10,6 +10,7 @@ import (
 	"gioui.org/io/key"
 	"gioui.org/layout"
 	"gioui.org/op"
+	"gioui.org/text"
 	"gioui.org/unit"
 
 	"github.com/lichdotdev/godemirror/internal/glyphs"
@@ -62,11 +63,11 @@ type Editor struct {
 	// the editor's Layout. OnKey may Dispatch.
 	OnKey func(gtx layout.Context, ev event.Event) bool
 	// Hover, when set, tells what to show over the name at pos, a position
-	// in s, once the pointer has rested on it for half a second: the popup
-	// shows it above the name, with the diagnostics there. It runs on a
-	// goroutine of its own, and ctx is cancelled when the pointer leaves
-	// first; a zero HoverInfo shows nothing.
-	Hover func(ctx context.Context, s EditorState, pos int) HoverInfo
+	// in s, once the pointer has rested on it for half a second, as
+	// Markdown: the popup shows it above the name, with the diagnostics
+	// there. It runs on a goroutine of its own, and ctx is cancelled when the
+	// pointer leaves first; an empty answer shows nothing.
+	Hover func(ctx context.Context, s EditorState, pos int) (markdown string)
 	// Definition, when set, finds where the name at pos, a position in s,
 	// is defined, for Ctrl+click and F12; ok false finds nothing. It runs on
 	// a goroutine of its own. A Location in the editor's own document
@@ -172,6 +173,10 @@ type Editor struct {
 	elsewhere  []Location
 	completion completion
 	popups     popupPointer
+	// shaper lays out the popups' prose, and proseSizes are the runs of it
+	// measured.
+	shaper     *text.Shaper
+	proseSizes map[proseKey]layout.Dimensions
 	// menuRowH is the height of a completion's row as last drawn.
 	menuRowH int
 	// afterReport is what runs after the frame's updates are reported.

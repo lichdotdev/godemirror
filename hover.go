@@ -26,23 +26,17 @@ const hoverDelay = 500 * time.Millisecond
 // it has a Definition.
 const DefaultDefinitionHint = "Ctrl+click to go to definition"
 
-// HoverInfo is what an Editor's Hover shows over a name: Code, drawn as
-// code, a signature say, over Text, the documentation, both plain text.
-type HoverInfo struct {
-	Code, Text string
-}
-
 // hoverState is what the pointer rests over.
 type hoverState struct {
 	at    image.Point
 	since time.Time
 	// fired is whether it rested long enough, and then name is the name
-	// under it, diags the diagnostics, info what Hover answered.
+	// under it, diags the diagnostics, info the Markdown Hover answered.
 	fired bool
 	name  SelectionRange
 	diags []Diagnostic
-	info  HoverInfo
-	call  *call[HoverInfo]
+	info  string
+	call  *call[string]
 }
 
 // trackHover follows the pointer resting over the text: after hoverDelay in
@@ -93,7 +87,7 @@ func (e *Editor) fireHover() {
 			if !h.fired || h.name != name || h.call != nil {
 				return
 			}
-			h.call = startCall(func(ctx context.Context) HoverInfo { return hook(ctx, s, pos) })
+			h.call = startCall(func(ctx context.Context) string { return hook(ctx, s, pos) })
 		})
 	}
 }
@@ -124,6 +118,7 @@ func (e *Editor) over(at image.Point, from, to int) bool {
 func (e *Editor) clearHover() {
 	e.hover.call.stop()
 	e.hover = hoverState{at: e.hover.at, since: e.hover.since}
+	e.popups.scroll[hoverPopup] = 0
 }
 
 // nameAt is the word under at, a point in the editor, ok false when there
@@ -140,37 +135,36 @@ func (e *Editor) nameAt(at image.Point) (SelectionRange, bool) {
 // paintHover draws the popup of what the pointer rests over, or of the
 // diagnostics at the cursor after a jump to one.
 func (e *Editor) paintHover(gtx layout.Context) {
-	h, cols := &e.hover, e.popupCols(gtx)
-	var rows []popupRow
+	h := &e.hover
+	var blocks []mdBlock
 	var anchor image.Rectangle
 	above := false
 	switch {
-	case h.fired && (len(h.diags) > 0 || h.info != HoverInfo{}):
-		rows = e.diagnosticRows(h.diags, cols)
-		if info := e.hoverRows(h.info, cols); len(info) > 0 {
-			if len(rows) > 0 {
-				rows = append(rows, popupRow{rule: true})
+	case h.fired && (len(h.diags) > 0 || strings.TrimSpace(h.info) != ""):
+		blocks = e.diagnosticBlocks(h.diags)
+		if info := parseMarkdown(h.info); len(info) > 0 {
+			if len(blocks) > 0 {
+				blocks = append(blocks, mdBlock{kind: ruleBlock})
 			}
-			rows, above = append(rows, info...), true
+			blocks, above = append(blocks, info...), true
+			if e.Definition != nil && e.DefinitionHint != "" {
+				blocks = append(blocks, plainBlocks(e.DefinitionHint, true)...)
+			}
 		}
 		anchor = e.hoverAnchor()
 	case e.jumped:
-		rows = e.diagnosticRows(e.diagnosticsAtCursor(), cols)
+		blocks = e.diagnosticBlocks(e.diagnosticsAtCursor())
 		main := e.state.sel.Main()
 		x, top := e.coordsAt(main.Head(), main.Assoc())
 		x += e.f.g.textX - e.view.scrollX()
 		anchor = image.Rect(x, top-e.view.scroll.Y, x+1, top-e.view.scroll.Y+e.f.ch)
 	}
-	if len(rows) == 0 {
+	if len(blocks) == 0 {
 		return
 	}
-	var footer []popupRow
-	if above && e.Definition != nil && e.DefinitionHint != "" {
-		footer = []popupRow{{spans: []textSpan{{text: e.DefinitionHint, color: e.Theme.Popup.Muted}}}}
-	}
-	rows, r := e.fitPopup(gtx, rows, footer, anchor, above)
-	e.paintTextPopup(gtx, rows, r)
-	e.popupHandler(gtx, hoverPopup, r)
+	e.proseBox(gtx, hoverPopup, blocks, e.maxProseWidth(gtx), func(size image.Point) image.Rectangle {
+		return e.placePopup(gtx, anchor, size, above)
+	})
 }
 
 // hoverAnchor is what the hover popup points at: the name under the
@@ -189,29 +183,6 @@ func (e *Editor) hoverAnchor() image.Rectangle {
 	}
 	return image.Rectangle{Min: h.at, Max: h.at.Add(image.Pt(1, 1))}
 }
-
-// hoverRows are a popup's rows for info: its code, a rule, and its text.
-func (e *Editor) hoverRows(info HoverInfo, cols int) []popupRow {
-	p := e.Theme.Popup
-	var rows []popupRow
-	code := e.Theme.tagColor(tags.Function(tags.VariableName))
-	for l := range strings.SplitSeq(strings.TrimSpace(info.Code), "\n") {
-		if l != "" {
-			rows = append(rows, popupRow{spans: []textSpan{{text: expandTabs(l), color: code}}})
-		}
-	}
-	if text := strings.TrimSpace(info.Text); text != "" {
-		if len(rows) > 0 {
-			rows = append(rows, popupRow{rule: true})
-		}
-		rows = append(rows, textRows(text, cols, p.Foreground)...)
-	}
-	return rows
-}
-
-// expandTabs is l with each tab as four spaces, a popup having no tab
-// stops.
-func expandTabs(l string) string { return strings.ReplaceAll(l, "\t", "    ") }
 
 // tagColor is the color t's highlighting gives code tagged tag.
 func (t Theme) tagColor(tag *tags.Tag) color.NRGBA {

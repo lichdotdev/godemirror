@@ -292,27 +292,22 @@ func (e *Editor) diagnosticsAtCursor() []Diagnostic {
 	return out
 }
 
-// diagnosticRows are a popup's rows for ds: each message, after a dot of
-// its severity's color, and its source and code under it.
-func (e *Editor) diagnosticRows(ds []Diagnostic, cols int) []popupRow {
-	p := e.Theme.Popup
-	var rows []popupRow
+// diagnosticBlocks are a popup's blocks for ds: each message, after a dot
+// of its severity's color, and its source and code under it.
+func (e *Editor) diagnosticBlocks(ds []Diagnostic) []mdBlock {
+	var blocks []mdBlock
 	for i, d := range ds {
 		if i > 0 {
-			rows = append(rows, popupRow{rule: true})
+			blocks = append(blocks, mdBlock{kind: ruleBlock})
 		}
-		dot := textSpan{text: "● ", color: e.Theme.Diagnostics.of(d.severity())}
-		for j, l := range wrapText(d.Message, max(cols-2, 1)) {
-			if j > 0 {
-				dot.text = "  "
-			}
-			rows = append(rows, popupRow{spans: []textSpan{dot, {text: l, color: p.Foreground}}})
-		}
+		msg := plainBlocks(d.Message, false)
+		msg[0].bullet, msg[0].bulletColor = "● ", e.Theme.Diagnostics.of(d.severity())
+		blocks = append(blocks, msg...)
 		if origin := diagnosticOrigin(d); origin != "" {
-			rows = append(rows, popupRow{spans: []textSpan{{text: "  " + origin, color: p.Muted}}})
+			blocks = append(blocks, plainBlocks(origin, true)...)
 		}
 	}
-	return rows
+	return blocks
 }
 
 // diagnosticOrigin is d's source and code, as "source · code".

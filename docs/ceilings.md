@@ -284,15 +284,15 @@ file is the trap alone.
   aligns two editors in one scroller with block-widget spacers before each unchanged stretch and places its
   revert buttons at `lineBlockAt(chunk.fromA).top`, with no connectors between the sides; an `Editor` has no
   block widgets for such spacers, so panes beside it follow its scroll instead.
-- **An Editor's popups draw in its code font** (diagnostics, hover, completion): their text is rasterized cell by
-  cell as code is, never through Gio's text stack, so prose shows monospaced, a popup is at most 72 cells wide
-  and 24 rows tall, and what runs past is cut, not scrolled. A popup is clipped to the editor: one taller than
-  the room above and below its anchor loses its last rows. A popup takes the pointer over its last frame's box: a
-  click on a completion takes it and the wheel scrolls the menu, while over the hover and the documentation
-  beside the menu the wheel does nothing yet; a popup's box is a frame late after it moves.
-- **Markdown from a server shows as plain text** (`lsp`): a hover's first fenced block is its code and the rest
-  its text, fences, links' targets, backticks, `**`, `__`, `#` and rules dropped; lists, tables and a lone `*`
-  or `_` stay as written, and nothing is bold or italic.
+- **An Editor's popups set prose in Gio's Go font, not the app's** (diagnostics, hover, the documentation beside the
+  completions): prose goes through Gio's text stack in the Go typeface shipped with Gio, whatever font the app
+  uses elsewhere, while code (inline, fenced, a signature) goes through glyphs in the editor's font. A popup
+  is at most 560dp wide and 420dp tall, and scrolls past that; a code line wider than it is cut, not
+  wrapped. A popup takes the pointer over its last frame's box, a frame late after it moves.
+- **Popups render a part of Markdown** (`Hover`, `CompletionItem.Documentation`): paragraphs, headings (as bold),
+  lists, fenced code (highlighted when godemirror knows the fence's language), rules, and inline code, bold,
+  italic and links (as their text). Tables, blockquotes (shown as plain paragraphs), HTML and images (their
+  alt text) are not rendered; a lone `*` or `_` with no closing one stays as written.
 - **A snippet completion inserts plain text** (`lsp`): the client tells the server it takes no snippets, and an
   item that sends one anyway loses its tabstops and placeholders (`${1:x}` becomes `x`, `$0` nothing); the
   cursor lands at the end of the text, not at the first tabstop.
