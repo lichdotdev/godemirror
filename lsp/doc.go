@@ -7,8 +7,9 @@
 // Connect does the same over any stream, a server already running or one in
 // a test. Attach then binds an Editor to a document of the server: it opens
 // the document, sends every edit, shows the server's diagnostics, and sets
-// the editor's Complete, ResolveCompletion, Hover and Definition to ask the
-// server.
+// the editor's hooks to ask the server for completions, hovers, signatures,
+// definitions, implementations, references, renames and code actions; the
+// Document it returns formats the document and lists its symbols.
 //
 // Messages are JSON-RPC 2.0 framed by Content-Length headers, over the
 // server's standard input and output. Positions are offered in UTF-8, the

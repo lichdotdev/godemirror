@@ -53,12 +53,7 @@ func (e *Editor) Layout(gtx layout.Context) (layout.Dimensions, error) {
 	}
 	e.scrollIntoView(gtx)
 	e.trackCrosshair()
-	e.trackHover(gtx)
-	e.trackLink()
-	e.takeCompletions(gtx)
-	e.takeSignature(gtx)
-	e.takeRename(gtx)
-	e.trackActions(gtx)
+	e.takeAnswers(gtx)
 	dims := v.paint(gtx, e.f)
 	e.popups.boxes = [popupKinds]image.Rectangle{}
 	e.paintDiagnostics(gtx)
@@ -80,6 +75,17 @@ func (e *Editor) Layout(gtx layout.Context) (layout.Dimensions, error) {
 	e.reportDefinitions()
 	e.reportWorkspaceEdits()
 	return dims, nil
+}
+
+// takeAnswers follows the pointer's rest and the link under it, and takes
+// what the hooks running off the UI goroutine answered.
+func (e *Editor) takeAnswers(gtx layout.Context) {
+	e.trackHover(gtx)
+	e.trackLink()
+	e.takeCompletions(gtx)
+	e.takeSignature(gtx)
+	e.takeRename(gtx)
+	e.trackActions(gtx)
 }
 
 // paintPopups draws the popups over everything else, inside the editor.

@@ -158,8 +158,10 @@ editor.OnDefinition = func(l godemirror.Location) { open(l.URI, l.Start) }
 // doc.Save() after writing the file, doc.Close() when it closes
 ```
 
-The editor's hooks (`SetDiagnostics`, `Complete`, `Hover`, `Definition`) take any
-source, not only a language server. `lsp/servers` is a catalog of servers
+The editor's hooks (`SetDiagnostics`, `Complete`, `Hover`, `SignatureHelp`,
+`Definition`, `References`, `Rename`, `CodeActions` and the rest) take any
+source, not only a language server; `doc.Format(ctx)` and `doc.Symbols(ctx)`
+format the document and list its outline. `lsp/servers` is a catalog of servers
 converted from nvim-lspconfig and mason-registry: `servers.Lookup("main.go")`
 returns the candidates for a file, the common one first, with its command,
 root markers, default settings and an install recipe. It only describes; it
