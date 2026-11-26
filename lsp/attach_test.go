@@ -314,3 +314,63 @@ func TestRenameReadsBothShapesOfAWorkspaceEdit(t *testing.T) {
 		t.Fatalf("rename params %v", p)
 	}
 }
+
+func TestCodeActionsResolveApplyAndRunTheirCommand(t *testing.T) {
+	h, s, _ := attached(t, "x := y", map[string]any{"codeActionProvider": map[string]any{"resolveProvider": true}})
+	s.handlers["textDocument/codeAction"] = func(json.RawMessage) any {
+		return json.RawMessage(`[
+			{"title":"Run it","command":"gopls.run","arguments":[1]},
+			{"title":"Use _","kind":"quickfix","data":{"n":1}}]`)
+	}
+	s.handlers["codeAction/resolve"] = func(p json.RawMessage) any {
+		a := unmarshal[map[string]any](t, p)
+		a["edit"] = map[string]any{"changes": map[string]any{"file:///a.go": []map[string]any{{
+			"range": Range{Position{0, 5}, Position{0, 6}}, "newText": "_",
+		}}}}
+		a["command"] = map[string]any{"title": "after", "command": "gopls.after"}
+		return a
+	}
+	ctx := context.Background()
+	st := h.e.State()
+	actions := h.e.CodeActions(ctx, st, 0, 6, []godemirror.Diagnostic{{From: 5, To: 6, Message: "undefined: y"}})
+	if len(actions) != 2 || actions[0].Title != "Run it" || actions[1].Kind != "quickfix" {
+		t.Fatalf("actions %+v", actions)
+	}
+	p := unmarshal[struct {
+		Context struct {
+			Diagnostics []Diagnostic `json:"diagnostics"`
+		} `json:"context"`
+	}](t, s.wait("textDocument/codeAction"))
+	if d := p.Context.Diagnostics; len(d) != 1 || d[0].Range.Start.Character != 5 {
+		t.Fatalf("context diagnostics %+v", d)
+	}
+	edits, err := h.e.ApplyCodeAction(ctx, st, actions[1])
+	if err != nil || len(edits) != 1 || edits[0].Edits[0].Text != "_" {
+		t.Fatalf("edits %+v, %v", edits, err)
+	}
+	cmd := unmarshal[map[string]any](t, s.wait("workspace/executeCommand"))
+	if cmd["command"] != "gopls.after" {
+		t.Fatalf("ran %v", cmd)
+	}
+	if _, err := h.e.ApplyCodeAction(ctx, st, actions[0]); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestTheServersApplyEditReachesTheEditor(t *testing.T) {
+	h, s, _ := attached(t, "x := y", map[string]any{})
+	var elsewhere []godemirror.DocumentEdit
+	h.e.OnWorkspaceEdit = func(d []godemirror.DocumentEdit) { elsewhere = d }
+	edit := func(uri string) map[string]any {
+		return map[string]any{"textDocument": map[string]any{"uri": uri, "version": nil}, "edits": []map[string]any{{
+			"range": Range{Position{0, 5}, Position{0, 6}}, "newText": "z",
+		}}}
+	}
+	raw := s.request("workspace/applyEdit", map[string]any{"edit": map[string]any{
+		"documentChanges": []any{edit("file:///a.go"), edit("file:///nowhere/b.go")},
+	}})
+	if string(raw) != `{"applied":true}` {
+		t.Fatalf("applyEdit answered %s", raw)
+	}
+	h.until("applied", func() bool { return h.e.State().Doc() == "x := z" && len(elsewhere) == 1 })
+}

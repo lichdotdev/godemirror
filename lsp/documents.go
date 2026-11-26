@@ -34,6 +34,7 @@ type capabilities struct {
 	ImplementationProvider json.RawMessage `json:"implementationProvider"`
 	ReferencesProvider     json.RawMessage `json:"referencesProvider"`
 	RenameProvider         json.RawMessage `json:"renameProvider"`
+	CodeActionProvider     json.RawMessage `json:"codeActionProvider"`
 	SignatureHelpProvider  *struct {
 		TriggerCharacters   []string `json:"triggerCharacters"`
 		RetriggerCharacters []string `json:"retriggerCharacters"`
@@ -129,6 +130,44 @@ func (c *Client) SignatureHelp(ctx context.Context, uri string, pos Position, tr
 		"textDocument": textDocument{uri}, "position": pos, "context": how,
 	}, &h)
 	return h, err
+}
+
+// HasCodeActions reports whether the server answers
+// textDocument/codeAction.
+func (c *Client) HasCodeActions() bool { return enabled(c.caps.CodeActionProvider) }
+
+// CodeActions asks for the actions on r, where diags are.
+func (c *Client) CodeActions(ctx context.Context, uri string, r Range, diags []Diagnostic) ([]CodeAction, error) {
+	if diags == nil {
+		diags = []Diagnostic{}
+	}
+	var out []CodeAction
+	err := c.conn.call(ctx, "textDocument/codeAction", map[string]any{
+		"textDocument": textDocument{uri}, "range": r, "context": map[string]any{"diagnostics": diags},
+	}, &out)
+	return out, err
+}
+
+// ResolveCodeAction asks the server to fill in a, its edit most of all; a
+// server that does not resolve gives a back.
+func (c *Client) ResolveCodeAction(ctx context.Context, a CodeAction) (CodeAction, error) {
+	var o struct {
+		ResolveProvider bool `json:"resolveProvider"`
+	}
+	if json.Unmarshal(c.caps.CodeActionProvider, &o) != nil || !o.ResolveProvider || a.IsCommand {
+		return a, nil
+	}
+	resolved := a
+	err := c.conn.call(ctx, "codeAction/resolve", a, &resolved)
+	return resolved, err
+}
+
+// ExecuteCommand asks the server to run cmd. What it edits comes back as
+// workspace/applyEdit, which the documents attached to the client apply.
+func (c *Client) ExecuteCommand(ctx context.Context, cmd Command) error {
+	return c.conn.call(ctx, "workspace/executeCommand", map[string]any{
+		"command": cmd.Command, "arguments": cmd.Arguments,
+	}, nil)
 }
 
 // HasRename reports whether the server answers textDocument/rename.

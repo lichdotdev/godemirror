@@ -16,6 +16,7 @@ import (
 const (
 	codeMethodNotFound   = -32601
 	codeInternalError    = -32603
+	codeInvalidParams    = -32602
 	codeRequestCancelled = -32800
 )
 

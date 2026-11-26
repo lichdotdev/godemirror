@@ -58,8 +58,11 @@ func (e *Editor) Layout(gtx layout.Context) (layout.Dimensions, error) {
 	e.takeCompletions(gtx)
 	e.takeSignature(gtx)
 	e.takeRename(gtx)
+	e.trackActions(gtx)
 	dims := v.paint(gtx, e.f)
+	e.popups.boxes = [popupKinds]image.Rectangle{}
 	e.paintDiagnostics(gtx)
+	e.paintBulb(gtx)
 	e.paintLink(gtx)
 	if gtx.Focused(v) {
 		e.paintCarets(gtx)
@@ -82,10 +85,10 @@ func (e *Editor) Layout(gtx layout.Context) (layout.Dimensions, error) {
 // paintPopups draws the popups over everything else, inside the editor.
 func (e *Editor) paintPopups(gtx layout.Context) {
 	defer clip.Rect(image.Rectangle{Max: e.f.size}).Push(gtx.Ops).Pop()
-	e.popups.boxes = [popupKinds]image.Rectangle{}
 	e.paintHover(gtx)
 	e.paintSignature(gtx)
 	e.paintCompletion(gtx)
+	e.paintActions(gtx)
 	e.paintRename(gtx)
 }
 

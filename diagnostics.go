@@ -37,6 +37,8 @@ type Diagnostic struct {
 	// Source names what found the problem (a server, a linter) and Code
 	// its name for it; the popup shows them under Message.
 	Source, Code string
+	// Data is the source's own, for CodeActions to read.
+	Data any
 }
 
 // diagnosticDot is the diameter of a diagnostic's dot in the gutter, and
@@ -66,6 +68,7 @@ func (e *Editor) SetDiagnostics(d []Diagnostic) {
 	}
 	slices.SortStableFunc(e.diags, func(a, b Diagnostic) int { return cmp.Compare(a.From, b.From) })
 	e.jumped = false
+	e.diagsGen++
 }
 
 // Diagnostics are the editor's diagnostics, mapped through every edit since

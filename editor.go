@@ -128,6 +128,16 @@ type Editor struct {
 	// those to other documents go to OnWorkspaceEdit at the end of Layout.
 	// An error shows at the symbol until the next transaction.
 	Rename func(ctx context.Context, s EditorState, pos int, name string) ([]DocumentEdit, error)
+	// CodeActions, when set, finds the actions on from, to, positions in s,
+	// where diags are, on a goroutine of its own: the editor asks it when the
+	// cursor reaches a line with a diagnostic (a bulb in the gutter shows
+	// there are some) and on Ctrl+., which lists them under the cursor, as a
+	// click on the bulb does. Up and Down choose, Enter takes the action,
+	// Escape closes the list.
+	CodeActions func(ctx context.Context, s EditorState, from, to int, diags []Diagnostic) []CodeAction
+	// ApplyCodeAction makes the edits of an action taken, on a goroutine of
+	// its own; they are made as Rename's are, an error shown at the cursor.
+	ApplyCodeAction func(ctx context.Context, s EditorState, a CodeAction) ([]DocumentEdit, error)
 	// OnWorkspaceEdit, when set, gets the edits a rename or a code action
 	// makes to documents other than the editor's, for the app to apply.
 	OnWorkspaceEdit func([]DocumentEdit)
@@ -194,6 +204,11 @@ type Editor struct {
 	completion completion
 	signature  signatureState
 	rename     renameState
+	actions    actionsState
+	actionRowH int
+	// diagsGen counts the SetDiagnostics calls, which ask for the code
+	// actions again.
+	diagsGen int
 	// workspaceEdits are edits to other documents, for OnWorkspaceEdit
 	// after the frame.
 	workspaceEdits []DocumentEdit
@@ -288,6 +303,8 @@ func (e *Editor) SetState(c EditorStateConfig) error {
 	e.closeSignature()
 	e.rename.call.stop()
 	e.rename = renameState{}
+	e.actions.call.stop()
+	e.actions = actionsState{}
 	e.unshown = emptyChangeSet(len(s.doc))
 	e.view.SetContent(s.content())
 	return nil
@@ -348,6 +365,7 @@ func (e *Editor) Dispatch(spec TransactionSpec) error {
 	e.rename.err = ""
 	if t.DocChanged() {
 		e.rename.input = nil
+		e.actions.open = false
 	}
 	e.signature.stale = e.signature.open
 	e.jumped = false

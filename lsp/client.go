@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"slices"
 	"sync"
 	"time"
 )
@@ -50,6 +51,9 @@ type Client struct {
 
 	mu      sync.Mutex
 	watches map[string]*watch
+	// docs are the documents attached to the client, by URI, in the order
+	// they were attached, which workspace/applyEdit edits.
+	docs []*Document
 }
 
 type watch struct{ f func(PublishDiagnostics) }
@@ -148,6 +152,8 @@ var clientCapabilities = map[string]any{
 		"configuration":    true,
 		"workspaceFolders": true,
 		"workspaceEdit":    map[string]any{"documentChanges": true},
+		"applyEdit":        true,
+		"executeCommand":   map[string]any{},
 	},
 	"textDocument": map[string]any{
 		"synchronization":    map[string]any{"didSave": true},
@@ -167,6 +173,14 @@ var clientCapabilities = map[string]any{
 		"implementation": map[string]any{"linkSupport": true},
 		"references":     map[string]any{},
 		"rename":         map[string]any{},
+		"codeAction": map[string]any{
+			"codeActionLiteralSupport": map[string]any{"codeActionKind": map[string]any{"valueSet": []string{
+				"", "quickfix", "refactor", "refactor.extract", "refactor.inline", "refactor.rewrite",
+				"source", "source.organizeImports", "source.fixAll",
+			}}},
+			"resolveSupport": map[string]any{"properties": []string{"edit"}},
+			"dataSupport":    true,
+		},
 		"signatureHelp": map[string]any{
 			"signatureInformation": map[string]any{
 				"documentationFormat":    []string{"markdown", "plaintext"},
@@ -246,8 +260,48 @@ func (c *Client) handle(method string, params json.RawMessage) (any, *ResponseEr
 		return []map[string]string{{"uri": FileURI(c.cfg.RootDir), "name": filepath.Base(c.cfg.RootDir)}}, nil
 	case "window/workDoneProgress/create", "client/registerCapability", "client/unregisterCapability":
 		return nil, nil
+	case "workspace/applyEdit":
+		return c.applyEdit(params)
 	}
 	return nil, &ResponseError{Code: codeMethodNotFound, Message: "method not found: " + method}
+}
+
+// applyEdit answers workspace/applyEdit: each attached document makes its
+// own edits, on its editor's goroutine, and the first attached hands the
+// rest to its editor's OnWorkspaceEdit. With no document attached it
+// applies nothing.
+func (c *Client) applyEdit(params json.RawMessage) (any, *ResponseError) {
+	var p struct {
+		Edit WorkspaceEdit `json:"edit"`
+	}
+	if err := json.Unmarshal(params, &p); err != nil {
+		return nil, &ResponseError{Code: codeInvalidParams, Message: err.Error()}
+	}
+	c.mu.Lock()
+	docs := slices.Clone(c.docs)
+	c.mu.Unlock()
+	if len(docs) == 0 {
+		return map[string]any{"applied": false, "failureReason": "no document is open"}, nil
+	}
+	owners := map[string]*Document{}
+	for _, d := range docs {
+		owners[d.uri] = d
+	}
+	byDoc := map[*Document][]documentEdit{}
+	for _, de := range p.Edit.documentEdits() {
+		d := owners[de.uri]
+		if d == nil {
+			d = docs[0]
+		}
+		byDoc[d] = append(byDoc[d], de)
+	}
+	for d, edits := range byDoc {
+		d.e.Post(func() { d.e.ApplyEdits(d.editorEdits(d.e.State(), edits)) })
+		if d.opts.Invalidate != nil {
+			d.opts.Invalidate()
+		}
+	}
+	return map[string]any{"applied": true}, nil
 }
 
 // configuration answers workspace/configuration: for each item, the

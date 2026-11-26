@@ -14,7 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   indent is only drawn: selection, search, copy and `Pos` see the line's own text, and the gutter stays
   empty on continuation rows. A line breaks into more rows than before, and `DiffView.Height`
   counts them.
-- **A focused `Editor` takes F2, F8, Shift+F8, F12, Ctrl+F12, Shift+F12, Ctrl+Shift+F12 and Ctrl+Space**, for the diagnostics, the definition and the
+- **A focused `Editor` takes Ctrl+., F2, F8, Shift+F8, F12, Ctrl+F12, Shift+F12, Ctrl+Shift+F12 and Ctrl+Space**, for the diagnostics, the definition and the
   completions below; an app that binds them for itself reads them before the editor's `Layout`. F12 and
   Ctrl+Space do nothing while no `Definition` or `Complete` is set.
 - **`Theme` has two more fields, `Diagnostics` and `Popup`**: a theme built field by field rather than copied
@@ -62,6 +62,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `DocumentEdit`s (`TextEdit`s by document), applies those to the editor's document as one transaction and
   hands the others to `OnWorkspaceEdit`; an error the hook returns shows at the symbol. `lsp` asks the
   server's rename (`Client.Rename`) and reads a `WorkspaceEdit` either way the server writes it.
+- **Code actions in an `Editor`**: when the cursor reaches a line with a diagnostic the editor asks
+  `CodeActions`, and a bulb in the gutter shows there are some; Ctrl+. or a click on the bulb lists them, and
+  the one taken goes to `ApplyCodeAction`, whose edits are made as a rename's. `Editor.ApplyEdits` makes
+  `DocumentEdit`s from elsewhere the same way, and `Diagnostic.Data` carries a source's own data. `lsp` asks
+  the server's codeAction, resolves an action with no edit, runs its command (`Client.CodeActions`,
+  `ResolveCodeAction`, `ExecuteCommand`) and applies the server's workspace/applyEdit to the documents
+  attached.
 - **The mouse in an `Editor`'s popups**: a click on a completion takes it, the wheel scrolls a long menu, the
   pointer over the hover keeps it open, and a click in the code closes the menu and the hover. The code
   under a popup no longer sees the pointer over it.

@@ -18,6 +18,8 @@ const (
 	hoverPopup
 	signaturePopup
 	renamePopup
+	bulbPopup
+	actionsPopup
 	popupKinds
 )
 
@@ -80,8 +82,16 @@ func (e *Editor) popupEvent(kind int, ev pointer.Event) {
 			p.over = -1
 		}
 	case pointer.Press:
-		if kind == menuPopup && ev.Buttons.Contain(pointer.ButtonPrimary) {
+		if !ev.Buttons.Contain(pointer.ButtonPrimary) {
+			return
+		}
+		switch kind {
+		case menuPopup:
 			e.pressMenu(ev.Position.Round())
+		case actionsPopup:
+			e.pressActions(ev.Position.Round())
+		case bulbPopup:
+			e.actions.open, e.actions.sel, e.actions.at = true, 0, e.state.sel.Main().Head()
 		}
 	case pointer.Scroll:
 		e.scrollPopup(kind, int(ev.Scroll.Y))

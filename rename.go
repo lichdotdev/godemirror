@@ -139,8 +139,13 @@ func (e *Editor) takeRename(gtx layout.Context) {
 	}
 }
 
-// applyEdits makes the edits to the editor's own document one transaction,
-// and keeps those to others for OnWorkspaceEdit after the frame.
+// ApplyEdits makes edits as a rename makes them: those to the editor's own
+// document (URI empty) one transaction, their spans in the document as it
+// is, and those to others go to OnWorkspaceEdit at the end of the next
+// Layout. It runs on the goroutine that lays the editor out.
+func (e *Editor) ApplyEdits(edits []DocumentEdit) { e.applyEdits(edits, "input") }
+
+// applyEdits is ApplyEdits with the transaction's userEvent.
 func (e *Editor) applyEdits(edits []DocumentEdit, userEvent string) {
 	var changes []ChangeSpec
 	for _, d := range edits {

@@ -279,6 +279,44 @@ type documentEdit struct {
 	edits []TextEdit
 }
 
+// Command is a command a server runs with workspace/executeCommand.
+type Command struct {
+	Title     string            `json:"title"`
+	Command   string            `json:"command"`
+	Arguments []json.RawMessage `json:"arguments,omitempty"`
+}
+
+// CodeAction is an action a server offers on a range: an edit, a command
+// to run after it, or both; or, with Edit and Command both nil and
+// IsCommand set, a bare command, whose Title and Command are in Command.
+type CodeAction struct {
+	Title       string          `json:"title"`
+	Kind        string          `json:"kind,omitempty"`
+	Diagnostics []Diagnostic    `json:"diagnostics,omitempty"`
+	Edit        *WorkspaceEdit  `json:"edit,omitempty"`
+	Command     *Command        `json:"command,omitempty"`
+	Data        json.RawMessage `json:"data,omitempty"`
+	IsCommand   bool            `json:"-"`
+}
+
+// UnmarshalJSON takes a CodeAction or a bare Command.
+func (a *CodeAction) UnmarshalJSON(b []byte) error {
+	var probe struct {
+		Command json.RawMessage `json:"command"`
+	}
+	if err := json.Unmarshal(b, &probe); err != nil {
+		return err
+	}
+	if len(probe.Command) > 0 && probe.Command[0] == '"' {
+		var c Command
+		err := json.Unmarshal(b, &c)
+		*a = CodeAction{Title: c.Title, Command: &c, IsCommand: true}
+		return err
+	}
+	type action CodeAction
+	return json.Unmarshal(b, (*action)(a))
+}
+
 // SignatureHelp is what textDocument/signatureHelp answers: the
 // signatures of the call, the active one, and its active parameter.
 type SignatureHelp struct {

@@ -88,12 +88,17 @@ var keymap = []binding{
 	{"L", key.ModShortcut, nil, stateCommand(EditorState.selectSelectionMatches)},
 	// godemirror's own: F8 and Shift+F8 go to the next and the previous
 	// diagnostic, as in @codemirror/lint's keymap and VS Code, Ctrl+Space
-	// asks for completions, as @codemirror/autocomplete's keymap, F2
-	// renames the name at the cursor and F12 goes to its definition.
+	// asks for completions, as @codemirror/autocomplete's keymap, Ctrl+.
+	// lists the code actions, F2 renames the name at the cursor and F12
+	// goes to its definition.
 	{key.NameF8, 0, func(e *Editor) (TransactionSpec, bool) { e.NextDiagnostic(0); return TransactionSpec{}, false },
 		func(e *Editor) (TransactionSpec, bool) { e.PrevDiagnostic(0); return TransactionSpec{}, false }},
 	{key.NameSpace, key.ModShortcut, func(e *Editor) (TransactionSpec, bool) {
 		e.askCompletion("", true)
+		return TransactionSpec{}, false
+	}, nil},
+	{".", key.ModShortcut, func(e *Editor) (TransactionSpec, bool) {
+		e.askActions(true)
 		return TransactionSpec{}, false
 	}, nil},
 	{key.NameF2, 0, func(e *Editor) (TransactionSpec, bool) {
@@ -217,7 +222,7 @@ func (e *Editor) echoEdit(ev key.EditEvent) {
 }
 
 func (e *Editor) onKey(gtx layout.Context, ev key.Event) {
-	if e.renameKey(ev) || e.completionKey(ev) || e.snippetKey(ev) || e.signatureKey(ev) || e.goToKey(ev) {
+	if e.renameKey(ev) || e.actionKey(ev) || e.completionKey(ev) || e.snippetKey(ev) || e.signatureKey(ev) || e.goToKey(ev) {
 		return
 	}
 	if ev.Name == key.NameEscape {

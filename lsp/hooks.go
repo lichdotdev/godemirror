@@ -196,9 +196,13 @@ func (d *Document) rename(ctx context.Context, s godemirror.EditorState, pos int
 // workspaceEdit is w as the editor takes it: the document's edits read in
 // s, with an empty URI; the others in their own files.
 func (d *Document) workspaceEdit(s godemirror.EditorState, w WorkspaceEdit) []godemirror.DocumentEdit {
+	return d.editorEdits(s, w.documentEdits())
+}
+
+func (d *Document) editorEdits(s godemirror.EditorState, edits []documentEdit) []godemirror.DocumentEdit {
 	files := map[string][]string{}
 	var out []godemirror.DocumentEdit
-	for _, de := range w.documentEdits() {
+	for _, de := range edits {
 		edit := godemirror.DocumentEdit{}
 		if de.uri != d.uri {
 			edit.URI = de.uri
@@ -210,4 +214,53 @@ func (d *Document) workspaceEdit(s godemirror.EditorState, w WorkspaceEdit) []go
 		out = append(out, edit)
 	}
 	return out
+}
+
+func (d *Document) codeActions(ctx context.Context, s godemirror.EditorState, from, to int, diags []godemirror.Diagnostic) []godemirror.CodeAction {
+	var lspDiags []Diagnostic
+	for _, x := range diags {
+		ld, ok := x.Data.(Diagnostic)
+		if !ok {
+			ld = Diagnostic{Severity: Severity(x.Severity), Message: x.Message, Source: x.Source, Code: Code(x.Code)}
+		}
+		ld.Range = Range{d.position(s, x.From), d.position(s, x.To)}
+		lspDiags = append(lspDiags, ld)
+	}
+	actions, err := d.c.CodeActions(ctx, d.uri, Range{d.position(s, from), d.position(s, to)}, lspDiags)
+	if err != nil {
+		d.fail(err)
+		return nil
+	}
+	out := make([]godemirror.CodeAction, len(actions))
+	for i, a := range actions {
+		out[i] = godemirror.CodeAction{Title: a.Title, Kind: a.Kind, Data: a}
+	}
+	return out
+}
+
+// applyCodeAction resolves the action when it has no edit, gives its edit
+// to the editor, and runs its command, whose edits come back through
+// workspace/applyEdit.
+func (d *Document) applyCodeAction(ctx context.Context, s godemirror.EditorState, ga godemirror.CodeAction) ([]godemirror.DocumentEdit, error) {
+	a, ok := ga.Data.(CodeAction)
+	if !ok {
+		return nil, nil
+	}
+	if a.Edit == nil {
+		resolved, err := d.c.ResolveCodeAction(ctx, a)
+		if err != nil {
+			return nil, err
+		}
+		a = resolved
+	}
+	var edits []godemirror.DocumentEdit
+	if a.Edit != nil {
+		edits = d.workspaceEdit(s, *a.Edit)
+	}
+	if a.Command != nil {
+		// The edit stands whatever the command does: its failure goes to
+		// OnError, not over the edit.
+		d.fail(d.c.ExecuteCommand(ctx, *a.Command))
+	}
+	return edits, nil
 }

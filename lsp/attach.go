@@ -64,7 +64,7 @@ type versioned struct {
 // whole otherwise), the server's diagnostics show in the editor, and the
 // editor's hooks (Complete, ResolveCompletion, CompletionTriggers, Hover,
 // Definition, TypeDefinition, Implementation, References, SignatureHelp,
-// Rename) ask the server,
+// Rename, CodeActions, ApplyCodeAction) ask the server,
 // for what it offers. The editor's OnUpdate, if
 // set, is still called after the server hears of each update. Attach runs
 // on the goroutine that lays the editor out; Close undoes it.
@@ -79,6 +79,9 @@ func Attach(c *Client, e *godemirror.Editor, uri string, opts Options) (*Documen
 		return nil, err
 	}
 	d.stop = c.WatchDiagnostics(uri, d.onPublish)
+	c.mu.Lock()
+	c.docs = append(c.docs, d)
+	c.mu.Unlock()
 	e.OnUpdate = d.update
 	if c.HasCompletion() {
 		e.Complete, e.ResolveCompletion, e.CompletionTriggers = d.complete, d.resolve, c.CompletionTriggers()
@@ -101,6 +104,9 @@ func Attach(c *Client, e *godemirror.Editor, uri string, opts Options) (*Documen
 	if c.HasRename() {
 		e.Rename = d.rename
 	}
+	if c.HasCodeActions() {
+		e.CodeActions, e.ApplyCodeAction = d.codeActions, d.applyCodeAction
+	}
 	if c.HasSignatureHelp() {
 		e.SignatureHelp, e.SignatureTriggers = d.signatureHelp, c.SignatureTriggers()
 	}
@@ -122,11 +128,15 @@ func (d *Document) Save() error {
 // goroutine that lays the editor out.
 func (d *Document) Close() error {
 	d.stop()
+	d.c.mu.Lock()
+	d.c.docs = slices.DeleteFunc(d.c.docs, func(o *Document) bool { return o == d })
+	d.c.mu.Unlock()
 	e := d.e
 	e.OnUpdate = d.onUpdate
 	e.Complete, e.ResolveCompletion, e.CompletionTriggers = nil, nil, nil
 	e.Hover, e.Definition, e.TypeDefinition, e.Implementation, e.References = nil, nil, nil, nil, nil
 	e.SignatureHelp, e.SignatureTriggers, e.Rename = nil, nil, nil
+	e.CodeActions, e.ApplyCodeAction = nil, nil
 	e.SetDiagnostics(nil)
 	return d.c.DidClose(d.uri)
 }
@@ -223,7 +233,7 @@ func (d *Document) showDiagnostics() {
 		}
 		out = append(out, godemirror.Diagnostic{
 			From: from, To: max(to, from), Severity: godemirror.Severity(cmp.Or(x.Severity, SeverityError)),
-			Message: x.Message, Source: x.Source, Code: string(x.Code),
+			Message: x.Message, Source: x.Source, Code: string(x.Code), Data: x,
 		})
 	}
 	d.e.SetDiagnostics(out)

@@ -320,7 +320,13 @@ file is the trap alone.
   operations (create, rename, delete a file) are dropped. The input takes typed text, Backspace, Enter and
   Escape, with the cursor at its end and no selection but the whole old name. The edits to the editor's
   document are dropped when it changed while the server worked.
-- **Out of the LSP client for now**: code actions, formatting, document
+- **Code actions are asked for the cursor's line only** (`CodeActions`): the bulb shows on the line the cursor
+  is on when it holds a diagnostic and the hook offers actions, never on the other lines with diagnostics;
+  Ctrl+. asks for the selection, or the whole line under a cursor. The list takes the keyboard and a click,
+  not the wheel. A command an action runs edits through `workspace/applyEdit`, applied to the attached
+  documents as it comes; the edits for files not attached go to the first attached editor's
+  `OnWorkspaceEdit`.
+- **Out of the LSP client for now**: formatting, document
   symbols (an outline), pull diagnostics (`textDocument/diagnostic`), workspace edits, progress and
   `window/showMessage` are not asked for or are dropped. A server's dynamic registrations are acknowledged and
   ignored, so a capability a server only registers later is never used.
