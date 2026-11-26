@@ -5,7 +5,7 @@
 // commit 76f4cafc49677a34dc8ad8142b773d78ab4a041e, and mason-registry
 // (https://github.com/mason-org/mason-registry) release 2026-11-26-scared-trunk;
 // evaluated, and filetypes taken, with Neovim 0.12.6+v0.12.6.
-// See LICENSE.apache and NOTICE.
+// See LICENSE.apache, LICENSE.vim (for the filetype tables) and NOTICE.
 
 package servers
 

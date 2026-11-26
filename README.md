@@ -311,4 +311,5 @@ others: see [their license](LICENSE.codemirror).
 `lsp/servers` holds data converted from
 [nvim-lspconfig](https://github.com/neovim/nvim-lspconfig) and
 [mason-registry](https://github.com/mason-org/mason-registry), Apache-2.0: see
-[its license](lsp/servers/LICENSE.apache) and [notice](lsp/servers/NOTICE).
+[its license](lsp/servers/LICENSE.apache) and [notice](lsp/servers/NOTICE); its filetype
+tables come from Vim by way of Neovim, under [the Vim license](lsp/servers/LICENSE.vim).

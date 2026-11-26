@@ -8,7 +8,8 @@
 //
 // The data is converted from nvim-lspconfig's lsp/*.lua configs and from
 // mason-registry's registry.json, both Apache-2.0, at the versions named in
-// catalog_generated.go; LICENSE.apache and NOTICE carry their terms. Where an
+// catalog_generated.go; LICENSE.apache and NOTICE carry their terms, and
+// LICENSE.vim the terms of the filetype tables, from Vim by way of Neovim. Where an
 // lspconfig config computes a field in Lua, the catalog cannot carry it:
 // the field's name goes into Server.Dynamic and its value is lost. That is
 // every field that is or holds a function (cmd, root_dir, on_attach,

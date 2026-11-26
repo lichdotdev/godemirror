@@ -213,7 +213,7 @@ function header(nvim) {
 // commit ${LSPCONFIG_COMMIT}, and mason-registry
 // (https://github.com/mason-org/mason-registry) release ${MASON_TAG};
 // evaluated, and filetypes taken, with Neovim ${nvim}.
-// See LICENSE.apache and NOTICE.
+// See LICENSE.apache, LICENSE.vim (for the filetype tables) and NOTICE.
 
 package servers
 `;

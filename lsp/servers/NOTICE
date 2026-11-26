@@ -10,7 +10,9 @@ from the following works, licensed under the Apache License, Version 2.0
   (runtime/lua/vim/filetype.lua), https://github.com/neovim/neovim,
   Copyright Neovim contributors. Neovim is Apache-2.0 except for parts
   contributed under the Vim license; filetype.lua ports Vim's
-  filetype.vim.
+  filetype.vim, so filetypes_generated.go is also distributed under the
+  Vim license (LICENSE.vim), Copyright Bram Moolenaar and the Vim
+  contributors.
 
 The data was modified: lspconfig's Lua configs were evaluated and their
 plain-data fields kept, values computed in Lua dropped, mason's package
