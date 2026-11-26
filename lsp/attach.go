@@ -26,8 +26,9 @@ type Options struct {
 	// the server.
 	Invalidate func()
 	// OnError, when set, hears of every request the server failed or a
-	// change the client could not send. Without it they are dropped: the
-	// editor shows nothing for a request that failed.
+	// change the client could not send, from the goroutine that met it: the
+	// UI's for a change, a request's own for a request. Without it they are
+	// dropped: the editor shows nothing for a request that failed.
 	OnError func(error)
 }
 

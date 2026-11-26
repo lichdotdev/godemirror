@@ -310,3 +310,7 @@ file is the trap alone.
   symbols (an outline), pull diagnostics (`textDocument/diagnostic`), workspace edits, progress and
   `window/showMessage` are not asked for or are dropped. A server's dynamic registrations are acknowledged and
   ignored, so a capability a server only registers later is never used.
+- **An edit reaches the server from the UI goroutine** (`lsp.Attach`): `didChange` is written to the server's
+  standard input inside the editor's `OnUpdate`, before the frame's requests, so that a request never
+  overtakes the edit it is about. A server that stops reading its input while the pipe's buffer is full
+  (64 KiB on Linux) stalls the frame until it reads again or exits.
