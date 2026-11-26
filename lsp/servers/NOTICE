@@ -1,0 +1,19 @@
+The catalog in catalog_generated.go and filetypes_generated.go is derived
+from the following works, licensed under the Apache License, Version 2.0
+(LICENSE.apache):
+
+- nvim-lspconfig, https://github.com/neovim/nvim-lspconfig
+  Copyright the nvim-lspconfig contributors.
+- mason-registry, https://github.com/mason-org/mason-registry
+  Copyright the mason-registry contributors.
+- The extension and filename tables come from Neovim's runtime
+  (runtime/lua/vim/filetype.lua), https://github.com/neovim/neovim,
+  Copyright Neovim contributors. Neovim is Apache-2.0 except for parts
+  contributed under the Vim license; filetype.lua ports Vim's
+  filetype.vim.
+
+The data was modified: lspconfig's Lua configs were evaluated and their
+plain-data fields kept, values computed in Lua dropped, mason's package
+specs reduced to install recipes with their templates expanded, and both
+converted to Go source by internal/serversgen. The exact upstream
+versions are named at the top of catalog_generated.go.

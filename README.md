@@ -278,3 +278,8 @@ licensed © 2018-2021 Marijn Haverbeke and others: see
 `@codemirror/view`, `@codemirror/commands`, `@codemirror/language` and
 `@marijn/find-cluster-break`, MIT licensed © 2018-2024 Marijn Haverbeke and
 others: see [their license](LICENSE.codemirror).
+
+`lsp/servers` holds data converted from
+[nvim-lspconfig](https://github.com/neovim/nvim-lspconfig) and
+[mason-registry](https://github.com/mason-org/mason-registry), Apache-2.0: see
+[its license](lsp/servers/LICENSE.apache) and [notice](lsp/servers/NOTICE).

@@ -23,6 +23,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `DidClose`) and asks for `Completion`, `ResolveCompletion`, `Hover` and `Definition`;
   `WatchDiagnostics` hands over what the server publishes. It offers UTF-8 positions and falls back
   to UTF-16, which `PositionEncoding` converts. Standard library only.
+- **`lsp/servers`, an optional catalog of 428 language servers** converted from nvim-lspconfig and
+  mason-registry (Apache-2.0): each server's command, filetypes, root markers, default init options
+  and settings, and a plain-data install recipe (npm, pypi, golang, cargo, gem, or a GitHub release
+  asset per platform) for 252 of them. `Lookup(path)` returns a file's candidates with the common
+  server first. The catalog never runs a server nor an install.
 - **`DiffOptions.UnifiedGutter`**, how a unified diff numbers its rows: `TwoColumnGutter`, the
   default, shows the old and the new number, and `OneColumnGutter` shows one, the line's number in
   the modified file or, for a deleted line, in the original, in about half the width.
