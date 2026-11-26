@@ -165,6 +165,14 @@ var clientCapabilities = map[string]any{
 		"typeDefinition": map[string]any{"linkSupport": true},
 		"implementation": map[string]any{"linkSupport": true},
 		"references":     map[string]any{},
+		"signatureHelp": map[string]any{
+			"signatureInformation": map[string]any{
+				"documentationFormat":    []string{"markdown", "plaintext"},
+				"parameterInformation":   map[string]any{"labelOffsetSupport": true},
+				"activeParameterSupport": true,
+			},
+			"contextSupport": true,
+		},
 	},
 }
 

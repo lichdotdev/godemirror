@@ -16,6 +16,7 @@ const (
 	menuPopup = iota
 	docPopup
 	hoverPopup
+	signaturePopup
 	popupKinds
 )
 

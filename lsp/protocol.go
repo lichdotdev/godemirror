@@ -243,6 +243,51 @@ type Hover struct {
 	Range    *Range `json:"range,omitempty"`
 }
 
+// SignatureHelp is what textDocument/signatureHelp answers: the
+// signatures of the call, the active one, and its active parameter.
+type SignatureHelp struct {
+	Signatures      []SignatureInformation `json:"signatures"`
+	ActiveSignature int                    `json:"activeSignature"`
+	ActiveParameter *int                   `json:"activeParameter"`
+}
+
+// SignatureInformation is one signature: its label, its documentation, its
+// parameters, and, overriding the help's, its active parameter.
+type SignatureInformation struct {
+	Label           string                 `json:"label"`
+	Documentation   Markup                 `json:"documentation,omitzero"`
+	Parameters      []ParameterInformation `json:"parameters"`
+	ActiveParameter *int                   `json:"activeParameter"`
+}
+
+// ParameterInformation is a parameter of a signature. Its label is a
+// substring of the signature's, or Start and End, offsets in it in the
+// position encoding's units, when the server sends offsets.
+type ParameterInformation struct {
+	Label         string
+	Start, End    int
+	Offsets       bool
+	Documentation Markup `json:"documentation,omitzero"`
+}
+
+// UnmarshalJSON takes a label that is a string or a pair of offsets.
+func (p *ParameterInformation) UnmarshalJSON(b []byte) error {
+	var raw struct {
+		Label         json.RawMessage `json:"label"`
+		Documentation Markup          `json:"documentation"`
+	}
+	if err := json.Unmarshal(b, &raw); err != nil {
+		return err
+	}
+	*p = ParameterInformation{Documentation: raw.Documentation}
+	var offsets [2]int
+	if json.Unmarshal(raw.Label, &offsets) == nil {
+		p.Start, p.End, p.Offsets = offsets[0], offsets[1], true
+		return nil
+	}
+	return json.Unmarshal(raw.Label, &p.Label)
+}
+
 // locations reads what textDocument/definition answers: a Location, an
 // array of Locations or of LocationLinks, or null.
 func locations(b json.RawMessage) ([]Location, error) {

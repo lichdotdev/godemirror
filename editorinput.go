@@ -158,6 +158,7 @@ func (e *Editor) handleInput(gtx layout.Context) {
 			e.ime = imeState{}
 			if !ev.Focus {
 				e.closeCompletion()
+				e.closeSignature()
 			}
 		case key.Event:
 			e.onAltKey(ev)
@@ -202,7 +203,7 @@ func (e *Editor) takenByOnKey(gtx layout.Context, ev event.Event) bool {
 }
 
 func (e *Editor) onKey(gtx layout.Context, ev key.Event) {
-	if e.completionKey(ev) || e.snippetKey(ev) || e.goToKey(ev) {
+	if e.completionKey(ev) || e.snippetKey(ev) || e.signatureKey(ev) || e.goToKey(ev) {
 		return
 	}
 	if ev.Name == key.NameEscape {
@@ -315,6 +316,7 @@ func (e *Editor) onEdit(ev key.EditEvent) {
 	e.mustDispatch(e.state.applyDefaultInsert(change, newSel, e.ime.composing))
 	if !e.ime.composing {
 		e.afterTyping(ev.Text)
+		e.signatureTyped(ev.Text)
 	}
 }
 

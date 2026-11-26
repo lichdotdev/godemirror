@@ -312,7 +312,10 @@ file is the trap alone.
 - **A go-to key changed takes effect a frame later** (`TypeDefinitionKey`, `ImplementationKey`,
   `ReferencesKey`): Gio routes a key by the filters the frame before it registered, so a key pressed in the
   frame its Shortcut was set is not taken. Highlighted references are dropped by any edit, not mapped.
-- **Out of the LSP client for now**: rename, code actions, formatting, signature help, document
+- **Signature help asks again on every transaction while it shows** (`SignatureHelp`): a keystroke, a click
+  or a move of the cursor is a request, with no debounce; only the active signature shows, with no way to
+  page through overloads. It follows one cursor: with several, it does not open.
+- **Out of the LSP client for now**: rename, code actions, formatting, document
   symbols (an outline), pull diagnostics (`textDocument/diagnostic`), workspace edits, progress and
   `window/showMessage` are not asked for or are dropped. A server's dynamic registrations are acknowledged and
   ignored, so a capability a server only registers later is never used.

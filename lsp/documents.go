@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"slices"
 	"strings"
 )
 
@@ -32,6 +33,10 @@ type capabilities struct {
 	TypeDefinitionProvider json.RawMessage `json:"typeDefinitionProvider"`
 	ImplementationProvider json.RawMessage `json:"implementationProvider"`
 	ReferencesProvider     json.RawMessage `json:"referencesProvider"`
+	SignatureHelpProvider  *struct {
+		TriggerCharacters   []string `json:"triggerCharacters"`
+		RetriggerCharacters []string `json:"retriggerCharacters"`
+	} `json:"signatureHelpProvider"`
 }
 
 // enabled reads a capability that is a boolean or an options object.
@@ -95,6 +100,35 @@ func (c *Client) HasTypeDefinition() bool { return enabled(c.caps.TypeDefinition
 // HasImplementation reports whether the server answers
 // textDocument/implementation.
 func (c *Client) HasImplementation() bool { return enabled(c.caps.ImplementationProvider) }
+
+// SignatureTriggers are the characters after which the server tells a
+// call's signature, those that retrigger it included, and HasSignatureHelp
+// whether it tells any.
+func (c *Client) SignatureTriggers() []string {
+	if p := c.caps.SignatureHelpProvider; p != nil {
+		return append(slices.Clone(p.TriggerCharacters), p.RetriggerCharacters...)
+	}
+	return nil
+}
+
+// HasSignatureHelp reports whether the server answers
+// textDocument/signatureHelp.
+func (c *Client) HasSignatureHelp() bool { return c.caps.SignatureHelpProvider != nil }
+
+// SignatureHelp asks for the signature of the call around pos; trigger is
+// the character typed that asked, empty when the client asks again. nil
+// when pos is in no call.
+func (c *Client) SignatureHelp(ctx context.Context, uri string, pos Position, trigger string) (*SignatureHelp, error) {
+	how := map[string]any{"triggerKind": invoked, "isRetrigger": trigger == ""}
+	if trigger != "" {
+		how["triggerKind"], how["triggerCharacter"] = triggerCharacter, trigger
+	}
+	var h *SignatureHelp
+	err := c.conn.call(ctx, "textDocument/signatureHelp", map[string]any{
+		"textDocument": textDocument{uri}, "position": pos, "context": how,
+	}, &h)
+	return h, err
+}
 
 // HasReferences reports whether the server answers textDocument/references.
 func (c *Client) HasReferences() bool { return enabled(c.caps.ReferencesProvider) }

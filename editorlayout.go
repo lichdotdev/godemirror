@@ -56,6 +56,7 @@ func (e *Editor) Layout(gtx layout.Context) (layout.Dimensions, error) {
 	e.trackHover(gtx)
 	e.trackLink()
 	e.takeCompletions(gtx)
+	e.takeSignature(gtx)
 	dims := v.paint(gtx, e.f)
 	e.paintDiagnostics(gtx)
 	e.paintLink(gtx)
@@ -81,6 +82,7 @@ func (e *Editor) paintPopups(gtx layout.Context) {
 	defer clip.Rect(image.Rectangle{Max: e.f.size}).Push(gtx.Ops).Pop()
 	e.popups.boxes = [popupKinds]image.Rectangle{}
 	e.paintHover(gtx)
+	e.paintSignature(gtx)
 	e.paintCompletion(gtx)
 }
 

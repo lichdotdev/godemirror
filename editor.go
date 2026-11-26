@@ -114,6 +114,15 @@ type Editor struct {
 	// CompletionTriggers are the characters that ask Complete for
 	// completions when typed, "." say.
 	CompletionTriggers []string
+	// SignatureHelp, when set, tells the signature of the call around pos,
+	// a position in s, on a goroutine of its own: the editor asks it after
+	// one of SignatureTriggers is typed, trigger, and then after every
+	// transaction, trigger empty, while it answers; ok false, past the call
+	// say, closes the popup it shows above the cursor, as Escape does.
+	SignatureHelp func(ctx context.Context, s EditorState, pos int, trigger string) (sig Signature, ok bool)
+	// SignatureTriggers are the characters that ask SignatureHelp when
+	// typed, "(" and "," say.
+	SignatureTriggers []string
 
 	view  *View
 	state EditorState
@@ -172,6 +181,7 @@ type Editor struct {
 	// after the frame.
 	elsewhere  []Location
 	completion completion
+	signature  signatureState
 	// snippet is the snippet whose fields Tab visits, nil for none.
 	snippet *snippetSession
 	popups  popupPointer
@@ -260,6 +270,7 @@ func (e *Editor) SetState(c EditorStateConfig) error {
 	e.diags, e.jumped, e.occurrences, e.snippet = nil, false, nil, nil
 	e.clearHover()
 	e.closeCompletion()
+	e.closeSignature()
 	e.unshown = emptyChangeSet(len(s.doc))
 	e.view.SetContent(s.content())
 	return nil
@@ -317,6 +328,7 @@ func (e *Editor) Dispatch(spec TransactionSpec) error {
 	e.unshown = e.unshown.compose(t.Changes)
 	e.mapDiagnostics(t.Changes)
 	e.mapSnippet(t)
+	e.signature.stale = e.signature.open
 	e.jumped = false
 	if c := &e.completion; c.open {
 		c.since = c.since.compose(t.Changes)

@@ -53,6 +53,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `${1:name}`, `${1|a,b|}`, `$0`), its lines indented as the line it goes on, and selects its first field;
   Tab and Shift+Tab go from field to field, and `$0`, Escape or a selection out of it end it. A
   `CompletionItem` with `Snippet` set is inserted so, and `lsp` now tells servers it takes snippets.
+- **Signature help in an `Editor`**: `SignatureHelp` tells the `Signature` of the call being typed after
+  one of `SignatureTriggers`, and again after every transaction while it answers; the popup above the cursor
+  shows its label as code, the active parameter bold, and its documentation, and closes when the hook
+  answers none (past the call) or on Escape. `lsp` asks the server's signatureHelp
+  (`Client.SignatureHelp`, `SignatureTriggers`), parameters given as substrings or offsets.
 - **The mouse in an `Editor`'s popups**: a click on a completion takes it, the wheel scrolls a long menu, the
   pointer over the hover keeps it open, and a click in the code closes the menu and the hover. The code
   under a popup no longer sees the pointer over it.

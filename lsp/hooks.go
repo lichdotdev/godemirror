@@ -153,3 +153,34 @@ func (d *Document) elsewhere(lines []string, p Position) godemirror.LineColumn {
 	}
 	return out
 }
+
+func (d *Document) signatureHelp(ctx context.Context, s godemirror.EditorState, pos int, trigger string) (godemirror.Signature, bool) {
+	h, err := d.c.SignatureHelp(ctx, d.uri, d.position(s, pos), trigger)
+	if err != nil || h == nil || len(h.Signatures) == 0 {
+		d.fail(err)
+		return godemirror.Signature{}, false
+	}
+	sig := h.Signatures[min(max(h.ActiveSignature, 0), len(h.Signatures)-1)]
+	out := godemirror.Signature{Label: sig.Label, Doc: markdown(sig.Documentation), Active: -1}
+	if active := cmp.Or(sig.ActiveParameter, h.ActiveParameter); active != nil {
+		out.Active = *active
+	}
+	from := strings.IndexByte(sig.Label, '(') + 1
+	for _, p := range sig.Parameters {
+		r := godemirror.SignatureParam{From: d.c.Encoding().ByteColumn(sig.Label, p.Start), To: d.c.Encoding().ByteColumn(sig.Label, p.End)}
+		if !p.Offsets {
+			i := strings.Index(sig.Label[from:], p.Label)
+			if i < 0 {
+				out.Params = append(out.Params, godemirror.SignatureParam{})
+				continue
+			}
+			r = godemirror.SignatureParam{From: from + i, To: from + i + len(p.Label)}
+			from = r.To
+		}
+		out.Params = append(out.Params, r)
+	}
+	if out.Active >= 0 && out.Active < len(sig.Parameters) && sig.Parameters[out.Active].Documentation.Value != "" {
+		out.Doc = strings.TrimSpace(markdown(sig.Parameters[out.Active].Documentation) + "\n\n" + out.Doc)
+	}
+	return out, true
+}

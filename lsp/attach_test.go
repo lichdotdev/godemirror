@@ -256,3 +256,39 @@ func TestTheOtherGoTosAndReferencesAskTheServer(t *testing.T) {
 		t.Fatalf("references context %s", p["context"])
 	}
 }
+
+func TestSignatureHelpReadsLabelsAndOffsets(t *testing.T) {
+	h, s, _ := attached(t, "f(", map[string]any{
+		"signatureHelpProvider": map[string]any{"triggerCharacters": []string{"("}, "retriggerCharacters": []string{","}},
+	})
+	if got := h.e.SignatureTriggers; len(got) != 2 {
+		t.Fatalf("triggers %v", got)
+	}
+	answers := []string{
+		`{"signatures":[{"label":"f(a int, a2 int)","parameters":[{"label":"a int"},{"label":"a2 int","documentation":"the second"}]}],"activeParameter":1}`,
+		`{"signatures":[{"label":"f(é int, b int)","parameters":[{"label":[2,7]},{"label":[9,14]}],"activeParameter":0}]}`,
+		`null`,
+	}
+	for i, a := range answers {
+		s.handlers["textDocument/signatureHelp"] = func(json.RawMessage) any { return json.RawMessage(a) }
+		sig, ok := h.e.SignatureHelp(context.Background(), h.e.State(), 2, "(")
+		switch i {
+		case 0:
+			if !ok || sig.Active != 1 || sig.Params[1] != (godemirror.SignatureParam{From: 9, To: 15}) || sig.Doc != "the second" {
+				t.Fatalf("labels read as %+v", sig)
+			}
+		case 1:
+			if !ok || sig.Params[0] != (godemirror.SignatureParam{From: 2, To: 8}) || sig.Params[1] != (godemirror.SignatureParam{From: 10, To: 15}) {
+				t.Fatalf("UTF-16 offsets read as %+v, want bytes", sig.Params)
+			}
+		case 2:
+			if ok {
+				t.Fatal("null read as a signature")
+			}
+		}
+	}
+	p := unmarshal[map[string]json.RawMessage](t, s.wait("textDocument/signatureHelp"))
+	if string(p["context"]) != `{"isRetrigger":false,"triggerCharacter":"(","triggerKind":2}` {
+		t.Fatalf("context %s", p["context"])
+	}
+}
