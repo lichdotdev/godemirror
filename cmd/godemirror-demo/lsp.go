@@ -23,6 +23,7 @@ import (
 var (
 	flagLSP      = flag.String("lsp", "", "with -edit, a language server command to attach (gopls), run in -file's directory")
 	flagSettings = flag.String("settings", "", `with -lsp, the server's settings as JSON, as {"gopls":{"usePlaceholders":true}}`)
+	flagFormat   = flag.Bool("format", false, "with -lsp, format the file through the server once it is open")
 	flagLang     = flag.String("lang", "go", "with -lsp, the document's LSP language id")
 	flagAt       = flag.String("at", "", "with -edit, a line:col (from 1) to put the cursor at")
 	flagType     = flag.String("type", "", "headless, with -edit: text typed at the cursor, a character a frame, before the shot")
@@ -58,14 +59,20 @@ func (d *demo) attachLSP(invalidate func()) error {
 		return err
 	}
 	d.client = c
-	_, err = lsp.Attach(c, d.editor, lsp.FileURI(path), lsp.Options{
+	doc, err := lsp.Attach(c, d.editor, lsp.FileURI(path), lsp.Options{
 		LanguageID: *flagLang, Invalidate: invalidate,
 		OnError: func(err error) { log.Print(err) },
 	})
+	if err != nil {
+		return err
+	}
 	d.editor.OnDefinition = func(l godemirror.Location) {
 		log.Printf("definition in %s at %d:%d", l.URI, l.Start.Line+1, l.Start.Column+1)
 	}
-	return err
+	if *flagFormat {
+		return doc.Format(ctx)
+	}
+	return nil
 }
 
 // placeCursor puts the editor's cursor at -at.

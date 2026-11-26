@@ -326,7 +326,9 @@ file is the trap alone.
   not the wheel. A command an action runs edits through `workspace/applyEdit`, applied to the attached
   documents as it comes; the edits for files not attached go to the first attached editor's
   `OnWorkspaceEdit`.
-- **Out of the LSP client for now**: formatting, document
+- **`Document.Format` blocks the goroutine that lays the editor out** until the server answers, and formats
+  the whole document only (no range or on-type formatting); a tab indent asks for tabs four wide.
+- **Out of the LSP client for now**: document
   symbols (an outline), pull diagnostics (`textDocument/diagnostic`), workspace edits, progress and
   `window/showMessage` are not asked for or are dropped. A server's dynamic registrations are acknowledged and
   ignored, so a capability a server only registers later is never used.

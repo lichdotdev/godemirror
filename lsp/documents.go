@@ -35,6 +35,7 @@ type capabilities struct {
 	ReferencesProvider     json.RawMessage `json:"referencesProvider"`
 	RenameProvider         json.RawMessage `json:"renameProvider"`
 	CodeActionProvider     json.RawMessage `json:"codeActionProvider"`
+	FormattingProvider     json.RawMessage `json:"documentFormattingProvider"`
 	SignatureHelpProvider  *struct {
 		TriggerCharacters   []string `json:"triggerCharacters"`
 		RetriggerCharacters []string `json:"retriggerCharacters"`
@@ -168,6 +169,23 @@ func (c *Client) ExecuteCommand(ctx context.Context, cmd Command) error {
 	return c.conn.call(ctx, "workspace/executeCommand", map[string]any{
 		"command": cmd.Command, "arguments": cmd.Arguments,
 	}, nil)
+}
+
+// FormattingOptions are how a server is asked to lay code out.
+type FormattingOptions struct {
+	TabSize      int  `json:"tabSize"`
+	InsertSpaces bool `json:"insertSpaces"`
+}
+
+// HasFormatting reports whether the server answers
+// textDocument/formatting.
+func (c *Client) HasFormatting() bool { return enabled(c.caps.FormattingProvider) }
+
+// Format asks for the edits that format the whole document.
+func (c *Client) Format(ctx context.Context, uri string, opts FormattingOptions) ([]TextEdit, error) {
+	var edits []TextEdit
+	err := c.conn.call(ctx, "textDocument/formatting", map[string]any{"textDocument": textDocument{uri}, "options": opts}, &edits)
+	return edits, err
 }
 
 // HasRename reports whether the server answers textDocument/rename.

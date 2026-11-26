@@ -69,6 +69,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the server's codeAction, resolves an action with no edit, runs its command (`Client.CodeActions`,
   `ResolveCodeAction`, `ExecuteCommand`) and applies the server's workspace/applyEdit to the documents
   attached.
+- **`Document.Format(ctx)`** formats the whole document through the server (`Client.Format`), indented as
+  the new `EditorState.IndentUnit`, and makes its edits one transaction that one Undo takes back.
+  Formatting on save stays the caller's choice. The demo's `-format` runs it.
 - **The mouse in an `Editor`'s popups**: a click on a completion takes it, the wheel scrolls a long menu, the
   pointer over the hover keeps it open, and a click in the code closes the menu and the hover. The code
   under a popup no longer sees the pointer over it.

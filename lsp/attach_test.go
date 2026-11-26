@@ -374,3 +374,27 @@ func TestTheServersApplyEditReachesTheEditor(t *testing.T) {
 	}
 	h.until("applied", func() bool { return h.e.State().Doc() == "x := z" && len(elsewhere) == 1 })
 }
+
+func TestFormatMakesTheServersEditsOneUndoableTransaction(t *testing.T) {
+	h, s, d := attached(t, "package a\nfunc f(){\nx:=1}", map[string]any{"documentFormattingProvider": true})
+	s.handlers["textDocument/formatting"] = func(json.RawMessage) any {
+		return []TextEdit{
+			{Range: Range{Position{1, 8}, Position{1, 8}}, NewText: " "},
+			{Range: Range{Position{2, 0}, Position{2, 4}}, NewText: "\tx := 1\n"},
+		}
+	}
+	if err := d.Format(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	if got := h.e.State().Doc(); got != "package a\nfunc f() {\n\tx := 1\n}" {
+		t.Fatalf("formatted %q", got)
+	}
+	p := unmarshal[map[string]FormattingOptions](t, s.wait("textDocument/formatting"))
+	if p["options"] != (FormattingOptions{TabSize: 2, InsertSpaces: true}) {
+		t.Fatalf("options %+v", p["options"])
+	}
+	h.e.Undo()
+	if got := h.e.State().Doc(); got != "package a\nfunc f(){\nx:=1}" {
+		t.Fatalf("undo left %q", got)
+	}
+}
