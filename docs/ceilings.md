@@ -289,12 +289,24 @@ file is the trap alone.
   and 24 rows tall, and what runs past is cut, not scrolled. A popup is clipped to the editor: one taller than
   the room above and below its anchor loses its last rows. The menu and the popups take no pointer: a click
   on the menu is a click on the code under it (which closes the menu), and the wheel scrolls the code.
+- **Markdown from a server shows as plain text** (`lsp`): a hover's first fenced block is its code and the rest
+  its text, fences, links' targets, backticks, `**`, `__`, `#` and rules dropped; lists, tables and a lone `*`
+  or `_` stay as written, and nothing is bold or italic.
+- **A snippet completion inserts plain text** (`lsp`): the client tells the server it takes no snippets, and an
+  item that sends one anyway loses its tabstops and placeholders (`${1:x}` becomes `x`, `$0` nothing); the
+  cursor lands at the end of the text, not at the first tabstop.
 - **Completions filter as a fuzzy subsequence, in the order given** (`Editor.Complete`): items keep the order
-  the hook gives, with no ranking of their own; an `Incomplete` result is asked again
+  the hook gives (`lsp` sorts by `sortText`), with no ranking of their own; an `Incomplete` result is asked again
   on each character typed. Only one cursor completes: with several, nothing opens.
 - **Diagnostics are mapped, not recomputed** (`Editor.SetDiagnostics`): between an edit and the server's next
-  publish they move with the text around them, and one whose whole range was deleted is gone. A dot marks the line
+  publish they move with the text around them, and one whose whole range was deleted is gone. `lsp` reads a
+  publish in the version it names, through the last 32 versions; an older one is dropped. A dot marks the line
   a diagnostic starts on only, and the popup opens on a rest of half a second, the time hover takes too.
 - **Ctrl+click goes to the definition while a `Definition` is set**, over a word: it no longer adds a cursor
   there (`AllowMultipleSelections`); Ctrl+click off a word still does. A definition with several locations
-  goes to the first.
+  goes to the first. One in another file reaches `OnDefinition` with its column in UTF-8 bytes, read from the
+  file when the server counts in UTF-16; a file that cannot be read keeps the server's column as it was.
+- **Out of the LSP client for now**: rename, code actions, formatting, references, signature help, document
+  symbols (an outline), pull diagnostics (`textDocument/diagnostic`), workspace edits, progress and
+  `window/showMessage` are not asked for or are dropped. A server's dynamic registrations are acknowledged and
+  ignored, so a capability a server only registers later is never used.

@@ -17,6 +17,7 @@ import (
 	"gioui.org/widget/material"
 
 	"github.com/lichdotdev/godemirror"
+	"github.com/lichdotdev/godemirror/lsp"
 )
 
 // Keys, held with Alt, that drive the demo while it runs: Alt keeps them
@@ -51,6 +52,8 @@ type demo struct {
 	comments []*comment
 	// focused is whether the editor was given the keyboard yet.
 	focused bool
+	// client is the language server of -lsp.
+	client *lsp.Client
 }
 
 var portedThemes = map[string]godemirror.Theme{

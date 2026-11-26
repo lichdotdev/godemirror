@@ -139,6 +139,32 @@ by document line. `SetContent` shows a new document from its top;
 in) without moving the scroll. For two sides, build a `godemirror.Split` and
 give `Left` and `Right` their own content.
 
+### Language servers
+
+`lsp` is a Language Server Protocol client: start a server, attach an `Editor`
+to a document, and the editor shows the server's diagnostics and offers its
+completions, hover and go to definition.
+
+```go
+client, err := lsp.Start(ctx, lsp.Config{Command: []string{"gopls"}, RootDir: root})
+if err != nil {
+	return err
+}
+doc, err := lsp.Attach(client, editor, lsp.FileURI(path), lsp.Options{
+	LanguageID: "go",
+	Invalidate: window.Invalidate, // diagnostics arrive between frames
+})
+editor.OnDefinition = func(l godemirror.Location) { open(l.URI, l.Start) }
+// doc.Save() after writing the file, doc.Close() when it closes
+```
+
+The editor's hooks (`SetDiagnostics`, `Complete`, `Hover`, `Definition`) take any
+source, not only a language server. `lsp/servers` is a catalog of servers
+converted from nvim-lspconfig and mason-registry: `servers.Lookup("main.go")`
+returns the candidates for a file, the common one first, with its command,
+root markers, default settings and an install recipe. It only describes; it
+never runs a server or an install.
+
 The deliberate limits, and what they mean for a caller, are in
 [`docs/ceilings.md`](docs/ceilings.md).
 
@@ -236,7 +262,10 @@ lines. Reverting a chunk of two files puts it back and shows the diff again.
 `-narrow` uses the narrow gutter, `-search text` highlights its matches and selects the first (with `-edit`,
 which shows the file in an `Editor`, it selects them all), `-light` uses
 `LightTheme`, and `-bench N` with `-shot out.png` runs it headless
-and reports frame times.
+and reports frame times. With `-edit`, `-lsp gopls` attaches a language server
+started in the file's directory; headless, `-at line:col` and `-type text` type
+at a place, `-hover x,y` rests the pointer (with `-ctrl`, Ctrl held), and
+`-wait 4s` keeps drawing until the server has answered.
 
 ## Requirements
 

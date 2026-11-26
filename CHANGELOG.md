@@ -46,6 +46,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `DidClose`) and asks for `Completion`, `ResolveCompletion`, `Hover` and `Definition`;
   `WatchDiagnostics` hands over what the server publishes. It offers UTF-8 positions and falls back
   to UTF-16, which `PositionEncoding` converts. Standard library only.
+- **`lsp.Attach(client, editor, uri, opts)`**, the editor and the server bound: the document opens on the
+  server, every edit follows (incrementally or whole, as the server syncs), published diagnostics show in
+  the editor mapped through the edits made since, and the editor's completions, hover and definition ask
+  the server, markdown shown as plain text and snippets inserted without their placeholders.
+  `Document.Save` and `Document.Close` send didSave and didClose. The demo's `-lsp gopls` runs it.
 - **`lsp/servers`, an optional catalog of 428 language servers** converted from nvim-lspconfig and
   mason-registry (Apache-2.0): each server's command, filetypes, root markers, default init options
   and settings, and a plain-data install recipe (npm, pypi, golang, cargo, gem, or a GitHub release
