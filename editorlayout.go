@@ -57,7 +57,6 @@ func (e *Editor) Layout(gtx layout.Context) (layout.Dimensions, error) {
 	dims := v.paint(gtx, e.f)
 	e.popups.boxes = [popupKinds]image.Rectangle{}
 	e.paintDiagnostics(gtx)
-	e.paintBulb(gtx)
 	e.paintLink(gtx)
 	if gtx.Focused(v) {
 		e.paintCarets(gtx)

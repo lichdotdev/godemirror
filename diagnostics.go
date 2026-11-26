@@ -242,9 +242,10 @@ func paintWave(gtx layout.Context, c color.NRGBA, x0, x1, bottom int) {
 	paint.FillShape(gtx.Ops, c, clip.Stroke{Path: p.End(), Width: float32(gtx.Dp(1))}.Op())
 }
 
-// paintDiagnosticDots draws a dot in the gutter's last cell, beside the
-// line numbers, of each line on screen a diagnostic starts on, in the
-// color of the worst of them.
+// paintDiagnosticDots draws a dot in the gutter's last cell, the marks
+// cell beside the line numbers, of each line on screen a diagnostic starts
+// on, in the color of the worst of them; on the line with code actions,
+// the bulb takes the dot's place.
 func (e *Editor) paintDiagnosticDots(gtx layout.Context) {
 	v, f := e.view, e.f
 	first, last := e.visibleLines()
@@ -259,7 +260,12 @@ func (e *Editor) paintDiagnosticDots(gtx layout.Context) {
 		}
 	}
 	size := gtx.Dp(diagnosticDot)
+	bulb := e.bulbLine()
 	for line, s := range worst {
+		if line == bulb {
+			e.paintBulb(gtx, s)
+			continue
+		}
 		cx := f.g.gutterW - f.cw/2
 		cy := v.tops[line] - v.scroll.Y + f.ch/2
 		r := image.Rect(cx-size/2, cy-size/2, cx-size/2+size, cy-size/2+size)

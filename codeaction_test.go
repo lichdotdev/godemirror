@@ -2,6 +2,7 @@ package godemirror
 
 import (
 	"context"
+	"strings"
 	"testing"
 
 	"gioui.org/f32"
@@ -59,4 +60,23 @@ func TestClickingTheBulbAndAnActionAppliesIt(t *testing.T) {
 	}
 	h.click(f32.Pt(float32(box.Min.X+5), float32(box.Min.Y+2)), 0)
 	h.until("applied", func() bool { return h.ed.State().Doc() == "ok\nx := y\n" && h.ed.UndoDepth() == 1 })
+}
+
+// The bulb was drawn from the gutter's first cell, nine pixels wide,
+// over the line number's first digit.
+func TestTheBulbNeverCoversTheLineNumber(t *testing.T) {
+	h, _ := focusedEditor(t, EditorStateConfig{Doc: strings.Repeat("ok\n", 22) + "x := y\n"}, SingleSelection(0, 0))
+	h.ed.CodeActions = func(context.Context, EditorState, int, int, []Diagnostic) []CodeAction {
+		return []CodeAction{{Title: "Declare y"}}
+	}
+	h.ed.SetDiagnostics([]Diagnostic{{From: 71, To: 72, Message: "undefined: y"}})
+	dispatch(t, h.ed, TransactionSpec{Selection: SingleSelection(66, 66), ScrollIntoView: true})
+	h.until("offered", func() bool { return !h.ed.popups.boxes[bulbPopup].Empty() })
+	g := h.ed.Geometry()
+	bulb := h.ed.popups.boxes[bulbPopup]
+	numberEnd := g.GutterWidth - g.CellWidth
+	if bulb.Min.X < numberEnd || bulb.Max.X > g.GutterWidth {
+		t.Fatalf("bulb at x %d..%d, want it in the marks cell %d..%d, clear of the number ending at %d",
+			bulb.Min.X, bulb.Max.X, numberEnd, g.GutterWidth, numberEnd)
+	}
 }

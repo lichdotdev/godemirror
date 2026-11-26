@@ -321,7 +321,8 @@ file is the trap alone.
   Escape, with the cursor at its end and no selection but the whole old name. The edits to the editor's
   document are dropped when it changed while the server worked.
 - **Code actions are asked for the cursor's line only** (`CodeActions`): the bulb shows on the line the cursor
-  is on when it holds a diagnostic and the hook offers actions, never on the other lines with diagnostics;
+  is on when it holds a diagnostic and the hook offers actions, never on the other lines with diagnostics; it
+  takes the place of the dot, so only a line a diagnostic starts on shows it;
   Ctrl+. asks for the selection, or the whole line under a cursor. The list takes the keyboard and a click,
   not the wheel. A command an action runs edits through `workspace/applyEdit`, applied to the attached
   documents as it comes; the edits for files not attached go to the first attached editor's

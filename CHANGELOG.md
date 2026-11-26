@@ -63,7 +63,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   hands the others to `OnWorkspaceEdit`; an error the hook returns shows at the symbol. `lsp` asks the
   server's rename (`Client.Rename`) and reads a `WorkspaceEdit` either way the server writes it.
 - **Code actions in an `Editor`**: when the cursor reaches a line with a diagnostic the editor asks
-  `CodeActions`, and a bulb in the gutter shows there are some; Ctrl+. or a click on the bulb lists them, and
+  `CodeActions`, and a bulb in the gutter's marks cell, in place of the line's diagnostic dot and in its
+  color, shows there are some; Ctrl+. or a click on the bulb lists them, and
   the one taken goes to `ApplyCodeAction`, whose edits are made as a rename's. `Editor.ApplyEdits` makes
   `DocumentEdit`s from elsewhere the same way, and `Diagnostic.Data` carries a source's own data. `lsp` asks
   the server's codeAction, resolves an action with no edit, runs its command (`Client.CodeActions`,

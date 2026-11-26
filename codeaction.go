@@ -156,26 +156,37 @@ func (e *Editor) takeEdits(a renameAnswer, pos int) {
 	}
 }
 
-// paintBulb draws the bulb in the first cell of the gutter on the line the
-// actions are for, when there are some, and takes a press on it.
-func (e *Editor) paintBulb(gtx layout.Context) {
+// bulbLine is the line (from 0) the bulb shows on, -1 for none.
+func (e *Editor) bulbLine() int {
 	a := &e.actions
 	if len(a.items) == 0 || a.line == 0 || a.line > e.state.Lines() {
+		return -1
+	}
+	return a.line - 1
+}
+
+// paintBulb draws the bulb in the gutter's marks cell, where the dot of the
+// line's diagnostics goes and in their worst severity's color, on the line
+// the actions are for, and takes a press on it.
+func (e *Editor) paintBulb(gtx layout.Context, worst Severity) {
+	line := e.bulbLine()
+	if line < 0 {
 		return
 	}
 	v, f := e.view, e.f
-	top := v.tops[a.line-1] - v.scroll.Y
+	top := v.tops[line] - v.scroll.Y
 	if top+f.ch < 0 || top > f.size.Y {
 		return
 	}
-	size := gtx.Dp(bulbSize)
-	cx, cy := f.cw/2+1, top+f.ch/2-size/6
+	cell := image.Rect(f.g.gutterW-f.cw, top, f.g.gutterW, top+f.ch)
+	size := min(gtx.Dp(bulbSize), f.cw)
+	cx, cy := cell.Min.X+f.cw/2, top+f.ch/2-size/6
 	glass := image.Rect(cx-size/2, cy-size/2, cx-size/2+size, cy-size/2+size)
-	base := image.Rect(cx-size/4, glass.Max.Y-1, cx+size/4+1, glass.Max.Y+size/3)
-	c := e.Theme.Diagnostics.Warning
+	base := image.Rect(cx-size/4, glass.Max.Y-1, cx-size/4+max(size/2, 1), glass.Max.Y+size/3)
+	c := e.Theme.Diagnostics.of(worst)
 	paint.FillShape(gtx.Ops, c, clip.Ellipse(glass).Op(gtx.Ops))
 	paint.FillShape(gtx.Ops, c, clip.Rect(base).Op())
-	e.popupHandler(gtx, bulbPopup, image.Rect(0, top, f.g.gutterW-f.cw, top+f.ch))
+	e.popupHandler(gtx, bulbPopup, cell)
 }
 
 // paintActions draws the list of actions under the cursor.
