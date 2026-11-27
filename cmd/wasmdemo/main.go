@@ -114,6 +114,7 @@ func newDemo() (*demo, error) {
 		return nil, err
 	}
 	editor.RectangularSelection = true
+	editor.Complete, editor.CompletionTriggers = completeWords, []string{"."}
 	diff.Split = true
 	diff.SetDocs("server.go", original, modified)
 	th := material.NewTheme()
