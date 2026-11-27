@@ -28,7 +28,8 @@
   [hidden] { display: none !important; }
 
   nav .wrap { display: flex; align-items: center; height: 56px; font: 13px var(--mono); gap: 24px; border-bottom: 1px solid var(--line); }
-  nav .logo { font-weight: 700; } nav .logo span { color: var(--kw); }
+  nav .logo { font-weight: 700; display: flex; align-items: center; gap: 9px; color: var(--fg); text-decoration: none; } nav .logo span { color: var(--kw); }
+  nav .logo img { width: 26px; height: 26px; display: block; }
   nav .r { margin-left: auto; display: flex; gap: 20px; } nav a { color: var(--muted); text-decoration: none; } nav a:hover { color: var(--fg); }
 
   .hero { display: grid; grid-template-columns: 1.15fr 1fr; gap: 48px; padding: 72px 0 40px; align-items: end; }
@@ -97,7 +98,7 @@
 </style>
 </head>
 <body>
-<nav><div class="wrap"><span class="logo"><span>go</span>demirror</span><div class="r"><a href="#lsp">lsp</a><a class="wide" href="#compare">compare</a><a href="#start">start</a><a class="wide" href="https://pkg.go.dev/github.com/lichdotdev/godemirror">pkg.go.dev</a><a href="https://github.com/lichdotdev/godemirror">github</a></div></div></nav>
+<nav><div class="wrap"><a class="logo" href="#"><img src="icon.svg" alt=""><b><span>go</span>demirror</b></a><div class="r"><a href="#lsp">lsp</a><a class="wide" href="#compare">compare</a><a href="#start">start</a><a class="wide" href="https://pkg.go.dev/github.com/lichdotdev/godemirror">pkg.go.dev</a><a href="https://github.com/lichdotdev/godemirror">github</a></div></div></nav>
 
 <main class="wrap">
   <div class="hero">
