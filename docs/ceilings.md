@@ -130,6 +130,15 @@ file is the trap alone.
   changes a row's pixels (a per-cell style, a ligature) must join the key or drop the cache, or the old image
   keeps being drawn. The three bugs this has caused (wrap, resize, theme) showed only after a toggle or a
   resize, never on first paint.
+- **A wrapped row hangs by a virtual indent, which CodeMirror's `lineWrapping` does not do**: a continuation
+  row starts `hangOf` cells in, the line's leading spaces (a tab counts its cells) plus 2, capped at half the
+  columns so a deeply indented line keeps room, and breaks at the columns left. The indent is not text: the row's
+  cells, the selection, search spans, copy and positions are the line's own, and the pointer, `coordsAt` and
+  `posAtCoords` add or take the hang off at the edge. A point in the indent is the row's first cell. The editor
+  keeps the column it moves vertically on in pixels, so Up from a continuation row lands `hang` cells further
+  into a row without one. A rectangular selection's column past a line's end is still counted from the pointer's
+  place, hang not included, as it never took a wrapped row's start into account. A `LineWidget` after the text
+  of a continuation row is placed past the hang.
 - **A diff past 10,000 edits is one chunk** (`maxDiffEdits`): `SetDocs` runs Myers' diff, which costs
   O((N+M)·D). A stretch of the two documents that needs more edits than that shows as all of it deleted and all
   of it inserted, not as its smallest diff.
@@ -146,6 +155,13 @@ file is the trap alone.
 - **A `DiffView` calls back after the frame**: `DiffOptions.Expand` and `Revert` run at the end of `Layout`,
   never while it paints, so a callback may set a new diff at once. A `DiffBlock` on a line inside a gap is not
   shown until the gap is filled.
+- **`DiffView.Height` leaves out blocks and is not cached**: a `DiffBlock` or `BlockWidget` is laid out only by
+  `Layout`, once a frame, so its height is the caller's to add. Without `Wrap` the call is the row count times
+  the row height; with it, every row is measured again each call, so a very long diff is sized when the diff, the
+  width or `Wrap` change, not every frame.
+- **A `GutterCell` widget is as wide as the gutter**: it is laid out with at most the gutter's width and centered
+  in the cell, so a wider one is clipped. A `RevertWidget` in the gutter has to fit a cell of a few characters;
+  the default, a single "↩", does.
 - **A held drag scrolls the view; `Select` does not**: dragging a selection past an edge scrolls the view for as
   long as the button is held there, and each such frame asks for the next with `op.InvalidateCmd`, so the host
   must honor it (a window that redraws only on input events scrolls only as the pointer moves). The time of a
@@ -197,7 +213,16 @@ file is the trap alone.
   next occurrence and Ctrl+Shift+L every occurrence. There is no search panel, so none of its other keys. Ctrl is Gio's `ModShortcut`, Cmd on macOS,
   so macOS gets these bindings and none of CodeMirror's macOS ones (Cmd+arrows, Alt+arrows, the Emacs keys).
   Nothing else of `defaultKeymap` is bound yet: no syntax motion, moving or copying lines, commenting,
-  bracket matching or indenting a selection, and Tab moves focus away, as without `indentWithTab`.
+  bracket matching or indenting a selection, and Tab moves focus away, as without `indentWithTab`, unless
+  `OnKey` is set.
+- **With `OnKey` set, the editor takes every key read after it, and a key's text comes apart**: Gio gives a key to the first
+  `gtx.Event` call of the frame whose filters match it, so while `OnKey` is set the editor's catch-all filter
+  takes every key read after it, whatever `key.Filter`'s godoc says of an empty `Name` yielding to named
+  filters (Gio v0.10.3). An app shortcut reaches the app only when it is read before the editor's `Layout`,
+  and returning false from `OnKey` does not give the key back. A key's text comes as its own `key.EditEvent`,
+  which taking the `key.Event` does not stop, where a browser's `preventDefault` on keydown stops the input:
+  a caller typing for itself takes both. After a taken edit the window's text input believes the text was
+  typed until the frame ends, and the editor drops the selection it reports for it.
 - **Enter indents as CodeMirror does with no language**: the new line takes the column of its line's
   indentation, written in `IndentUnit` (two spaces by default, so a tab-indented line goes on in spaces unless
   `IndentUnit` is `"\t"`), and between `()`, `[]` or `{}` it breaks twice. No grammar indents by its syntax,
@@ -252,10 +277,73 @@ file is the trap alone.
   the last `Layout` (`SetContent`, `SetState`) is estimated, as CodeMirror's height map estimates lines it has
   not measured, but more crudely: a row a line, wrapping and blocks left out, until the next frame places it. A line's block
   covers its rows, not the block widgets under it, which CodeMirror makes blocks of their own. `OnScroll`
-  is ours: CodeMirror has a DOM scroll event, godemirror calls back after the frame that left the view
-  scrolled elsewhere, the scroll a caller set included, so views that follow each other must stop where the
-  position they set is the one they were told of. Views inside a `Split` or a `DiffView` neither call it nor
+  is ours: CodeMirror has a DOM scroll event, godemirror calls back after a frame in which the user scrolled
+  (wheel, touchpad, a selection dragged past an edge), never for what the program scrolled: `SetScrollTop`,
+  `ScrollToLine`, an `Editor` keeping its cursor in view. A pane that follows an `Editor` scrolled by the
+  keyboard hears nothing, and reads `ScrollTop` after each `Layout` instead. Views inside a `Split` or a `DiffView` neither call it nor
   answer for their place in it. CodeMirror has no three-pane view: `@codemirror/merge` 6.12.3's `MergeView`
   aligns two editors in one scroller with block-widget spacers before each unchanged stretch and places its
   revert buttons at `lineBlockAt(chunk.fromA).top`, with no connectors between the sides; an `Editor` has no
   block widgets for such spacers, so panes beside it follow its scroll instead.
+- **A jump the program makes glides; the wheel never does**: `SetScrollTop`, `ScrollToLine` and an `Editor`'s
+  scroll into view slide down or up over 140 ms, eased out, unless the jump is three rows or less. Each frame of
+  the glide reads `gtx.Now`, so a caller that lays out with a fixed `Now` sees the glide stand still and asking
+  for frames forever; a zero `Now` lands at once. `ScrollTop` is where the frame drew the view, partway
+  through; `ScrollTarget` is where it lands. A wheel stops it where it is; a press or a selection does not.
+  Sideways scrolling, a `Split` and a `DiffView` never glide. Gio reports no reduced-motion preference from the
+  platform, so `ReduceMotion` (off, so gliding, by default) is the caller's to set from its own setting.
+- **An Editor's popups set prose in Gio's Go font, not the app's** (diagnostics, hover, the documentation beside the
+  completions): prose goes through Gio's text stack in the Go typeface shipped with Gio, whatever font the app
+  uses elsewhere, while code (inline, fenced, a signature) goes through glyphs in the editor's font. A popup
+  is at most 560dp wide and 420dp tall, and scrolls past that; a code line wider than it is cut, not
+  wrapped. A popup takes the pointer over its last frame's box, a frame late after it moves.
+- **Popups render a part of Markdown** (`Hover`, `CompletionItem.Documentation`): paragraphs, headings (as bold),
+  lists, fenced code (highlighted when godemirror knows the fence's language), rules, and inline code, bold,
+  italic and links (as their text). Tables, blockquotes (shown as plain paragraphs), HTML and images (their
+  alt text) are not rendered; a lone `*` or `_` with no closing one stays as written.
+- **A snippet's fields are visited, not mirrored** (`InsertSnippet`, `CompletionItem.Snippet`): fields of one
+  number are selected together (with `AllowMultipleSelections`, else the first), but typing in one does not
+  copy into the others while a single cursor edits; variables (`$TM_FILENAME`, `${VAR:default}`) insert their
+  default or nothing, and transforms are not read. Fields are not outlined on screen. Tab inside a snippet
+  goes to the next field, so a Tab is never typed there.
+- **Completions filter as a fuzzy subsequence, in the order given** (`Editor.Complete`): items keep the order
+  the hook gives (`lsp` sorts by `sortText`), with no ranking of their own; an `Incomplete` result is asked again
+  on each character typed. Only one cursor completes: with several, nothing opens.
+- **Diagnostics are mapped, not recomputed** (`Editor.SetDiagnostics`): between an edit and the server's next
+  publish they move with the text around them, and one whose whole range was deleted is gone. `lsp` reads a
+  publish in the version it names, through the last 32 versions; an older one is dropped. A dot marks the line
+  a diagnostic starts on only, and the popup opens on a rest of half a second, the time hover takes too.
+- **Ctrl+click goes to the definition while a `Definition` is set**, over a word: it no longer adds a cursor
+  there (`AllowMultipleSelections`); Ctrl+click off a word still does. A definition, a type definition or an
+  implementation with several locations goes to the first; only references hand over the whole list. One in another file reaches `OnDefinition` with its column in UTF-8 bytes, read from the
+  file when the server counts in UTF-16; a file that cannot be read keeps the server's column as it was.
+- **A go-to key changed takes effect a frame later** (`TypeDefinitionKey`, `ImplementationKey`,
+  `ReferencesKey`): Gio routes a key by the filters the frame before it registered, so a key pressed in the
+  frame its Shortcut was set is not taken. Highlighted references are dropped by any edit, not mapped.
+- **Signature help asks again on every transaction while it shows** (`SignatureHelp`): a keystroke, a click
+  or a move of the cursor is a request, with no debounce; only the active signature shows, with no way to
+  page through overloads. It follows one cursor: with several, it does not open.
+- **Rename asks no server first and edits only text** (`Rename`): the input holds the word at the cursor, with
+  no `prepareRename` to check the symbol can be renamed or to pick its range; a `WorkspaceEdit`'s file
+  operations (create, rename, delete a file) are dropped. The input takes typed text, Backspace, Enter and
+  Escape, with the cursor at its end and no selection but the whole old name. The edits to the editor's
+  document are dropped when it changed while the server worked.
+- **Code actions are asked for the cursor's line only** (`CodeActions`): the bulb shows on the line the cursor
+  is on when it holds a diagnostic and the hook offers actions, never on the other lines with diagnostics; it
+  takes the place of the dot, so only a line a diagnostic starts on shows it;
+  Ctrl+. asks for the selection, or the whole line under a cursor. The list takes the keyboard and a click,
+  not the wheel. A command an action runs edits through `workspace/applyEdit`, applied to the attached
+  documents as it comes; the edits for files not attached go to the first attached editor's
+  `OnWorkspaceEdit`.
+- **`Document.Format` blocks the goroutine that lays the editor out** until the server answers, and formats
+  the whole document only (no range or on-type formatting); a tab indent asks for tabs four wide.
+- **`Document.Symbols` blocks the goroutine that lays the editor out** until the server answers, as `Format`
+  does; the editor draws no outline of its own.
+- **Out of the LSP client for now**: pull diagnostics (`textDocument/diagnostic`), a workspace edit's file
+  operations, range and on-type formatting, `prepareRename`, progress and `window/showMessage` are not asked
+  for or are dropped. A server's dynamic registrations are acknowledged and
+  ignored, so a capability a server only registers later is never used.
+- **An edit reaches the server from the UI goroutine** (`lsp.Attach`): `didChange` is written to the server's
+  standard input inside the editor's `OnUpdate`, before the frame's requests, so that a request never
+  overtakes the edit it is about. A server that stops reading its input while the pipe's buffer is full
+  (64 KiB on Linux) stalls the frame until it reads again or exits.

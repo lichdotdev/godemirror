@@ -46,8 +46,9 @@ godemirror lets you:
   `Dracula`, `GitHubLight`, `GitHubDark`, `Nord`) or a theme of your own. Highlighting runs off the UI
   goroutine: a 13,000-line file shows at once and takes its colors when they are
   ready.
-- **Wrap, or don't.** Lines break after spaces the way CSS `pre-wrap` does, or
-  scroll sideways with Shift and the wheel.
+- **Wrap, or don't.** Lines break after spaces the way CSS `pre-wrap` does, each
+  continuation row hanging under its line's own indentation, or scroll sideways
+  with Shift and the wheel.
 - **Decorate lines.** Tint a line and its gutter cell, put a strip down the
   gutter, rule a separator, hatch a filler row, and replace the line numbers
   with labels of your own: everything a diff needs.
@@ -85,6 +86,11 @@ godemirror lets you:
   for a word, triple click for a line, Shift+click to extend, Ctrl+A and
   Ctrl+C. Copying gives back the text as it was, tabs included, and
   `SelectedLines` turns the selection into the line span an action works on.
+- **Jumps glide.** A scroll the program makes (`SetScrollTop`, `ScrollToLine`,
+  PageDown, a far cursor move in an `Editor`) slides there in 140 ms, eased
+  out; a jump of a few rows, the wheel and the touchpad stay direct.
+  `SnapScrollTop` and `ReduceMotion` land at once, and `OnScroll` hears only
+  the user's own scrolls.
 
 ## Getting started
 
@@ -138,6 +144,34 @@ by document line. `SetContent` shows a new document from its top;
 in) without moving the scroll. For two sides, build a `godemirror.Split` and
 give `Left` and `Right` their own content.
 
+### Language servers
+
+`lsp` is a Language Server Protocol client: start a server, attach an `Editor`
+to a document, and the editor shows the server's diagnostics and offers its
+completions, hover and go to definition.
+
+```go
+client, err := lsp.Start(ctx, lsp.Config{Command: []string{"gopls"}, RootDir: root})
+if err != nil {
+	return err
+}
+doc, err := lsp.Attach(client, editor, lsp.FileURI(path), lsp.Options{
+	LanguageID: "go",
+	Invalidate: window.Invalidate, // diagnostics arrive between frames
+})
+editor.OnDefinition = func(l godemirror.Location) { open(l.URI, l.Start) }
+// doc.Save() after writing the file, doc.Close() when it closes
+```
+
+The editor's hooks (`SetDiagnostics`, `Complete`, `Hover`, `SignatureHelp`,
+`Definition`, `References`, `Rename`, `CodeActions` and the rest) take any
+source, not only a language server; `doc.Format(ctx)` and `doc.Symbols(ctx)`
+format the document and list its outline. `lsp/servers` is a catalog of servers
+converted from nvim-lspconfig and mason-registry: `servers.Lookup("main.go")`
+returns the candidates for a file, the common one first, with its command,
+root markers, default settings and an install recipe. It only describes; it
+never runs a server or an install.
+
 The deliberate limits, and what they mean for a caller, are in
 [`docs/ceilings.md`](docs/ceilings.md).
 
@@ -153,6 +187,7 @@ The deliberate limits, and what they mean for a caller, are in
 | `changeByRange`, `replaceSelection` | `ChangeByRange`, `ReplaceSelection` |
 | `standardKeymap`, `drawSelection`, `indentUnit`, `view.focus()` | built into `Editor`, `Theme.Cursor`, `EditorStateConfig.IndentUnit`, `Focus` |
 | `addCursorAbove`, `addCursorBelow`, `simplifySelection` | built into `Editor` (Ctrl+Alt+Up/Down, Escape) |
+| `EditorView.domEventHandlers({keydown})`, `coordsAtPos` | `Editor.OnKey`, `Editor.CoordsAtPos` |
 | `rectangularSelection()`, `crosshairCursor()` | `Editor.RectangularSelection`, `Editor.CrosshairCursor` |
 | `selectNextOccurrence`, `selectSelectionMatches` | built into `Editor` (Ctrl+D, Ctrl+Shift+L) |
 | `history()`, `undo`, `redo`, `undoDepth`, `redoDepth` | built into `Editor`, `Undo`, `Redo`, `UndoDepth`, `RedoDepth` |
@@ -169,7 +204,7 @@ The deliberate limits, and what they mean for a caller, are in
 | `state.selection`, `dispatch({selection})` | `Selection`, `Select`, `SelectLines` |
 | `SearchQuery`, `findNext`, `findPrevious` | `SearchQuery`, `SetSearch`, `FindNext`, `FindPrevious`, `Matches` (no panel: draw your own search box) |
 | `EditorView.scrollIntoView` | `ScrollToLine` |
-| `scrollDOM.scrollTop`, `lineBlockAt`, `lineBlockAtHeight`, `contentHeight` | `ScrollTop`, `SetScrollTop`, `LineBlock` (`LineBlockAt` on an `Editor`), `LineAtHeight` (`LineBlockAtHeight`), `ContentHeight`, and `OnScroll` |
+| `scrollDOM.scrollTop`, `lineBlockAt`, `lineBlockAtHeight`, `contentHeight` | `ScrollTop`, `SetScrollTop` (`SnapScrollTop`, `ScrollTarget`), `LineBlock` (`LineBlockAt` on an `Editor`), `LineAtHeight` (`LineBlockAtHeight`), `ContentHeight`, and `OnScroll` |
 | `state.doc.lines`, `doc.line(n)` | `LineCount`, `LineText` |
 | `MergeView`, `unifiedMergeView` | `DiffView` (`Split` on or off) |
 | `collapseUnchanged` | `DiffOptions.Collapse`, or the gaps of a patch |
@@ -208,6 +243,13 @@ in as many parts as your backend answers in. `Chunks`, `SelectedRange` and
 a review thread to a line of either file. The colors live in `Theme.Diff`, in
 both `DarkTheme` and `LightTheme`.
 
+For a narrow view, `DiffOptions.UnifiedGutter` set to `OneColumnGutter` numbers a
+unified diff's rows once (the new file's number, or the old one's for a deleted
+line), and `RevertPlacement` set to `RevertInGutter` puts the revert over the
+chunk's first line number instead of over the end of the code. `Height(gtx,
+width)` is how tall the rows are at a width, wrapped or not, unified or split,
+for a caller that gives each diff exactly the room it needs.
+
 ## The demo
 
 `cmd/godemirror-demo` shows what the library draws, in a window or headless: a
@@ -224,10 +266,16 @@ go run ./cmd/godemirror-demo -diff /tmp/change.patch -new path/to/changed/file -
 In the window: **Alt+W** toggles wrapping, **Alt+S** switches a diff between
 unified and side by side, and **Alt+N** opens a comment under the selected
 lines. Reverting a chunk of two files puts it back and shows the diff again.
-`-search text` highlights its matches and selects the first (with `-edit`,
+`-narrow` uses the narrow gutter, `-search text` highlights its matches and selects the first (with `-edit`,
 which shows the file in an `Editor`, it selects them all), `-light` uses
 `LightTheme`, and `-bench N` with `-shot out.png` runs it headless
-and reports frame times.
+and reports frame times. With `-edit`, `-lsp gopls` attaches a language server
+started in the file's directory; headless, `-at line:col` and `-type text` type
+at a place, `-hover x,y` rests the pointer (with `-ctrl`, Ctrl held), and
+`-wait 4s` keeps drawing until the server has answered, and `-key Shift+F12`
+then presses a key; `-format` formats the file through the server, and
+`-settings '{"gopls":{...}}'` gives the server its settings, and `-symbols`
+prints the file's outline.
 
 ## Requirements
 
@@ -269,3 +317,9 @@ licensed © 2018-2021 Marijn Haverbeke and others: see
 `@codemirror/view`, `@codemirror/commands`, `@codemirror/language` and
 `@marijn/find-cluster-break`, MIT licensed © 2018-2024 Marijn Haverbeke and
 others: see [their license](LICENSE.codemirror).
+
+`lsp/servers` holds data converted from
+[nvim-lspconfig](https://github.com/neovim/nvim-lspconfig) and
+[mason-registry](https://github.com/mason-org/mason-registry), Apache-2.0: see
+[its license](lsp/servers/LICENSE.apache) and [notice](lsp/servers/NOTICE); its filetype
+tables come from Vim by way of Neovim, under [the Vim license](lsp/servers/LICENSE.vim).

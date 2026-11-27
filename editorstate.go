@@ -127,6 +127,10 @@ func (s EditorState) SliceDoc(from, to int) string {
 // Selection is the selection.
 func (s EditorState) Selection() EditorSelection { return s.sel }
 
+// IndentUnit is one level of indentation in s, as CodeMirror's
+// getIndentUnit reads the indentUnit facet: spaces or tabs.
+func (s EditorState) IndentUnit() string { return s.conf.IndentUnit }
+
 // Lines is the number of lines, at least one.
 func (s EditorState) Lines() int { return len(s.lines) }
 

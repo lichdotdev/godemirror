@@ -32,7 +32,8 @@ type scrollTarget struct {
 // ScrollToLine scrolls the view down or up so that line (0-based) sits where
 // align says, as far as the document's ends allow. It takes effect on the next
 // Layout, against the content shown then; a line past the end is the last
-// line. It never scrolls sideways. On either side of a Split it scrolls both.
+// line. It never scrolls sideways. A View glides there as SetScrollTop does;
+// on either side of a Split it scrolls both, at once.
 func (v *View) ScrollToLine(line int, align Align) {
 	v.target = &scrollTarget{line: line, align: align}
 }
@@ -48,7 +49,7 @@ func (v *View) scrollToTarget(gtx layout.Context, f frame) bool {
 	line := min(max(t.line, 0), len(v.doc.lines)-1)
 	top := v.tops[line]
 	bottom := top + (v.starts[line+1]-v.starts[line])*f.ch
-	y := v.scroll.Y
+	y := v.heading()
 	switch t.align {
 	case AlignTop:
 		y = top

@@ -18,6 +18,19 @@ type Gap struct {
 	key, gen int
 }
 
+// UnifiedGutter is what a unified DiffView numbers its rows with.
+type UnifiedGutter uint8
+
+const (
+	// TwoColumnGutter shows the old line number and then the new one, each
+	// blank on a row that is not in that file, as `git diff` viewers do.
+	TwoColumnGutter UnifiedGutter = iota
+	// OneColumnGutter shows one number per row: the line's number in the
+	// modified file, or, for a deleted line, in the original. It takes about
+	// half the width of TwoColumnGutter, for a narrow view.
+	OneColumnGutter
+)
+
 // Side is which file of a diff a line is in.
 type Side uint8
 
@@ -287,16 +300,23 @@ type side struct {
 	reverts map[int]int
 }
 
-// unified is the single-column layout, with a two-column gutter: the old
-// number then the new one, each blank on a side the row is not in.
-func unified(rows []diffRow) side {
+// unified is the single-column layout. Its gutter is two columns, the old
+// number then the new one, each blank on a side the row is not in, or one,
+// holding the number a row has in the file it is in: the new one, or for a
+// deletion the old one.
+func unified(rows []diffRow, gutter UnifiedGutter) side {
 	width := 0
 	for _, r := range rows {
 		width = max(width, len(strconv.Itoa(max(r.oldLine, r.newLine))))
 	}
 	return layoutSide(rows, true, func(r diffRow) string {
-		if r.oldLine == 0 && r.newLine == 0 {
+		switch {
+		case r.oldLine == 0 && r.newLine == 0:
 			return ""
+		case gutter == OneColumnGutter && r.kind == rowDeleted:
+			return strconv.Itoa(r.oldLine)
+		case gutter == OneColumnGutter:
+			return strconv.Itoa(r.newLine)
 		}
 		return fmt.Sprintf("%*s %*s", width, lineNumber(r.oldLine), width, lineNumber(r.newLine))
 	})

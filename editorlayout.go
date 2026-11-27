@@ -29,40 +29,79 @@ const (
 // View.Layout's.
 func (e *Editor) Layout(gtx layout.Context) (layout.Dimensions, error) {
 	v := e.view
-	v.Wrap, v.Theme = e.Wrap, e.Theme
+	v.Wrap, v.Theme, v.ReduceMotion = e.Wrap, e.Theme, e.ReduceMotion
+	v.formatNumber = nil
+	if format := e.FormatNumber; format != nil {
+		v.formatNumber = func(line int) string { return format(line, e.shown) }
+	}
 	e.now = gtx.Now
 	defer func() { e.now = time.Time{} }()
+	e.runPosted()
 	e.show()
 	f, err := v.prepare(gtx)
 	if err != nil {
 		return layout.Dimensions{}, err
 	}
 	e.place(f)
+	e.takeDefinition(gtx)
+	e.takeReferences(gtx)
 	e.handleInput(gtx)
+	e.handlePopupPointer(gtx)
 	v.handlePointer(gtx, e.f)
 	if e.show() {
 		e.place(e.f)
 	}
 	e.scrollIntoView(gtx)
+	v.stepGlide(gtx, e.f)
 	e.trackCrosshair()
+	e.takeAnswers(gtx)
 	dims := v.paint(gtx, e.f)
+	e.popups.boxes = [popupKinds]image.Rectangle{}
+	e.paintDiagnostics(gtx)
+	e.paintLink(gtx)
 	if gtx.Focused(v) {
 		e.paintCarets(gtx)
 		e.tellIME(gtx)
 	}
-	if v.scroll != v.scrolled {
-		v.scrolled = v.scroll
-		if e.OnScroll != nil {
-			e.OnScroll()
-		}
-	}
+	e.paintPopups(gtx)
+	v.reportScroll(e.OnScroll)
 	e.report(gtx)
+	e.runLater()
+	e.reportDefinitions()
+	e.reportWorkspaceEdits()
 	return dims, nil
+}
+
+// takeAnswers follows the pointer's rest and the link under it, and takes
+// what the hooks running off the UI goroutine answered.
+func (e *Editor) takeAnswers(gtx layout.Context) {
+	e.trackHover(gtx)
+	e.trackLink()
+	e.takeCompletions(gtx)
+	e.takeSignature(gtx)
+	e.takeRename(gtx)
+	e.trackActions(gtx)
+}
+
+// paintPopups draws the popups over everything else, inside the editor.
+func (e *Editor) paintPopups(gtx layout.Context) {
+	defer clip.Rect(image.Rectangle{Max: e.f.size}).Push(gtx.Ops).Pop()
+	e.paintHover(gtx)
+	e.paintSignature(gtx)
+	e.paintCompletion(gtx)
+	e.paintActions(gtx)
+	e.paintRename(gtx)
 }
 
 // Focus gives the editor the keyboard, as CodeMirror's EditorView.focus: it
 // takes keys and text from the next frame on, and shows its carets.
 func (e *Editor) Focus(gtx layout.Context) { gtx.Execute(key.FocusCmd{Tag: e.view}) }
+
+// HasFocus reports whether the editor has the keyboard in gtx, as
+// @codemirror/view 6.43.15's EditorView.hasFocus. It answers before the
+// editor's Layout in a frame as well as after, so an app that reads its own
+// shortcuts first can leave the keys to a focused editor.
+func (e *Editor) HasFocus(gtx layout.Context) bool { return gtx.Focused(e.view) }
 
 // place lays the rows of what the view shows out in f.
 func (e *Editor) place(f frame) {
@@ -115,8 +154,9 @@ func (e *Editor) show() (edited bool) {
 }
 
 // scrollIntoView scrolls the main range's head into view, as CodeMirror's
-// scrollIntoView does by default, revealMargin clear of the edges; after a
-// page motion, it keeps the head's row where it was on screen instead.
+// scrollIntoView does by default, revealMargin clear of the edges, judged
+// where a glide lands; after a page motion, it keeps the head's row where it
+// was on screen instead. It glides down or up and moves sideways at once.
 func (e *Editor) scrollIntoView(gtx layout.Context) {
 	if !e.scrollPending {
 		return
@@ -130,7 +170,7 @@ func (e *Editor) scrollIntoView(gtx layout.Context) {
 		e.scrollTarget = nil
 	}
 	margin := gtx.Dp(revealMargin)
-	y := v.scroll.Y
+	y := v.heading()
 	switch {
 	case e.keepOnScreen != nil:
 		y = top - *e.keepOnScreen
@@ -140,7 +180,7 @@ func (e *Editor) scrollIntoView(gtx layout.Context) {
 	case top+f.ch+margin > y+f.size.Y:
 		y = top + f.ch + margin - f.size.Y
 	}
-	v.scroll.Y = min(max(y, 0), max(v.tops[len(v.tops)-1]-f.size.Y, 0))
+	v.glideTo(min(max(y, 0), max(v.tops[len(v.tops)-1]-f.size.Y, 0)))
 	if v.Wrap {
 		return
 	}

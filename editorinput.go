@@ -86,6 +86,29 @@ var keymap = []binding{
 	{"U", key.ModShortcut, selectionCommand(doneBranch), nil},
 	{"U", key.ModAlt, selectionCommand(undoneBranch), nil},
 	{"L", key.ModShortcut, nil, stateCommand(EditorState.selectSelectionMatches)},
+	// godemirror's own: F8 and Shift+F8 go to the next and the previous
+	// diagnostic, as in @codemirror/lint's keymap and VS Code, Ctrl+Space
+	// asks for completions, as @codemirror/autocomplete's keymap, Ctrl+.
+	// lists the code actions, F2 renames the name at the cursor and F12
+	// goes to its definition.
+	{key.NameF8, 0, func(e *Editor) (TransactionSpec, bool) { e.NextDiagnostic(0); return TransactionSpec{}, false },
+		func(e *Editor) (TransactionSpec, bool) { e.PrevDiagnostic(0); return TransactionSpec{}, false }},
+	{key.NameSpace, key.ModShortcut, func(e *Editor) (TransactionSpec, bool) {
+		e.askCompletion("", true)
+		return TransactionSpec{}, false
+	}, nil},
+	{".", key.ModShortcut, func(e *Editor) (TransactionSpec, bool) {
+		e.askActions(true)
+		return TransactionSpec{}, false
+	}, nil},
+	{key.NameF2, 0, func(e *Editor) (TransactionSpec, bool) {
+		e.startRename()
+		return TransactionSpec{}, false
+	}, nil},
+	{key.NameF12, 0, func(e *Editor) (TransactionSpec, bool) {
+		e.goTo(e.Definition, e.state.sel.Main().Head())
+		return TransactionSpec{}, false
+	}, nil},
 }
 
 // Clipboard keys, which a browser turns into the copy, cut and paste events
@@ -105,6 +128,18 @@ func (e *Editor) keyFilters() []event.Filter {
 		key.Filter{Focus: v, Name: keyCut, Required: key.ModShortcut},
 		key.Filter{Focus: v, Name: keyPaste, Required: key.ModShortcut},
 		key.Filter{Focus: v, Name: key.NameAlt, Optional: key.ModAlt | key.ModShift | key.ModShortcut | key.ModCtrl | key.ModSuper},
+		key.Filter{Focus: v, Name: key.NameCtrl, Optional: key.ModAlt | key.ModShift | key.ModShortcut | key.ModCtrl | key.ModSuper},
+	}
+	if e.completion.open || e.snippet != nil {
+		filters = append(filters, key.Filter{Focus: v, Name: key.NameTab, Optional: key.ModShift})
+	}
+	filters = append(filters, e.goToFilters()...)
+	if e.OnKey != nil {
+		filters = append(filters,
+			key.Filter{Focus: v, Optional: key.ModCtrl | key.ModCommand | key.ModShift | key.ModAlt | key.ModSuper},
+			// Gio's window moves focus on Tab and Shift+Tab unless a filter names them.
+			key.Filter{Focus: v, Name: key.NameTab, Optional: key.ModShift},
+		)
 	}
 	for _, b := range keymap {
 		f := key.Filter{Focus: v, Name: b.name, Required: b.mods}
@@ -124,15 +159,27 @@ func (e *Editor) handleInput(gtx layout.Context) {
 		if !ok {
 			return
 		}
+		if e.takenByOnKey(gtx, ev) {
+			continue
+		}
 		switch ev := ev.(type) {
 		case key.FocusEvent:
 			e.ime = imeState{}
+			if !ev.Focus {
+				e.closeCompletion()
+				e.closeSignature()
+			}
 		case key.Event:
 			e.onAltKey(ev)
+			e.onShortcutKey(ev)
 			if ev.State == key.Press {
 				e.onKey(gtx, ev)
 			}
 		case key.EditEvent:
+			if e.renameTyped(ev.Text) {
+				e.echoEdit(ev)
+				continue
+			}
 			e.onEdit(ev)
 		case key.SnippetEvent:
 			e.sendSnippet(gtx, key.Range(ev))
@@ -146,7 +193,41 @@ func (e *Editor) handleInput(gtx layout.Context) {
 	}
 }
 
+// takenByOnKey reports whether OnKey took ev from the editor. Gio's window
+// moved its text input's selection past a taken edit as if it were typed:
+// the SelectionEvent saying so is dropped, and the window takes the editor's
+// selection back after the frame.
+func (e *Editor) takenByOnKey(gtx layout.Context, ev event.Event) bool {
+	if e.OnKey == nil {
+		return false
+	}
+	switch ev := ev.(type) {
+	case key.Event:
+		return e.OnKey(gtx, ev)
+	case key.EditEvent:
+		if !e.OnKey(gtx, ev) {
+			return false
+		}
+		e.echoEdit(ev)
+		return true
+	}
+	return false
+}
+
+// echoEdit drops the selection Gio's window moves past ev, an edit the
+// editor took without applying it, as if it were typed.
+func (e *Editor) echoEdit(ev key.EditEvent) {
+	at := min(ev.Range.Start, ev.Range.End) + utf8.RuneCountInString(ev.Text)
+	e.ime.echo = &key.Range{Start: at, End: at}
+}
+
 func (e *Editor) onKey(gtx layout.Context, ev key.Event) {
+	if e.renameKey(ev) || e.actionKey(ev) || e.completionKey(ev) || e.snippetKey(ev) || e.signatureKey(ev) || e.goToKey(ev) {
+		return
+	}
+	if ev.Name == key.NameEscape {
+		e.occurrences = nil
+	}
 	mods := ev.Modifiers &^ key.ModShift
 	shift := ev.Modifiers.Contain(key.ModShift)
 	switch {
@@ -218,11 +299,14 @@ func (e *Editor) onPaste(ev transfer.DataEvent) {
 
 // imeState is what the editor last told Gio's text input of its document:
 // the main range and the snippet around it, in runes of the whole document,
-// as Gio counts them. composing is whether an input method is composing.
+// as Gio counts them. composing is whether an input method is composing, and
+// echo, when set, the selection Gio's window moved to after an edit OnKey
+// took.
 type imeState struct {
 	sel       key.Range
 	snippet   key.Snippet
 	composing bool
+	echo      *key.Range
 }
 
 // runeIndex is the number of runes of the document before pos.
@@ -249,10 +333,19 @@ func (e *Editor) onEdit(ev key.EditEvent) {
 	// Gio's text input puts the cursor after what it inserted.
 	newSel := from + len(normalizeBreaks(ev.Text, e.state.conf.LineSeparator))
 	e.mustDispatch(e.state.applyDefaultInsert(change, newSel, e.ime.composing))
+	if !e.ime.composing {
+		e.afterTyping(ev.Text)
+		e.signatureTyped(ev.Text)
+	}
 }
 
 // onIMESelection takes a selection an input method set as the main range.
 func (e *Editor) onIMESelection(r key.Range) {
+	echo := e.ime.echo
+	e.ime.echo = nil
+	if echo != nil && r == *echo {
+		return
+	}
 	main := e.state.sel.Main()
 	if r == (key.Range{Start: e.runeIndex(main.Anchor()), End: e.runeIndex(main.Head())}) {
 		return

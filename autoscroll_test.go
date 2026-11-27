@@ -128,7 +128,7 @@ func TestAutoScrollStopsAtTheEndOfTheDocument(t *testing.T) {
 func TestAutoScrollGoesUpWhenDraggedAboveTheView(t *testing.T) {
 	h := newHarness(t, manyLines(100))
 	h.v.ScrollToLine(60, AlignTop)
-	h.frame()
+	h.settle()
 	start := h.v.scroll.Y
 	h.pointer(pointer.Press, h.at(1, 0), 0)
 	p := h.at(0, 1)

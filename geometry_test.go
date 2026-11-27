@@ -38,7 +38,7 @@ func TestLineBlockCoversALinesRowsAndNotTheBlocksUnderIt(t *testing.T) {
 	}
 }
 
-func TestOnScrollHearsOfEveryScrollOnce(t *testing.T) {
+func TestOnScrollHearsOfTheUsersScrollsOnce(t *testing.T) {
 	h := newHarness(t, manyLines(200))
 	calls := 0
 	h.v.OnScroll = func() { calls++ }
@@ -51,13 +51,13 @@ func TestOnScrollHearsOfEveryScrollOnce(t *testing.T) {
 		t.Fatal("a frame that did not scroll called OnScroll")
 	}
 	h.v.SetScrollTop(1 << 20)
-	h.frame()
-	if calls != 2 || h.v.ScrollTop() != h.v.ContentHeight()-h.size.Y {
+	h.settle()
+	if calls != 1 || h.v.ScrollTop() != h.v.ContentHeight()-h.size.Y {
 		t.Fatalf("SetScrollTop past the end: %d calls, scrolled to %d", calls, h.v.ScrollTop())
 	}
 }
 
-func TestAnEditorsGeometryIsTheLastFramesAndItsScrollIsHeard(t *testing.T) {
+func TestAnEditorsGeometryIsTheLastFramesAndOnlyTheWheelIsHeard(t *testing.T) {
 	h, _ := focusedEditor(t, EditorStateConfig{Doc: manyLines(200)}, SingleSelection(0, 0))
 	ch := h.v.r.CellH()
 	scrolled := 0
@@ -76,13 +76,18 @@ func TestAnEditorsGeometryIsTheLastFramesAndItsScrollIsHeard(t *testing.T) {
 		t.Fatalf("height %d is line %d, want 3", 2*ch+1, l.Number)
 	}
 	h.press(key.NameEnd, key.ModShortcut)
-	if scrolled != 1 || h.ed.ScrollTop() == 0 {
-		t.Fatalf("Ctrl+End scrolled to %d with %d OnScroll calls", h.ed.ScrollTop(), scrolled)
+	h.advance(glideDuration)
+	if scrolled != 0 || h.ed.ScrollTop() == 0 {
+		t.Fatalf("Ctrl+End scrolled to %d with %d OnScroll calls, want none", h.ed.ScrollTop(), scrolled)
 	}
-	h.ed.SetScrollTop(0)
+	h.send(pointer.Event{Kind: pointer.Scroll, Source: pointer.Mouse, Position: f32.Pt(100, 100), Scroll: f32.Pt(0, -40)})
+	if scrolled != 1 {
+		t.Fatalf("the wheel: %d OnScroll calls, want 1", scrolled)
+	}
+	h.ed.SnapScrollTop(0)
 	h.frame()
-	if scrolled != 2 || h.ed.ScrollTop() != 0 {
-		t.Fatalf("SetScrollTop(0): at %d, %d calls", h.ed.ScrollTop(), scrolled)
+	if scrolled != 1 || h.ed.ScrollTop() != 0 {
+		t.Fatalf("SnapScrollTop(0): at %d, %d calls", h.ed.ScrollTop(), scrolled)
 	}
 }
 
@@ -158,5 +163,60 @@ func TestAnEditorsGeometryIsItsViews(t *testing.T) {
 	h.frame()
 	if g := h.ed.Geometry(); g != h.ed.view.Geometry() || g.GutterWidth == 0 {
 		t.Fatalf("editor geometry %+v, its view's %+v", g, h.ed.view.Geometry())
+	}
+}
+
+func TestCoordsAtPosIsAZeroWidthRowHighRectangleOnScreen(t *testing.T) {
+	h := newEditorHarness(t, EditorStateConfig{Doc: "ab\n" + wideSample})
+	g, ch := h.ed.Geometry(), h.v.r.CellH()
+	for _, c := range []struct{ pos, cells, line int }{{0, 0, 0}, {4, 1, 1}, {7, 3, 1}, {8, 4, 1}} {
+		r, ok := h.ed.CoordsAtPos(c.pos, 1)
+		x, y := g.TextX+c.cells*g.CellWidth, c.line*ch
+		if !ok || r.Min.X != x || r.Max.X != x || r.Min.Y != y || r.Max.Y != y+ch {
+			t.Fatalf("CoordsAtPos(%d) %v %v, want x %d from %d to %d", c.pos, r, ok, x, y, y+ch)
+		}
+	}
+	h.size.Y = ch
+	h.ed.SetScrollTop(ch)
+	h.frame()
+	if r, _ := h.ed.CoordsAtPos(4, 1); r.Min.Y != 0 {
+		t.Fatalf("scrolled a row down, line 2 at %d, want 0", r.Min.Y)
+	}
+}
+
+func TestCoordsAtPosTakesASideWhereALineWraps(t *testing.T) {
+	h := newEditorHarness(t, EditorStateConfig{Doc: strings.Repeat("word ", 40)})
+	h.ed.Wrap = true
+	h.frame()
+	g, ch, end := h.ed.Geometry(), h.v.r.CellH(), h.v.wraps[0][1]
+	before, _ := h.ed.CoordsAtPos(end, -1)
+	after, _ := h.ed.CoordsAtPos(end, 1)
+	// The row after the break hangs under the line's indentation.
+	hang := hangOf(h.v.doc.lines[0], h.v.wrapCols)
+	if before.Min != image.Pt(g.TextX+end*g.CellWidth, 0) || after.Min != image.Pt(g.TextX+hang*g.CellWidth, ch) {
+		t.Fatalf("at the wrap, side -1 %v and 1 %v, want the end of row 1 and the start of row 2", before, after)
+	}
+}
+
+func TestCoordsAtPosIsFalseOutsideWhatWasLaidOut(t *testing.T) {
+	e := newTestEditor(t, EditorStateConfig{Doc: "ab"})
+	if _, ok := e.CoordsAtPos(0, 1); ok {
+		t.Fatal("CoordsAtPos before any Layout reported a place")
+	}
+	h := newEditorHarness(t, EditorStateConfig{Doc: wideSample})
+	for _, pos := range []int{-1, 2, len(wideSample) + 1} {
+		if _, ok := h.ed.CoordsAtPos(pos, 1); ok {
+			t.Fatalf("CoordsAtPos(%d) in %q reported a place", pos, wideSample)
+		}
+	}
+	dispatch(t, h.ed, TransactionSpec{Changes: []ChangeSpec{ins(0, "\n")}})
+	if r, ok := h.ed.CoordsAtPos(len(wideSample), 1); !ok || r.Min.Y != 0 {
+		t.Fatalf("after a Dispatch, the end at %v %v, want still the first row's, as on screen", r, ok)
+	}
+	if err := h.ed.SetState(EditorStateConfig{Doc: "a"}); err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := h.ed.CoordsAtPos(0, 1); ok {
+		t.Fatal("CoordsAtPos for a state set since the Layout reported a place")
 	}
 }

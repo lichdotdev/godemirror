@@ -19,6 +19,11 @@ const (
 	// RightEdge puts the widget against the code area's right edge, on the
 	// line's first row.
 	RightEdge
+	// GutterCell draws the widget over the line's gutter cell, on the line's
+	// first row, in place of its label: the label is not drawn while the
+	// widget is. It is laid out with at most the gutter's width and one
+	// row's height, and centered in the cell.
+	GutterCell
 )
 
 // rightEdgeInset is a RightEdge widget's distance from the edge, 0.375rem
@@ -45,34 +50,86 @@ func (v *View) paintWidgets(gtx layout.Context, f frame, rows []visibleRow, code
 	v.widgetAreas = v.widgetAreas[:0]
 	defer clip.Rect(code).Push(gtx.Ops).Pop()
 	for _, w := range v.content.Widgets {
-		if w.WhileHovered && (v.hot == 0 || v.decoration(w.Line).HoverGroup != v.hot) {
+		if w.Placement == GutterCell {
 			continue
 		}
-		r, ok := v.widgetRow(w, rows)
+		r, ok := v.shownWidgetRow(w, rows)
 		if !ok {
 			continue
 		}
-		wgtx := gtx
-		wgtx.Constraints = layout.Constraints{Max: image.Pt(code.Dx(), f.ch)}
-		macro := op.Record(gtx.Ops)
-		dims := w.Widget(wgtx)
-		call := macro.Stop()
+		call, dims := v.layoutWidget(gtx, w, image.Pt(code.Dx(), f.ch))
 		at := image.Pt(0, r.y+(f.ch-dims.Size.Y)/2)
 		if w.Placement == RightEdge {
 			at.X = code.Max.X - gtx.Dp(rightEdgeInset) - dims.Size.X
 		} else {
 			segFrom, _ := v.segmentSpan(r.line, r.segment)
-			at.X = f.g.textX + (len(v.doc.lines[r.line])-segFrom+1)*f.cw
+			at.X = f.g.textX + (v.hang(r.line, r.segment)+len(v.doc.lines[r.line])-segFrom+1)*f.cw
 			if !v.Wrap {
 				at.X -= v.scroll.X
 			}
 		}
-		area := image.Rectangle{Min: at, Max: at.Add(dims.Size)}
-		v.widgetAreas = append(v.widgetAreas, area)
-		t := op.Offset(at).Push(gtx.Ops)
-		call.Add(gtx.Ops)
-		t.Pop()
+		v.placeWidget(gtx, call, at, dims)
 	}
+}
+
+// paintGutterWidgets draws the GutterCell widgets over the gutter, which is
+// already painted, centered in their cells.
+func (v *View) paintGutterWidgets(gtx layout.Context, f frame, rows []visibleRow) {
+	defer clip.Rect(image.Rect(0, 0, f.g.gutterW, f.size.Y)).Push(gtx.Ops).Pop()
+	for _, w := range v.content.Widgets {
+		if w.Placement != GutterCell {
+			continue
+		}
+		r, ok := v.shownWidgetRow(w, rows)
+		if !ok {
+			continue
+		}
+		call, dims := v.layoutWidget(gtx, w, image.Pt(f.g.gutterW, f.ch))
+		at := image.Pt(max((f.g.gutterW-dims.Size.X)/2, 0), r.y+(f.ch-dims.Size.Y)/2)
+		v.placeWidget(gtx, call, at, dims)
+	}
+}
+
+// coveredLabels are the lines whose gutter label a GutterCell widget
+// replaces this frame.
+func (v *View) coveredLabels(rows []visibleRow) map[int]bool {
+	var covered map[int]bool
+	for _, w := range v.content.Widgets {
+		if _, ok := v.shownWidgetRow(w, rows); ok && w.Placement == GutterCell {
+			if covered == nil {
+				covered = map[int]bool{}
+			}
+			covered[w.Line] = true
+		}
+	}
+	return covered
+}
+
+// shownWidgetRow is the row w is drawn on, if it is on screen and not
+// waiting for a hover.
+func (v *View) shownWidgetRow(w LineWidget, rows []visibleRow) (visibleRow, bool) {
+	if w.WhileHovered && (v.hot == 0 || v.decoration(w.Line).HoverGroup != v.hot) {
+		return visibleRow{}, false
+	}
+	return v.widgetRow(w, rows)
+}
+
+// layoutWidget lays w out once, within limit, and records it to be placed.
+func (v *View) layoutWidget(gtx layout.Context, w LineWidget, limit image.Point) (op.CallOp, layout.Dimensions) {
+	wgtx := gtx
+	wgtx.Constraints = layout.Constraints{Max: limit}
+	macro := op.Record(gtx.Ops)
+	dims := w.Widget(wgtx)
+	return macro.Stop(), dims
+}
+
+// placeWidget draws a laid-out widget at at, and remembers where, so a press
+// there is the widget's.
+func (v *View) placeWidget(gtx layout.Context, call op.CallOp, at image.Point, dims layout.Dimensions) {
+	v.widgetAreas = append(v.widgetAreas, image.Rectangle{Min: at, Max: at.Add(dims.Size)})
+	t := op.Offset(at).Push(gtx.Ops)
+	call.Add(gtx.Ops)
+	t.Pop()
 }
 
 // widgetRow is the visible row w sits on, if it is on screen.

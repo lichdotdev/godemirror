@@ -36,6 +36,31 @@ type Theme struct {
 	SearchMatch, SearchCurrent color.NRGBA
 	// Diff colors a DiffView's changes and the rows around them.
 	Diff DiffColors
+	// Diagnostics colors an Editor's diagnostics, their wavy underline and
+	// their dot in the gutter, by severity.
+	Diagnostics DiagnosticColors
+	// Popup draws the boxes an Editor shows over its text: a diagnostic's
+	// message, a hover, the completions.
+	Popup PopupColors
+	// Occurrence tints the references an Editor's References found in its
+	// document, as CodeMirror's selectionMatch tints a selection's
+	// matches. Like Selection it may be translucent.
+	Occurrence color.NRGBA
+}
+
+// DiagnosticColors are the colors of a diagnostic of each severity.
+type DiagnosticColors struct {
+	Error, Warning, Info, Hint color.NRGBA
+}
+
+// PopupColors are how an Editor's popups are drawn: a box of Background
+// edged with Border, text in Foreground, and what is secondary (a
+// diagnostic's source, a completion's detail, a hover's documentation) in
+// Muted. The chosen completion is filled with Selected and drawn in
+// SelectedForeground.
+type PopupColors struct {
+	Background, Border, Foreground, Muted color.NRGBA
+	Selected, SelectedForeground          color.NRGBA
 }
 
 // DiffColors are the colors of a diff. Like a LineDecoration's, each may be
@@ -87,6 +112,16 @@ func percent(c color.NRGBA, p int) color.NRGBA {
 	return c
 }
 
+// The blue and the amber of the diagnostics, and the zinc of the popups,
+// from the same oklch palette as the rest.
+var (
+	blue400  = rgb(0x51a2ff)
+	blue600  = rgb(0x155dfc)
+	amber600 = rgb(0xe17100)
+	zinc800  = rgb(0x27272a)
+	zinc900  = rgb(0x18181b)
+)
+
 // DarkTheme is the palette a new View starts with: zinc greys under an oklch
 // syntax palette, converted to sRGB. A theme of your own starts as a copy of
 // DarkTheme or LightTheme with the fields you want changed.
@@ -118,7 +153,14 @@ var DarkTheme = Theme{
 		},
 		Separator:       percent(rgb(0xffffff), 10),
 		Filler:          percent(rgb(0xffffff), 7),
-		AffordanceHover: rgb(0x27272a),
+		AffordanceHover: zinc800,
+	},
+	Diagnostics: DiagnosticColors{Error: red400, Warning: amber400, Info: blue400, Hint: rgb(0x9f9fa9)},
+	Occurrence:  percent(blue400, 22),
+	Popup: PopupColors{
+		Background: zinc900, Border: over(percent(rgb(0xffffff), 10), zinc900),
+		Foreground: rgb(0xfafafa), Muted: rgb(0x9f9fa9),
+		Selected: zinc800, SelectedForeground: rgb(0xfafafa),
 	},
 }
 
@@ -153,6 +195,13 @@ var LightTheme = Theme{
 		Separator:       rgb(0xdadadd),
 		Filler:          percent(rgb(0x18181b), 7),
 		AffordanceHover: rgb(0xdedee0),
+	},
+	Diagnostics: DiagnosticColors{Error: rgb(0xe7000b), Warning: amber600, Info: blue600, Hint: rgb(0x64636e)},
+	Occurrence:  percent(blue600, 15),
+	Popup: PopupColors{
+		Background: rgb(0xfafafa), Border: rgb(0xdadadd),
+		Foreground: zinc900, Muted: rgb(0x64636e),
+		Selected: rgb(0xdedee0), SelectedForeground: zinc900,
 	},
 }
 

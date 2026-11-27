@@ -31,6 +31,7 @@ var (
 	flagNew     = flag.String("new", "", "with -diff, the new file's text, which fills the lines the diff left out")
 	flagChanges = flag.Bool("changes", false, "in a diff, tint the words that changed within a line")
 	flagSplit   = flag.Bool("split", false, "start a diff side by side")
+	flagNarrow  = flag.Bool("narrow", false, "in a diff, one line number per row and the revert in the gutter")
 	flagWrap    = flag.Bool("wrap", false, "wrap long lines instead of scrolling sideways")
 	flagEdit    = flag.Bool("edit", false, "show -file in an Editor")
 	flagSearch  = flag.String("search", "", "highlight the matches of this text, and select the first one; with -edit, select them all")
@@ -57,7 +58,13 @@ func main() {
 	if err := d.search(*flagSearch); err != nil {
 		log.Fatal(err)
 	}
+	if err := d.placeCursor(); err != nil {
+		log.Fatal(err)
+	}
 	if *flagShot != "" || *flagBench > 0 {
+		if err := d.attachLSP(nil); err != nil {
+			log.Fatal(err)
+		}
 		if err := runHeadless(d); err != nil {
 			log.Fatal(err)
 		}
@@ -65,6 +72,9 @@ func main() {
 	}
 	go func() {
 		w := new(app.Window)
+		if err := d.attachLSP(w.Invalidate); err != nil {
+			log.Fatal(err)
+		}
 		w.Option(app.Title("godemirror: Alt+W wrap, Alt+S side by side, Alt+N comment on the selection"), app.Size(unit.Dp(*flagWidth), unit.Dp(*flagHeight)))
 		if err := runWindow(w, d); err != nil {
 			log.Fatal(err)
@@ -110,17 +120,13 @@ func runHeadless(d *demo) error {
 		return err
 	}
 	frames := max(*flagBench, 1) + 1
-	for i := range frames {
-		if i == frames-1 && hover != nil {
-			router.Queue(pointer.Event{Kind: pointer.Move, Source: pointer.Mouse, Position: *hover})
-		} else if i > 0 && *flagBench > 0 {
-			router.Queue(pointer.Event{
-				Kind:     pointer.Scroll,
-				Source:   pointer.Mouse,
-				Position: f32.Pt(float32(size.X)/2, float32(size.Y)/2),
-				Scroll:   f32.Pt(float32(*flagSide), float32(*flagStep)),
-			})
+	var w waiting
+	for i := 0; i < frames; i++ {
+		if i == frames-1 && w.lastFrameWaits(&router, hover) {
+			frames++
+			time.Sleep(frameWait)
 		}
+		queueInput(&router, size, hover, i, frames)
 		start := time.Now()
 		ops.Reset()
 		gtx := layout.Context{
@@ -149,6 +155,24 @@ func runHeadless(d *demo) error {
 	}
 	return nil
 }
+
+// queueInput queues frame i's input: the pointer resting at hover before
+// the last frame, else, with -bench, a scroll.
+func queueInput(router *input.Router, size image.Point, hover *f32.Point, i, frames int) {
+	if i == frames-1 && hover != nil && *flagWait == 0 {
+		router.Queue(hoverEvent(*hover))
+	} else if i > 0 && *flagBench > 0 {
+		router.Queue(pointer.Event{
+			Kind:     pointer.Scroll,
+			Source:   pointer.Mouse,
+			Position: f32.Pt(float32(size.X)/2, float32(size.Y)/2),
+			Scroll:   f32.Pt(float32(*flagSide), float32(*flagStep)),
+		})
+	}
+}
+
+// frameWait is the time between frames while the demo waits for a server.
+const frameWait = 16 * time.Millisecond
 
 func report(what string, times []time.Duration) {
 	if len(times) == 0 {

@@ -136,6 +136,7 @@ func (e *Editor) trackCrosshair() {
 	if mods := e.view.mods; mods != e.pointerMods {
 		e.pointerMods = mods
 		e.altDown = mods.Contain(key.ModAlt)
+		e.shortcutDown = mods.Contain(key.ModShortcut)
 	}
 	e.view.cursor = pointer.CursorText
 	if e.CrosshairCursor && e.altDown {

@@ -406,5 +406,8 @@ func (r *Rasterizer) Strikethrough() Rule { return r.strikethrough }
 // CellW is the width of one monospace cell in pixels at the current size.
 func (r *Rasterizer) CellW() int { return r.cellW }
 
+// Ascent is how far a row's baseline is below its top.
+func (r *Rasterizer) Ascent() int { return r.ascent }
+
 // CellH is the height of one line in pixels at the current size.
 func (r *Rasterizer) CellH() int { return r.cellH }

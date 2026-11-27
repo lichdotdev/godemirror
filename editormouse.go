@@ -22,6 +22,9 @@ type mouseSelection struct {
 	addsToRange bool
 	// rect, when set, is a rectangular selection the press started.
 	rect *rectangle
+	// toDefinition is whether the press went to a definition, which
+	// selects nothing, the drag after it included.
+	toDefinition bool
 }
 
 // posAndSide is the position under at, a point in the view, and the side of
@@ -35,6 +38,16 @@ func (e *Editor) posAndSide(f frame, at image.Point) (pos, assoc int) {
 func (m *mouseSelection) press(f frame, at image.Point, clicks int, mods key.Modifiers) {
 	e := m.e
 	m.rect = nil
+	m.toDefinition = false
+	e.closeCompletion()
+	e.clearHover()
+	if e.Definition != nil && mods.Contain(key.ModShortcut) && clicks == 1 {
+		if name, ok := e.nameAt(at); ok {
+			m.toDefinition = true
+			e.goTo(e.Definition, name.from)
+			return
+		}
+	}
 	if e.RectangularSelection && mods.Contain(key.ModAlt) {
 		m.rect = &rectangle{start: e.rectPosAt(f, at), startSel: e.state.sel,
 			adds: e.state.conf.AllowMultipleSelections && mods.Contain(key.ModShortcut)}
@@ -50,6 +63,9 @@ func (m *mouseSelection) press(f frame, at image.Point, clicks int, mods key.Mod
 }
 
 func (m *mouseSelection) drag(f frame, at image.Point) {
+	if m.toDefinition {
+		return
+	}
 	if m.rect != nil {
 		sel := m.rect.get(m.e.state, m.e.rectPosAt(f, at))
 		m.e.mustDispatch(TransactionSpec{Selection: sel, UserEvent: "select.pointer"})

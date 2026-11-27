@@ -65,7 +65,7 @@ func TestRenumberRowsKeepsMovesAndDrops(t *testing.T) {
 	h := newHarness(t, "")
 	before, edited, after := &rowImage{}, &rowImage{}, &rowImage{}
 	h.v.rows = map[rowKey]*rowImage{{line: 0}: before, {line: 2}: edited, {line: 5, segment: 1}: after}
-	h.v.gutter = map[int]*rowImage{0: {}}
+	h.v.gutter = map[gutterKey]*rowImage{{line: 0, text: "1"}: {}}
 	// Lines [2, 4) became three lines: one more.
 	h.v.renumberRows(2, 4, 1)
 	want := map[rowKey]*rowImage{{line: 0}: before, {line: 6, segment: 1}: after}

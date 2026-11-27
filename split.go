@@ -52,12 +52,12 @@ func (s *Split) SetTheme(t Theme) {
 // for either side.
 func (s *Split) Layout(gtx layout.Context) (layout.Dimensions, error) {
 	size := gtx.Constraints.Max
-	divider := max(gtx.Dp(1), 1)
-	leftW := (size.X - divider) / 2
+	divider := splitDivider(gtx)
+	leftW, rightW := splitWidths(size.X, divider)
 	rightX := leftW + divider
 	lgtx, rgtx := gtx, gtx
 	lgtx.Constraints = layout.Exact(image.Pt(leftW, size.Y))
-	rgtx.Constraints = layout.Exact(image.Pt(size.X-rightX, size.Y))
+	rgtx.Constraints = layout.Exact(image.Pt(rightW, size.Y))
 
 	s.Left.Wrap, s.Right.Wrap = s.Wrap, s.Wrap
 	s.Left.Nested, s.Right.Nested = s.Nested, s.Nested
@@ -91,6 +91,16 @@ func (s *Split) Layout(gtx layout.Context) (layout.Dimensions, error) {
 	defer op.Offset(image.Pt(rightX, 0)).Push(gtx.Ops).Pop()
 	s.Right.paint(rgtx, rf)
 	return layout.Dimensions{Size: size}, nil
+}
+
+// splitDivider is the width of the line between the sides.
+func splitDivider(gtx layout.Context) int { return max(gtx.Dp(1), 1) }
+
+// splitWidths are the widths of the two sides of a split width pixels wide
+// with a divider between them.
+func splitWidths(width, divider int) (left, right int) {
+	left = (width - divider) / 2
+	return left, width - left - divider
 }
 
 // input lets each side take its own pointer and keys, then carries whichever

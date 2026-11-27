@@ -53,12 +53,18 @@ type View struct {
 	// Theme colors the view; it starts as DarkTheme. A change shows on the
 	// next Layout, which composes the rows on screen again.
 	Theme Theme
-	// OnScroll, when set, is called at the end of a Layout that leaves the
-	// view scrolled elsewhere than the last call saw it, whatever moved it
-	// (the wheel, a drag, ScrollToLine, SetScrollTop), so that other views
-	// can follow; never while the view paints. A Split or a DiffView does
-	// not call it.
+	// OnScroll, when set, is called at the end of a Layout in which the
+	// user scrolled the view, with the wheel, the touchpad or a selection
+	// dragged past an edge; never while the view paints. What the program
+	// scrolls (SetScrollTop, SnapScrollTop, ScrollToLine, an Editor keeping
+	// its cursor in view) and every frame of a glide does not call it, so a
+	// caller that mirrors the scroll elsewhere hears no echo of its own:
+	// ScrollTarget says where a glide lands, and ScrollTop, read after each
+	// Layout, where the view is. A Split or a DiffView does not call it.
 	OnScroll func()
+	// ReduceMotion makes every scroll the program asks for land at once
+	// instead of gliding there; Gio reports no platform preference for it.
+	ReduceMotion bool
 
 	// r may be shared with the other side of a Split; px and composedIn are
 	// the size and the theme this view's row images were composed at.
@@ -95,11 +101,14 @@ type View struct {
 	extra    []int
 	wrapCols int
 	scroll   image.Point
-	// target is a ScrollToLine waiting for the next Layout.
+	// target is a ScrollToLine waiting for the next Layout, and glide the
+	// slide to where the program last scrolled the view.
 	target *scrollTarget
+	glide  glide
 
-	// scrolled is the scroll position OnScroll was last told of.
-	scrolled image.Point
+	// userScrolled is whether the user scrolled the view since OnScroll was
+	// last called.
+	userScrolled bool
 
 	sel selection
 	// selecting is what a press and a drag select: the view's own selection,
@@ -122,6 +131,10 @@ type View struct {
 	// mods are the modifiers the last pointer event had held: a Nested view
 	// reads Shift before the wheel arrives to know whether to claim it.
 	mods key.Modifiers
+	// pointerAt is where the pointer last was over the view, and pointerIn
+	// whether it still is.
+	pointerAt image.Point
+	pointerIn bool
 	// cursor is the pointer's shape over the code.
 	cursor pointer.Cursor
 	// widgetAreas are where last frame's widgets were drawn, which a press
@@ -134,7 +147,21 @@ type View struct {
 	frameNo uint64
 	hatches map[hatchKey]*rowImage
 	rows    map[rowKey]*rowImage
-	gutter  map[int]*rowImage
+	gutter  map[gutterKey]*rowImage
+	// extraSpans, when set, are more spans to tint on a line, an Editor's
+	// highlighted references.
+	extraSpans func(line int) []Span
+	// spans are the images of the text an Editor's popups show.
+	spans map[textSpan]*rowImage
+	// formatNumber, set by an Editor with FormatNumber, spells line's number.
+	formatNumber func(line int) string
+}
+
+// gutterKey names a gutter label's image: its line and its text, which an
+// Editor's FormatNumber may change while the line stays.
+type gutterKey struct {
+	line int
+	text string
 }
 
 // rowKey names the cells a row image holds: span cells of line from col, cut
@@ -174,8 +201,9 @@ func newView(r *glyphs.Rasterizer, size unit.Sp) *View {
 
 func (v *View) dropRows() {
 	v.rows = map[rowKey]*rowImage{}
-	v.gutter = map[int]*rowImage{}
+	v.gutter = map[gutterKey]*rowImage{}
 	v.hatches = map[hatchKey]*rowImage{}
+	v.spans = map[textSpan]*rowImage{}
 }
 
 // Layout draws the view into the whole of gtx.Constraints.Max, takes the
@@ -200,17 +228,28 @@ func (v *View) Layout(gtx layout.Context) (layout.Dimensions, error) {
 	v.starts = rowStarts(v.wraps, nil)
 	v.tops = lineTops(v.starts, f.ch, v.extra)
 	v.laid = v.doc
-	v.scrollToTarget(gtx, f)
+	if from := v.scroll.Y; v.scrollToTarget(gtx, f) {
+		to := v.scroll.Y
+		v.scroll.Y = from
+		v.glideTo(to)
+	}
 	v.handlePointer(gtx, f)
 	v.handleKeys(gtx)
+	v.stepGlide(gtx, f)
 	dims := v.paint(gtx, f)
-	if v.scroll != v.scrolled {
-		v.scrolled = v.scroll
-		if v.OnScroll != nil {
-			v.OnScroll()
+	v.reportScroll(v.OnScroll)
+	return dims, nil
+}
+
+// reportScroll calls onScroll, when set, if the user scrolled the view since
+// the last call.
+func (v *View) reportScroll(onScroll func()) {
+	if v.userScrolled {
+		v.userScrolled = false
+		if onScroll != nil {
+			onScroll()
 		}
 	}
-	return dims, nil
 }
 
 // frame is one frame's measurements, carried between the phases of a layout.
@@ -272,9 +311,15 @@ type geometry struct {
 }
 
 func (v *View) geometry(size image.Point, cw int) geometry {
-	gutterW := (v.labelWidth + 2) * cw
+	return geometryOf(v.labelWidth, size.X, cw)
+}
+
+// geometryOf is the geometry of a view width pixels wide, with cw-wide cells
+// and labels labelWidth cells wide.
+func geometryOf(labelWidth, width, cw int) geometry {
+	gutterW := (labelWidth + 2) * cw
 	textX := gutterW + cw/2
-	return geometry{gutterW: gutterW, textX: textX, cols: max((size.X-textX)/cw, 1)}
+	return geometry{gutterW: gutterW, textX: textX, cols: max((width-textX)/cw, 1)}
 }
 
 func (v *View) wrapRows(cols int) {
@@ -310,7 +355,7 @@ func (v *View) paintRows(gtx layout.Context, f frame) {
 	}
 	for _, r := range rows {
 		img := v.row(r.line, r.segment, firstCol, page)
-		v.paintImage(gtx, img, image.Pt(x, r.y), code)
+		v.paintImage(gtx, img, image.Pt(x+v.hang(r.line, r.segment)*cw, r.y), code)
 	}
 	v.paintWidgets(gtx, f, rows, code)
 	v.paintBlocks(gtx, blocks, code)
@@ -318,12 +363,14 @@ func (v *View) paintRows(gtx layout.Context, f frame) {
 	// under it instead of showing through.
 	paint.FillShape(gtx.Ops, v.Theme.GutterBackground, clip.Rect(image.Rect(0, 0, g.gutterW, size.Y)).Op())
 	v.paintGutterDecorations(gtx, rows, g.gutterW, ch)
+	covered := v.coveredLabels(rows)
 	for _, r := range rows {
-		if r.segment > 0 {
+		if r.segment > 0 || covered[r.line] {
 			continue
 		}
 		v.paintGutterLabel(gtx, r.line, r.y, g, cw)
 	}
+	v.paintGutterWidgets(gtx, f, rows)
 }
 
 // pageStep is the granularity of an unwrapped page, in columns: a view
@@ -350,10 +397,11 @@ func (v *View) paintImage(gtx layout.Context, img *rowImage, at image.Point, are
 }
 
 func (v *View) paintGutterLabel(gtx layout.Context, line, y int, g geometry, cw int) {
-	img, ok := v.gutter[line]
+	k := gutterKey{line, v.label(line)}
+	img, ok := v.gutter[k]
 	if !ok {
-		img = v.compose(textCells(v.label(line)), nil)
-		v.gutter[line] = img
+		img = v.compose(textCells(k.text), nil)
+		v.gutter[k] = img
 	}
 	img.used = v.frameNo
 	at := image.Pt(g.gutterW-cw-img.size.X, y)
@@ -401,14 +449,22 @@ func (v *View) compose(cells []rune, cellTags []*lezer.TagSet) *rowImage {
 }
 
 func (v *View) rasterize(cells []rune, cellTags []*lezer.TagSet) *image.RGBA {
+	return v.rasterizeStyled(cells, func(i int) TagStyle {
+		if cellTags == nil {
+			return TagStyle{Color: v.Theme.GutterForeground}
+		}
+		return v.Theme.Highlight.style(cellTags[i], v.Theme.Foreground)
+	})
+}
+
+// rasterizeStyled draws cells into a transparent image a row high, cell i
+// in styleOf(i).
+func (v *View) rasterizeStyled(cells []rune, styleOf func(i int) TagStyle) *image.RGBA {
 	cw, ch := v.r.CellW(), v.r.CellH()
 	dst := image.NewRGBA(image.Rect(0, 0, len(cells)*cw, ch))
 	for i, c := range cells {
 		x := i * cw
-		style := TagStyle{Color: v.Theme.GutterForeground}
-		if cellTags != nil {
-			style = v.Theme.Highlight.style(cellTags[i], v.Theme.Foreground)
-		}
+		style := styleOf(i)
 		v.decorate(dst, x, style)
 		if isTail(c) {
 			if i > 0 {
@@ -461,6 +517,13 @@ func (v *View) evict() {
 	for k, img := range v.hatches {
 		if img.used != v.frameNo {
 			delete(v.hatches, k)
+		}
+	}
+	// Popups are painted after the rows, past this eviction: a span the
+	// last frame drew is kept.
+	for k, img := range v.spans {
+		if img.used+1 < v.frameNo {
+			delete(v.spans, k)
 		}
 	}
 }
