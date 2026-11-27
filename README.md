@@ -1,6 +1,6 @@
 <div align="center">
   <h1>godemirror</h1>
-  <p><strong>A code editor library for Go and <a href="https://gioui.org">Gio</a>, with a language-server client, a code view and a diff view.</strong></p>
+  <p><strong>A code editor for <a href="https://gioui.org">Gio</a> apps, written in Go: syntax highlighting, completions from any language server, and side-by-side diffs, without embedding a browser.</strong></p>
   <p>
     <a href="https://pkg.go.dev/github.com/lichdotdev/godemirror"><img alt="Go Reference" src="https://pkg.go.dev/badge/github.com/lichdotdev/godemirror.svg" /></a>
     <a href="https://github.com/lichdotdev/godemirror/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/lichdotdev/godemirror/actions/workflows/ci.yml/badge.svg" /></a>
@@ -12,25 +12,46 @@
   <img src="docs/media/hero.png" alt="The godemirror Editor on a Go file with gopls attached: wavy underlines and gutter dots on two errors, and the completion menu for time.Sin with Since chosen and its documentation beside the menu" width="880" />
 </div>
 
+The usual ways to show code in a Go desktop app are a webview running
+CodeMirror or Monaco, which means two UI stacks kept in step across a
+JavaScript bridge, or a plain text widget that lacks highlighting, line
+numbers and a language server. godemirror is a Gio widget instead. You lay out its `Editor`,
+`View` or `DiffView` in your frame loop like any other widget, theme it with
+your colors, and attach gopls or any LSP server in a few lines.
+
 <p align="center">
   <img src="docs/media/tour.webp" alt="Typing in the Editor with gopls: the completion menu opens and Since is taken, a snippet field is filled, signature help shows the active parameter of http.Error in bold, and Ctrl+click on ErrNotFound glides up to its definition" width="880" />
 </p>
 
 ## Why godemirror
 
-- **Native, no webview.** A Go program draws code with Gio: no browser, no
-  JavaScript, no IPC, and it builds with `CGO_ENABLED=0`.
-- **One image per visible row.** Text is rasterized into row images and
-  cached, so a full screen of code costs a handful of quads, and a
-  13,000-line file shows at once.
-- **Lezer grammars, running natively.** CSS, Go, HTML, Java, JavaScript,
-  TypeScript, Python and Rust are parsed by a Go port of CodeMirror's Lezer,
-  off the UI goroutine, and tagged exactly as CodeMirror tags them.
-- **A language server, built in.** Diagnostics, completion, hover, signature
-  help, go to definition, references, rename, code actions, formatting and an
-  outline, from any LSP server, with a catalog of 428 of them.
-- **Diffs with a revert.** Unified or side by side, unchanged runs collapsed,
-  the words that changed tinted, a Revert on each chunk.
+- **One UI stack.** The editor is drawn by Gio in your process. Keystrokes,
+  selection and scrolling stay in Go, so nothing crosses a JavaScript bridge,
+  and the library itself builds with `CGO_ENABLED=0`.
+- **CodeMirror's editing model, checked against CodeMirror.** The document,
+  transactions, undo history and commands are ported from CodeMirror 6 and
+  tested against goldens the real packages write, so cursor motion and undo
+  behave the way users of web editors expect.
+- **Language servers in a few lines.** `lsp.Attach` connects an `Editor` to
+  a server that speaks LSP 3.17 (tested with gopls) for diagnostics, completion,
+  hover, signature help, go to definition, references, rename, code actions
+  and formatting. `lsp/servers` lists 428 servers, with install recipes for
+  252, so your app can pick the right one for a file.
+- **Cheap to draw at full screen.** Each visible row is one cached image, so a screen
+  of code costs a handful of quads, and highlighting runs off the UI
+  goroutine: a 13,000-line file shows at once and takes its colors when they
+  are ready. CSS, Go, HTML, Java, JavaScript, TypeScript, Python and Rust are
+  parsed by Lezer grammars ported to Go and tagged as CodeMirror tags them.
+- **Diffs you can act on.** `DiffView` shows two versions unified or side by
+  side, collapses unchanged runs, tints the words that changed within a line,
+  and puts a Revert on the chunk under the pointer.
+
+### Who it is for
+
+Go developers building desktop tools on Gio that show or edit code: git
+clients, code review, log viewers, notebooks, IDE-like apps. If your app
+already runs in a browser, CodeMirror itself is the better fit. godemirror is
+tested on Linux; macOS and Windows build but CI does not run them yet.
 
 ## Features
 
