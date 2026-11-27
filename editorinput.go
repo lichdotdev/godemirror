@@ -370,8 +370,16 @@ func (e *Editor) onIMESelection(r key.Range) {
 	e.mustDispatch(TransactionSpec{Selection: sel, UserEvent: "select"})
 }
 
+// snippetAroundCaret is whether the text input gets the text it asks for
+// around the caret; snippet_js.go says why a browser's does not.
+var snippetAroundCaret = true
+
 func (e *Editor) sendSnippet(gtx layout.Context, r key.Range) {
 	from, to := e.offsetOfRune(min(r.Start, r.End)), e.offsetOfRune(max(r.Start, r.End))
+	if !snippetAroundCaret {
+		from = e.state.sel.Main().Head()
+		to = from
+	}
 	snippet := key.Snippet{Range: key.Range{Start: e.runeIndex(from), End: e.runeIndex(to)}, Text: e.state.doc[from:to]}
 	if snippet != e.ime.snippet {
 		e.ime.snippet = snippet

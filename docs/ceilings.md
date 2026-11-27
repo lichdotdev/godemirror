@@ -206,6 +206,9 @@ file is the trap alone.
   colors: on the lines the change touched, the text before and after the change keeps its own, text typed
   inside a token takes that token's and other new text shows uncolored; lines the change recolors (a comment
   opened above them) change only when it lands.
+- **In a browser the text input gets no text around the caret** (`snippet_js.go`): Gio's browser text input
+  (v0.10.3) takes its whole textarea for the text a dead key composed, so the editor leaves it empty. An input
+  method that reads the surrounding text, to correct a word say, sees none there.
 - **An editor has `@codemirror/commands`' standard keymap, as it binds off macOS, and nothing more**: arrows by
   character and, with Ctrl, by group; Up and Down; Page Up and Down; Home and End (to the wrapped row first,
   Home then to the line's indentation); Ctrl+Home and Ctrl+End; Shift for each; Enter; Ctrl+A; Backspace and
