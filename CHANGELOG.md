@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **`Editor.CloseBrackets`** types brackets and quotes in pairs, as CodeMirror's `closeBrackets`: an opening
+  one typed before a space, a closing bracket or the line's end inserts its closing one, typing the closing one
+  steps over it, and Backspace in an empty pair deletes both. Off by default.
 - **`Editor.IndentWithTab`** binds Tab and Shift+Tab, as CodeMirror's `indentWithTab`: Tab inserts an
   `IndentUnit` at each cursor, or indents the lines of a selection, and Shift+Tab takes a unit off the lines a
   range is on. Off by default, so Tab still moves focus.

@@ -71,6 +71,13 @@ type Editor struct {
 	// of a selection, and Shift+Tab takes a unit off the lines a range is on.
 	// Off, Tab moves focus away, as a text field's does.
 	IndentWithTab bool
+	// CloseBrackets types brackets and quotes in pairs, as CodeMirror's
+	// closeBrackets: an opening one typed before a space, a closing bracket
+	// or the line's end inserts its closing one too, the closing one typed
+	// over the one already there steps over it, and Backspace between an
+	// empty pair deletes both. ( [ { " ' and ` pair; a quote after a word
+	// does not.
+	CloseBrackets bool
 	// Hover, when set, tells what to show over the name at pos, a position
 	// in s, once the pointer has rested on it for half a second, as
 	// Markdown: the popup shows it above the name, with the diagnostics

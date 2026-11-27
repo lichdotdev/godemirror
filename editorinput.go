@@ -234,6 +234,12 @@ func (e *Editor) onKey(gtx layout.Context, ev key.Event) {
 		e.mustDispatch(e.state.indentByTab(shift))
 		return
 	}
+	if e.CloseBrackets && ev.Name == key.NameDeleteBackward && ev.Modifiers == 0 {
+		if spec, ok := e.state.deletePair(); ok {
+			e.mustDispatch(spec)
+			return
+		}
+	}
 	switch {
 	case mods == key.ModShortcut && ev.Name == keyCopy:
 		e.copy(gtx, false)
@@ -338,6 +344,9 @@ func (e *Editor) onEdit(ev key.EditEvent) {
 	newSel := from + len(normalizeBreaks(ev.Text, e.state.conf.LineSeparator))
 	if !e.ime.composing {
 		change, newSel = e.state.outdentClosing(change)
+		if e.CloseBrackets && change.Insert == ev.Text {
+			change, newSel = e.state.closePair(change)
+		}
 	}
 	e.mustDispatch(e.state.applyDefaultInsert(change, newSel, e.ime.composing))
 	if !e.ime.composing {
