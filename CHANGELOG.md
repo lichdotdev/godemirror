@@ -15,6 +15,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **An edited line keeps its colors until highlighting catches up**, instead of showing uncolored for that
+  time: the text around the change keeps its tags, and text typed inside a token takes that token's. The gap
+  was invisible natively but flashed on every keystroke in a WebAssembly build.
 - **Taking a completion that ends in a signature trigger opens the signature help**, as typing the trigger
   would: a snippet like `Since($1)` from gopls now shows `Since(t time.Time)` with its field selected.
 - **The signature help no longer hides under the completion menu.** When the menu covers it, the signature

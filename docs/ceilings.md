@@ -202,9 +202,10 @@ file is the trap alone.
   wrapping of the lines the change touched and keeps the others', with their colors and row images. A
   keystroke in the middle of 13,000 lines of Java costs the UI goroutine about 1 ms where rebuilding the
   view's document took 23. Highlighting then reparses incrementally but builds every line's cells and tags
-  again, off the UI goroutine, as the ceiling on content changes says. Until it lands, the lines the change
-  touched show uncolored and the others keep their old colors, even those the change recolors (a comment
-  opened above them).
+  again, off the UI goroutine, as the ceiling on content changes says. Until it lands, every line keeps its old
+  colors: on the lines the change touched, the text before and after the change keeps its own, text typed
+  inside a token takes that token's and other new text shows uncolored; lines the change recolors (a comment
+  opened above them) change only when it lands.
 - **An editor has `@codemirror/commands`' standard keymap, as it binds off macOS, and nothing more**: arrows by
   character and, with Ctrl, by group; Up and Down; Page Up and Down; Home and End (to the wrapped row first,
   Home then to the line's indentation); Ctrl+Home and Ctrl+End; Shift for each; Enter; Ctrl+A; Backspace and
