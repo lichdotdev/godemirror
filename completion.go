@@ -407,13 +407,28 @@ func (e *Editor) acceptCompletion() {
 		if err := e.InsertSnippet(from, to, insert); err != nil {
 			panic("godemirror: a clamped completion range is invalid: " + err.Error())
 		}
+	} else {
+		end := from + len(insert)
+		e.mustDispatch(TransactionSpec{
+			Changes:   []ChangeSpec{{From: from, To: to, Insert: insert}},
+			Selection: SingleSelection(end, end), ScrollIntoView: true, UserEvent: "input.complete",
+		})
+	}
+	e.signatureAfterCompletion(from)
+}
+
+// signatureAfterCompletion asks for the signature when the text a completion
+// inserted at from ends, where the cursor is, in a signature trigger: taking
+// Since($1) opens the signature as typing its "(" would.
+func (e *Editor) signatureAfterCompletion(from int) {
+	at := e.state.sel.Main().From()
+	if at <= from {
 		return
 	}
-	end := from + len(insert)
-	e.mustDispatch(TransactionSpec{
-		Changes:   []ChangeSpec{{From: from, To: to, Insert: insert}},
-		Selection: SingleSelection(end, end), ScrollIntoView: true, UserEvent: "input.complete",
-	})
+	last, _ := utf8.DecodeLastRuneInString(e.state.doc[from:at])
+	if slices.Contains(e.SignatureTriggers, string(last)) {
+		e.askSignature(string(last))
+	}
 }
 
 // later runs f after the frame's updates are reported.

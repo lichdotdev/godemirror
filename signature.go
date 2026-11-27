@@ -131,8 +131,34 @@ func (e *Editor) paintSignature(gtx layout.Context) {
 	x += e.f.g.textX - e.view.scrollX()
 	anchor := image.Rect(x, top-e.view.scroll.Y, x+1, top-e.view.scroll.Y+e.f.ch)
 	e.proseBox(gtx, signaturePopup, blocks, e.maxProseWidth(gtx), func(size image.Point) image.Rectangle {
-		return e.placePopup(gtx, anchor, size, true)
+		return e.signatureBox(gtx, anchor, size)
 	})
+}
+
+// signatureBox places the signature above the cursor's row, or under it when
+// there is no room above. Clear of the completion menu: when the menu covers
+// it, the signature goes to the other side of the row, and when there is no
+// room there either it is not drawn while the menu is open, the menu being
+// what the next key acts on.
+func (e *Editor) signatureBox(gtx layout.Context, anchor image.Rectangle, size image.Point) image.Rectangle {
+	r := e.placePopup(gtx, anchor, size, true)
+	if c := &e.completion; !c.open || len(c.shown) == 0 {
+		return r
+	}
+	menu := e.menuLayout(gtx).box
+	if !r.Overlaps(menu) {
+		return r
+	}
+	gap := gtx.Dp(popupGap)
+	y := anchor.Max.Y + gap
+	if menu.Min.Y >= anchor.Max.Y {
+		y = anchor.Min.Y - gap - size.Y
+	}
+	r = r.Add(image.Pt(0, y-r.Min.Y))
+	if r.Min.Y < 0 || r.Max.Y > e.f.size.Y || r.Overlaps(menu) {
+		return image.Rectangle{}
+	}
+	return r
 }
 
 // signatureInlines are sig's label as code, its active parameter bold.

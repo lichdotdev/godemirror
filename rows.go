@@ -6,9 +6,10 @@ import "sort"
 const tabSize = 4
 
 // wrapLine returns where each visual row of l starts when it wraps at cols
-// cells, breaking after a space when the row has one, as CSS pre-wrap does,
-// and mid-word only when a word is longer than a row, never inside a wide
-// character: one that cannot fit a row of one cell takes the row alone.
+// cells, breaking after a space when the row has one past its indentation,
+// as CSS pre-wrap does, and mid-word only when a word is longer than a row or
+// than the room the indentation leaves, never inside a wide character: one
+// that cannot fit a row of one cell takes the row alone.
 // cols <= 0 never wraps. Every row after the first is indented by hangOf, so
 // it has that many cells less room.
 func wrapLine(l []rune, cols int) []int {
@@ -19,7 +20,13 @@ func wrapLine(l []rune, cols int) []int {
 	room, continued := cols, cols-hangOf(l, cols)
 	for start := 0; len(l)-start > room; {
 		end := start + room
-		for p := end; p > start; p-- {
+		// A space in the row's leading run is no break: breaking there
+		// would leave the row nothing but indentation.
+		text := start
+		for text < end && l[text] == ' ' {
+			text++
+		}
+		for p := end; p > text; p-- {
 			if l[p-1] == ' ' {
 				end = p
 				break

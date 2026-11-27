@@ -15,6 +15,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Taking a completion that ends in a signature trigger opens the signature help**, as typing the trigger
+  would: a snippet like `Since($1)` from gopls now shows `Since(t time.Time)` with its field selected.
+- **The signature help no longer hides under the completion menu.** When the menu covers it, the signature
+  moves to the other side of the cursor's row; when there is no room there, it is not drawn until the menu
+  closes.
+- **A wrapped line's first row no longer shows only its indentation** when the word after it is longer than
+  the rest of the row: the word is split on that row instead.
 - The completion menu no longer flickers while typing against a slow server: a word typed waits for a pause of
   120 ms before it asks (a trigger character or Ctrl+Space still asks at once), and the menu keeps its
   items, filtered by what was typed since, until the answer replaces them, the chosen item staying chosen when

@@ -18,6 +18,9 @@ func TestWrapLineBreaksAfterSpacesAndSplitsLongWords(t *testing.T) {
 		{"abcdefghij", 4, []int{0, 4, 6, 8}},
 		{"    aaaa bbbb cccc", 12, []int{0, 9, 14}},
 		{"            abcdefgh", 8, []int{0, 8, 12, 16}},
+		// A word longer than the row after the indentation is split on the
+		// first row rather than leaving it the indentation alone.
+		{"    abcdefghij k", 10, []int{0, 10, 15}},
 		{"abcdef", 1, []int{0, 1, 2, 3, 4, 5}},
 		{"", 4, []int{0}},
 		{"aaa bbb ccc", 0, []int{0}},
