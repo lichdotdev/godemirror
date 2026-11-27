@@ -8,9 +8,6 @@ import (
 	"unicode/utf16"
 	"unicode/utf8"
 
-	"github.com/alecthomas/chroma/v2"
-	"github.com/alecthomas/chroma/v2/lexers"
-
 	"github.com/lichdotdev/godemirror/internal/glyphs"
 	"github.com/lichdotdev/godemirror/internal/lezer"
 	"github.com/lichdotdev/godemirror/internal/lezer/css"
@@ -201,13 +198,12 @@ func highlightAfter(filename, text string, styles []StyleTags, prev *lezerParse)
 	if mode, ok := streamModeFor(filename); ok {
 		return highlightStream(mode(), normalize(text)), nil, nil
 	}
-	lexer := lexers.Match(filename)
-	if lexer == nil {
-		return plain(text), nil, nil
-	}
-	d, err := highlightChroma(lexer, normalize(text))
+	d, err := highlightOther(filename, normalize(text))
 	if err != nil {
 		return nil, nil, fmt.Errorf("highlight %s: %w", filename, err)
+	}
+	if d == nil {
+		return plain(text), nil, nil
 	}
 	return d, nil, nil
 }
@@ -232,24 +228,6 @@ func highlightApart(filename, text string, breaks []int, styles []StyleTags) (*d
 		d.source, d.cellOf = append(d.source, part.source...), append(d.cellOf, part.cellOf...)
 		from = to
 	}
-	return d, nil
-}
-
-// highlightChroma builds the document of text with the tags tagmap.go gives
-// lexer's tokens.
-func highlightChroma(lexer chroma.Lexer, text string) (*document, error) {
-	it, err := chroma.Coalesce(lexer).Tokenise(nil, text)
-	if err != nil {
-		return nil, err
-	}
-	d, sets := newDocument(), lezer.NewTagSets()
-	for t := it(); t != chroma.EOF; t = it() {
-		d.addToken(t, sets)
-	}
-	// Lexers that ensure a final newline hand one back the text never had.
-	lines := strings.Count(text, "\n") + 1
-	d.lines, d.tags = d.lines[:lines], d.tags[:lines]
-	d.source, d.cellOf = d.source[:lines], d.cellOf[:lines]
 	return d, nil
 }
 

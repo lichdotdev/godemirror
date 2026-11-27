@@ -142,6 +142,11 @@ func (v *View) pointerEvent(gtx layout.Context, f frame, e pointer.Event) (press
 			return false
 		}
 		gtx.Execute(key.FocusCmd{Tag: v})
+		if v.editable {
+			// A browser, Android and iOS hand over typed text only to an
+			// app that asks for the text input.
+			gtx.Execute(key.SoftKeyboardCmd{Show: true})
+		}
 		v.selecting.press(f, at, v.press.next(gtx.Now, at), e.Modifiers)
 		v.press.dragging = true
 		v.drag.pointer = at

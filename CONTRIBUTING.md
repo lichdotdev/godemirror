@@ -46,6 +46,10 @@ go run ./cmd/godemirror-demo -old a.go -file b.go -shot out.png   # headless PNG
 
 `go run ./cmd/godemirror-demo -h` lists every flag.
 
+The site under `site/` builds with `site/build.sh` into `_site` (the pages, the
+media from `docs/media` and `cmd/wasmdemo` as gzipped WebAssembly); a push to
+`main` builds and deploys it to GitHub Pages.
+
 ## Lezer grammars
 
 `internal/lezer` runs CodeMirror's Lezer grammars from tables generated out of

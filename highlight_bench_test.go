@@ -8,8 +8,6 @@ import (
 	"testing"
 	"unicode"
 	"unicode/utf16"
-
-	"github.com/alecthomas/chroma/v2/lexers"
 )
 
 // benchJavaLines is the size of the big file the ceilings measure.
@@ -51,19 +49,6 @@ func BenchmarkHighlightJavaLezer(b *testing.B) {
 	}
 }
 
-func BenchmarkHighlightJavaChroma(b *testing.B) {
-	text := normalize(bigJava(b))
-	lexer := lexers.Get("java")
-	for b.Loop() {
-		if _, err := highlightChroma(lexer, text); err != nil {
-			b.Fatal(err)
-		}
-	}
-}
-
-// bigHTML is an HTML page of about benchJavaLines lines, its sections each
-// nesting a script and a style sheet, and attributes CSS and JavaScript
-// parse, as @codemirror/lang-html nests them.
 func bigHTML() string {
 	const section = `<section id="s%[1]d" class="card" style="margin: 0 auto; color: #333">
   <h2 onclick="toggle(%[1]d)">Section %[1]d &amp; more</h2>

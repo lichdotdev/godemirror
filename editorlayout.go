@@ -94,8 +94,13 @@ func (e *Editor) paintPopups(gtx layout.Context) {
 }
 
 // Focus gives the editor the keyboard, as CodeMirror's EditorView.focus: it
-// takes keys and text from the next frame on, and shows its carets.
-func (e *Editor) Focus(gtx layout.Context) { gtx.Execute(key.FocusCmd{Tag: e.view}) }
+// takes keys and text from the next frame on, and shows its carets. It also
+// asks for the text input, which a browser, Android and iOS open only when
+// asked, as a press on the editor does.
+func (e *Editor) Focus(gtx layout.Context) {
+	gtx.Execute(key.FocusCmd{Tag: e.view})
+	gtx.Execute(key.SoftKeyboardCmd{Show: true})
+}
 
 // HasFocus reports whether the editor has the keyboard in gtx, as
 // @codemirror/view 6.43.15's EditorView.hasFocus. It answers before the

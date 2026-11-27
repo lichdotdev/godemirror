@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **The `godemirror_nochroma` build tag** leaves out chroma's lexers, for a smaller WebAssembly build: files that
+  no Lezer grammar or stream mode reads show plain. The site's demo drops from 22.4 MB to 16.7 MB (4.6 MB
+  gzipped).
+
 ### Fixed
 
 - The completion menu no longer flickers while typing against a slow server: a word typed waits for a pause of
@@ -16,6 +22,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Signature help is asked again once typing pauses, not on every transaction, and stays shown until the answer.
 - **A completion taken inside a snippet's field no longer ends the snippet** when the item is a snippet
   with no fields of its own, as gopls sends a variable: Tab still goes to the next field, or past the end.
+- **An `Editor` asks for the text input when it is pressed or focused**, so typing reaches it in a browser
+  (WebAssembly), on Android and on iOS, which open their text input only when asked. A read-only `View` still
+  does not ask.
 
 ## [0.12.0] - 2026-11-26
 
