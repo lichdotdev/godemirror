@@ -10,12 +10,17 @@ window.addEventListener("message", (e) => {
   if (e.source !== parent || !m || typeof window["godemirror" + m.cmd] !== "function") return;
   window["godemirror" + m.cmd](m.arg);
 });
+// A press or a key of the user's ends the scripted edit, which would go on
+// moving the cursor under them.
+for (const ev of ["pointerdown", "keydown"]) {
+  window.addEventListener(ev, () => window.godemirrorStop && godemirrorStop(), { capture: true });
+}
 // Gio scrolls the editor on a wheel but leaves the event to the browser,
 // which would scroll the page under the frame too.
 window.addEventListener("wheel", (e) => e.preventDefault(), { passive: false });
 (async () => {
   const go = new Go();
-  const resp = await fetch("main.wasm.gz");
+  const resp = await fetch("main.wasm.gz") /* build.sh names it by its content */;
   let bytes = await resp.arrayBuffer();
   // Gzip unless a server already decoded it (Content-Encoding: gzip).
   const head = new Uint8Array(bytes, 0, 2);

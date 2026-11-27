@@ -9,9 +9,9 @@ import (
 
 // listen lets the page drive the demo: godemirrorShow("editor" or "diff"),
 // godemirrorSplit(bool), godemirrorTheme(index), godemirrorWrap(bool),
-// godemirrorPlay() for the scripted edit, and godemirrorEmbed() to hide the
-// demo's own buttons. The page hears they are there through godemirrorReady,
-// after the first frame.
+// godemirrorPlay() for the scripted edit, godemirrorStop() to end it, and
+// godemirrorEmbed() to hide the demo's own buttons. The page hears they are
+// there through godemirrorReady, after the first frame.
 func listen(send func(func(*demo))) {
 	do := func(f func(*demo)) { go send(f) }
 	g := js.Global()
@@ -47,6 +47,10 @@ func listen(send func(func(*demo))) {
 	g.Set("godemirrorWrap", js.FuncOf(func(_ js.Value, args []js.Value) any {
 		wrap := len(args) > 0 && args[0].Truthy()
 		do(func(d *demo) { d.editor.Wrap = wrap })
+		return nil
+	}))
+	g.Set("godemirrorStop", js.FuncOf(func(js.Value, []js.Value) any {
+		interrupted.Store(true)
 		return nil
 	}))
 	g.Set("godemirrorEmbed", js.FuncOf(func(js.Value, []js.Value) any {

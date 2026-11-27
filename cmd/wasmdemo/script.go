@@ -4,6 +4,7 @@ import (
 	"log"
 	"regexp"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/lichdotdev/godemirror"
@@ -22,9 +23,23 @@ const (
 
 var skuWord = regexp.MustCompile(`\bsku\b`)
 
+// interrupted stops the script: the user pressed or typed in the demo, and
+// the script would go on moving the cursor and typing under them.
+var interrupted atomic.Bool
+
 // play runs the script on the file as it opened, each step sent to the UI
-// goroutine through do, in order.
-func play(do func(func(*demo))) {
+// goroutine through do, in order, until interrupted.
+func play(send func(func(*demo))) {
+	interrupted.Store(false)
+	do := func(f func(*demo)) {
+		if !interrupted.Load() {
+			send(func(d *demo) {
+				if !interrupted.Load() {
+					f(d)
+				}
+			})
+		}
+	}
 	do(func(d *demo) {
 		d.showDiff = false
 		logErr(d.editor.SetState(editorConfig()))
@@ -36,13 +51,19 @@ func play(do func(func(*demo))) {
 		end := at + len(anchorLine)
 		logErr(d.editor.Dispatch(godemirror.TransactionSpec{Selection: godemirror.SingleSelection(end, end), ScrollIntoView: true}))
 	})
-	time.Sleep(stepPause)
+	if !pause(stepPause) {
+		return
+	}
 	for _, c := range typedLine {
 		ch := string(c)
 		do(func(d *demo) { logErr(d.editor.Dispatch(d.editor.State().ReplaceSelection(ch))) })
-		time.Sleep(keyDelay)
+		if !pause(keyDelay) {
+			return
+		}
 	}
-	time.Sleep(stepPause)
+	if !pause(stepPause) {
+		return
+	}
 	do(func(d *demo) {
 		doc := d.editor.State().Doc()
 		from := strings.Index(doc, "func (s *Store) ServeHTTP")
@@ -55,12 +76,22 @@ func play(do func(func(*demo))) {
 			logErr(d.editor.Dispatch(godemirror.TransactionSpec{Selection: godemirror.NewSelection(ranges, 0)}))
 		}
 	})
-	time.Sleep(stepPause * 2)
+	if !pause(stepPause * 2) {
+		return
+	}
 	for _, c := range renamedTo {
 		ch := string(c)
 		do(func(d *demo) { logErr(d.editor.Dispatch(d.editor.State().ReplaceSelection(ch))) })
-		time.Sleep(keyDelay * 3)
+		if !pause(keyDelay * 3) {
+			return
+		}
 	}
+}
+
+// pause waits d, and reports whether the script goes on.
+func pause(d time.Duration) bool {
+	time.Sleep(d)
+	return !interrupted.Load()
 }
 
 func logErr(err error) {
