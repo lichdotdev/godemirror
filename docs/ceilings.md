@@ -348,3 +348,6 @@ file is the trap alone.
   standard input inside the editor's `OnUpdate`, before the frame's requests, so that a request never
   overtakes the edit it is about. A server that stops reading its input while the pipe's buffer is full
   (64 KiB on Linux) stalls the frame until it reads again or exits.
+- **`godemirror_nochroma` shows most languages plain**: with the tag, only the languages with a Lezer grammar (CSS,
+  Go, HTML, Java, JavaScript, TypeScript, Python, Rust) and the Kotlin and shell modes are highlighted; the
+  tag is for builds where size matters more than coverage, a WebAssembly page say.

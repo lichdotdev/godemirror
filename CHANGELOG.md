@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **The `godemirror_nochroma` build tag** leaves out chroma's lexers, for a smaller WebAssembly build: files that
+  no Lezer grammar or stream mode reads show plain. The site's demo drops from 22.4 MB to 16.7 MB (4.6 MB
+  gzipped).
+
 ### Fixed
 
 - The completion menu no longer flickers while typing against a slow server: a word typed waits for a pause of

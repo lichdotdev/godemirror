@@ -44,6 +44,10 @@ var themes = []struct {
 	{"GitHub Light", godemirror.GitHubLight}, {"Dracula", godemirror.Dracula}, {"Nord", godemirror.Nord},
 }
 
+// control are the changes the page asks for, run on the UI goroutine at
+// the next frame.
+var control = make(chan func(*demo), 64)
+
 type demo struct {
 	editor                               *godemirror.Editor
 	diff                                 *godemirror.DiffView
@@ -52,12 +56,22 @@ type demo struct {
 	showDiff                             bool
 	theme                                int
 	focused                              bool
+	// embedded hides the demo's own buttons when the page draws tabs.
+	embedded bool
 }
 
 func main() {
 	go func() {
 		w := new(app.Window)
 		w.Option(app.Title("godemirror"))
+		// send runs f at the next frame, in order; a call from the page goes
+		// through it on a goroutine of its own, since the page calls on the
+		// browser's event loop, which the window needs free to draw.
+		send := func(f func(*demo)) {
+			control <- f
+			w.Invalidate()
+		}
+		listen(send)
 		if err := run(w); err != nil {
 			log.Fatal(err)
 		}
@@ -132,6 +146,14 @@ func run(w *app.Window) error {
 }
 
 func (d *demo) layout(gtx layout.Context) error {
+	for drained := false; !drained; {
+		select {
+		case f := <-control:
+			f(d)
+		default:
+			drained = true
+		}
+	}
 	d.handleButtons(gtx)
 	t := themes[d.theme].theme
 	d.editor.Theme = t
@@ -139,7 +161,12 @@ func (d *demo) layout(gtx layout.Context) error {
 	paint.FillShape(gtx.Ops, t.GutterBackground, clip.Rect(image.Rectangle{Max: gtx.Constraints.Max}).Op())
 	var err error
 	layout.Flex{Axis: layout.Vertical}.Layout(gtx,
-		layout.Rigid(func(gtx layout.Context) layout.Dimensions { return d.bar(gtx, t) }),
+		layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+			if d.embedded {
+				return layout.Dimensions{}
+			}
+			return d.bar(gtx, t)
+		}),
 		layout.Flexed(1, func(gtx layout.Context) layout.Dimensions {
 			var dims layout.Dimensions
 			if d.showDiff {
