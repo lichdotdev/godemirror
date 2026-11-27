@@ -371,10 +371,12 @@ func (e *Editor) Dispatch(spec TransactionSpec) error {
 		e.rename.input = nil
 		e.actions.open = false
 	}
-	e.signature.stale = e.signature.open
+	if e.signature.open {
+		e.signature.due = e.now.Add(completionDebounce)
+	}
 	e.jumped = false
 	if c := &e.completion; c.open {
-		c.since = c.since.compose(t.Changes)
+		c.since, c.pending = c.since.compose(t.Changes), c.pending.compose(t.Changes)
 		c.from = t.Changes.MapPos(c.from, -1)
 	}
 	if t.DocChanged() {

@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- The completion menu no longer flickers while typing against a slow server: a word typed waits for a pause of
+  120 ms before it asks (a trigger character or Ctrl+Space still asks at once), and the menu keeps its
+  items, filtered by what was typed since, until the answer replaces them, the chosen item staying chosen when
+  it is still offered. A quick burst of typing is one request.
+- Signature help is asked again once typing pauses, not on every transaction, and stays shown until the answer.
+
 ## [0.12.0] - 2026-11-26
 
 ### Changed

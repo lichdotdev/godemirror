@@ -4,15 +4,22 @@ import (
 	"context"
 	"slices"
 	"strings"
+	"time"
 	"unicode/utf8"
 
 	"gioui.org/io/key"
 	"gioui.org/layout"
+	"gioui.org/op"
 )
 
 // completionMinWord is how many characters of a word typed in a row open the
 // completions unasked.
 const completionMinWord = 2
+
+// completionDebounce is how long typing pauses before the completions or the
+// signature are asked for again: keys typed in a burst come closer together
+// than this, so the burst costs the server one request, not one per key.
+const completionDebounce = 120 * time.Millisecond
 
 // CompletionKind is what a completion names, which picks the badge before
 // its label: one of the kinds below, those of @codemirror/autocomplete's
@@ -81,11 +88,13 @@ type CompletionResult struct {
 // completion is the completions offered, or being asked for.
 type completion struct {
 	open bool
-	// from is where the word being completed starts, and since the
-	// changes made after the items were asked for.
-	from  int
-	since ChangeSet
-	items []CompletionItem
+	// from is where the word being completed starts, since the changes
+	// made after the items were asked for, and pending those made after
+	// the request on its way was.
+	from    int
+	since   ChangeSet
+	pending ChangeSet
+	items   []CompletionItem
 	// incomplete is the result's Incomplete, and asked the text the items
 	// were asked for.
 	incomplete bool
@@ -98,6 +107,11 @@ type completion struct {
 	sel   int
 	top   int
 	call  *call[CompletionResult]
+	// due is when typing paused long enough to ask again, zero when no
+	// request waits for it; asks counts the requests, so that one made
+	// later wins over one not started yet.
+	due  time.Time
+	asks int
 	// resolve is a ResolveCompletion call for the item at resolving, and
 	// resolved the items asked about, each asked once.
 	resolve   *call[CompletionItem]
@@ -136,15 +150,25 @@ func (e *Editor) afterTyping(text string) {
 	case e.completion.open:
 		e.closeCompletion()
 	case categorize(string(last)) == categoryWord:
-		if _, n := e.state.wordBefore(head); n >= completionMinWord {
-			e.askCompletion("", false)
+		if from, n := e.state.wordBefore(head); n >= completionMinWord {
+			e.completion = e.openCompletion(from)
+			e.completion.due = e.now.Add(completionDebounce)
 		}
 	}
 }
 
+// openCompletion is a completion over the word starting at from, with no
+// items yet.
+func (e *Editor) openCompletion(from int) completion {
+	head, n := e.state.sel.Main().Head(), len(e.state.doc)
+	return completion{open: true, from: from, since: emptyChangeSet(n), pending: emptyChangeSet(n),
+		filtered: e.state.doc[from:head], asks: e.completion.asks}
+}
+
 // askCompletion asks Complete for the completions at the cursor, after the
 // frame's updates are reported, so that a language server hears of the
-// edits before the request.
+// edits before the request. Asked again in the same word, the items shown
+// stay, filtered as the user types, until the answer replaces them.
 func (e *Editor) askCompletion(trigger string, explicit bool) {
 	hook := e.Complete
 	if hook == nil {
@@ -154,12 +178,17 @@ func (e *Editor) askCompletion(trigger string, explicit bool) {
 	c.call.stop()
 	head := e.state.sel.Main().Head()
 	from, _ := e.state.wordBefore(head)
-	typed := e.state.doc[from:head]
-	*c = completion{open: true, from: from, since: emptyChangeSet(len(e.state.doc)), asked: typed, filtered: typed}
+	if !c.open || c.from != from || trigger != "" {
+		e.closeCompletion()
+		*c = e.openCompletion(from)
+	}
+	c.call, c.due, c.asked, c.pending = nil, time.Time{}, e.state.doc[from:head], emptyChangeSet(len(e.state.doc))
+	c.asks++
+	ask := c.asks
 	req := CompletionRequest{State: e.state, Pos: head, From: from, Trigger: trigger, Explicit: explicit}
 	e.later(func() {
 		// Closed, or asked again, since: this answer is not wanted.
-		if !c.open || c.from != from || c.call != nil {
+		if !c.open || c.asks != ask {
 			return
 		}
 		c.call = startCall(func(ctx context.Context) CompletionResult { return hook(ctx, req) })
@@ -169,7 +198,9 @@ func (e *Editor) askCompletion(trigger string, explicit bool) {
 func (e *Editor) closeCompletion() {
 	e.completion.call.stop()
 	e.completion.resolve.stop()
-	e.completion = completion{}
+	// asks outlives the completion, so that a request made before it closed
+	// never passes for one made after.
+	e.completion = completion{asks: e.completion.asks}
 }
 
 // typedSince is the text typed from the word's start to the cursor, ok
@@ -196,8 +227,7 @@ func (e *Editor) refilterCompletion() {
 		return
 	}
 	if c.incomplete && typed != c.asked {
-		e.askCompletion("", false)
-		return
+		c.due = e.now.Add(completionDebounce)
 	}
 	c.filtered = typed
 	c.shown = c.shown[:0]
@@ -206,7 +236,7 @@ func (e *Editor) refilterCompletion() {
 			c.shown = append(c.shown, i)
 		}
 	}
-	if c.call == nil && len(c.shown) == 0 {
+	if c.call == nil && c.due.IsZero() && len(c.shown) == 0 {
 		e.closeCompletion()
 		return
 	}
@@ -248,19 +278,48 @@ func (e *Editor) takeCompletions(gtx layout.Context) {
 		e.closeCompletion()
 		return
 	}
-	if c.call == nil && typed != c.filtered {
+	if typed != c.filtered {
 		e.refilterCompletion()
 	}
 	if c.call != nil {
 		if r, ok := c.call.poll(gtx); ok {
-			c.call, c.items, c.incomplete = nil, r.Items, r.Incomplete
-			e.refilterCompletion()
+			e.swapCompletions(r)
 		}
 	}
-	if c.resolve != nil {
+	if !c.due.IsZero() {
+		if gtx.Now.Before(c.due) {
+			gtx.Execute(op.InvalidateCmd{At: c.due})
+		} else {
+			e.askCompletion("", false)
+		}
+	}
+	if c.open && c.resolve != nil {
 		if it, ok := c.resolve.poll(gtx); ok {
 			c.resolve = nil
 			c.items[c.resolving] = it
+		}
+	}
+}
+
+// swapCompletions puts r's items in place of those shown, the chosen one
+// kept chosen while it is still offered.
+func (e *Editor) swapCompletions(r CompletionResult) {
+	c := &e.completion
+	chosen := ""
+	if len(c.shown) > 0 {
+		chosen = c.items[c.shown[c.sel]].Label
+	}
+	c.resolve.stop()
+	c.call, c.resolve, c.resolved = nil, nil, nil
+	c.items, c.incomplete, c.since, c.filtered = r.Items, r.Incomplete, c.pending, ""
+	e.refilterCompletion()
+	if !c.open {
+		return
+	}
+	for i, j := range c.shown {
+		if i > 0 && c.items[j].Label == chosen {
+			e.chooseCompletion(i)
+			return
 		}
 	}
 }

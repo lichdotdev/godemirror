@@ -4,9 +4,11 @@ import (
 	"context"
 	"image"
 	"slices"
+	"time"
 
 	"gioui.org/io/key"
 	"gioui.org/layout"
+	"gioui.org/op"
 )
 
 // Signature is the signature of the call being typed, as SignatureHelp
@@ -30,9 +32,9 @@ type signatureState struct {
 	open bool
 	sig  Signature
 	call *call[signatureAnswer]
-	// stale is whether a transaction came after the signature was asked
-	// for, which asks again.
-	stale bool
+	// due is when typing paused long enough after a transaction to ask
+	// again, zero when nothing waits.
+	due time.Time
 }
 
 type signatureAnswer struct {
@@ -49,7 +51,7 @@ func (e *Editor) askSignature(trigger string) {
 		return
 	}
 	g := &e.signature
-	g.open, g.stale = true, false
+	g.open, g.due = true, time.Time{}
 	g.call.stop()
 	g.call = nil
 	s, pos := e.state, e.state.sel.Main().Head()
@@ -78,25 +80,28 @@ func (e *Editor) signatureTyped(text string) {
 }
 
 // takeSignature takes SignatureHelp's answer when it comes, closing the
-// popup when it has none, and asks again after a transaction.
+// popup when it has none, and asks again once typing paused after a
+// transaction, the signature shown staying until the answer.
 func (e *Editor) takeSignature(gtx layout.Context) {
 	g := &e.signature
 	if !g.open {
 		return
 	}
 	if g.call != nil {
-		a, ok := g.call.poll(gtx)
-		if !ok {
-			return
+		if a, ok := g.call.poll(gtx); ok {
+			g.call = nil
+			if !a.ok {
+				e.closeSignature()
+				return
+			}
+			g.sig = a.sig
 		}
-		g.call = nil
-		if !a.ok {
-			e.closeSignature()
-			return
-		}
-		g.sig = a.sig
 	}
-	if g.stale {
+	switch {
+	case g.due.IsZero():
+	case gtx.Now.Before(g.due):
+		gtx.Execute(op.InvalidateCmd{At: g.due})
+	default:
 		e.askSignature("")
 	}
 }

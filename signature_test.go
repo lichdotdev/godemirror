@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 	"testing"
+	"time"
 
 	"gioui.org/io/key"
 )
@@ -61,5 +62,26 @@ func TestTheActiveParameterIsBold(t *testing.T) {
 	got := signatureInlines(Signature{Label: "f(a int, b string)", Params: []SignatureParam{{2, 7}, {9, 17}}, Active: 1})
 	if len(got) != 3 || got[1].text != "b string" || !got[1].bold || got[0].bold {
 		t.Fatalf("inlines %+v", got)
+	}
+}
+
+func TestSignatureHelpAsksOnceForABurstAndStays(t *testing.T) {
+	h, triggers := signatureEditor(t, "f")
+	h.typeText("(")
+	h.until("shown", func() bool { return h.ed.signature.sig.Label != "" })
+	<-triggers
+	for _, s := range []string{"a", "b", "c"} {
+		h.typeText(s)
+		if !h.ed.signature.open || h.ed.signature.sig.Label == "" {
+			t.Fatalf("after %q the signature closed or emptied", s)
+		}
+		// A server quicker than the typist: each answer lands before the next key.
+		h.until("answered", func() bool { return h.ed.signature.call == nil })
+	}
+	h.until("asked again", func() bool { return len(triggers) > 0 })
+	h.advance(time.Second)
+	h.advance(time.Second)
+	if n := len(triggers); n != 1 {
+		t.Fatalf("%d requests for one burst of typing, want 1", n)
 	}
 }
