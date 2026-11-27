@@ -22,11 +22,12 @@ const (
 
 var skuWord = regexp.MustCompile(`\bsku\b`)
 
-// play runs the script, each step sent to the UI goroutine through do, in
-// order.
+// play runs the script on the file as it opened, each step sent to the UI
+// goroutine through do, in order.
 func play(do func(func(*demo))) {
 	do(func(d *demo) {
 		d.showDiff = false
+		logErr(d.editor.SetState(editorConfig()))
 		doc := d.editor.State().Doc()
 		at := strings.Index(doc, anchorLine)
 		if at < 0 {

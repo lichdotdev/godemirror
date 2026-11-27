@@ -80,6 +80,12 @@ func main() {
 	app.Main()
 }
 
+// editorConfig is the file the editor opens with, and goes back to before
+// the scripted edit plays.
+func editorConfig() godemirror.EditorStateConfig {
+	return godemirror.EditorStateConfig{Filename: "server.go", Doc: modified, AllowMultipleSelections: true, IndentUnit: "\t"}
+}
+
 func newDemo() (*demo, error) {
 	f, family := fonts()
 	var (
@@ -104,10 +110,7 @@ func newDemo() (*demo, error) {
 	if err != nil {
 		return nil, err
 	}
-	err = editor.SetState(godemirror.EditorStateConfig{
-		Filename: "server.go", Doc: modified, AllowMultipleSelections: true, IndentUnit: "\t",
-	})
-	if err != nil {
+	if err := editor.SetState(editorConfig()); err != nil {
 		return nil, err
 	}
 	editor.RectangularSelection = true
