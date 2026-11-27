@@ -88,3 +88,21 @@ func TestASnippetCompletionInsertsItsFields(t *testing.T) {
 		t.Fatalf("selection %d..%d, want format selected", a, hd)
 	}
 }
+
+// A completion inside a field, a snippet with no fields of its own as
+// gopls sends a variable, ended the snippet it was typed in.
+func TestASnippetWithNoFieldsKeepsTheOneItIsTypedIn(t *testing.T) {
+	h, _ := focusedEditor(t, EditorStateConfig{Doc: "x"}, SingleSelection(1, 1))
+	if err := h.ed.InsertSnippet(1, 1, "f(${1})"); err != nil {
+		t.Fatal(err)
+	}
+	h.frame()
+	if err := h.ed.InsertSnippet(3, 3, "started"); err != nil {
+		t.Fatal(err)
+	}
+	h.frame()
+	h.press(key.NameTab, 0)
+	if got, at := h.ed.State().Doc(), h.ed.State().Selection().Main().Head(); got != "xf(started)" || at != len(got) {
+		t.Fatalf("doc %q, cursor %d; want Tab to leave the outer snippet after its )", got, at)
+	}
+}

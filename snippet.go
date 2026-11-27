@@ -32,7 +32,8 @@ type snippetSession struct {
 // and the snippet in the syntax above, each of its lines after the first
 // indented as the line from is on; it selects the first field, and Tab and
 // Shift+Tab then go from field to field until the last, $0 or the
-// snippet's end. Escape, or a selection out of the snippet, ends it. It
+// snippet's end. Escape, or a selection out of the snippet, ends it. A
+// snippet with no fields is text, and leaves a snippet it goes in on. It
 // fails as Dispatch fails.
 func (e *Editor) InsertSnippet(from, to int, snippet string) error {
 	l := e.state.LineAt(from)
@@ -41,6 +42,12 @@ func (e *Editor) InsertSnippet(from, to int, snippet string) error {
 	if err := e.Dispatch(TransactionSpec{Changes: []ChangeSpec{{From: from, To: to, Insert: text}},
 		ScrollIntoView: true, UserEvent: "input.complete"}); err != nil {
 		return err
+	}
+	if len(fields) == 0 {
+		// Text alone: a snippet it was typed in goes on.
+		end := from + len(text)
+		e.mustDispatch(TransactionSpec{Selection: SingleSelection(end, end)})
+		return nil
 	}
 	for i := range fields {
 		fields[i].from += from

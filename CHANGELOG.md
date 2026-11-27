@@ -14,6 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   items, filtered by what was typed since, until the answer replaces them, the chosen item staying chosen when
   it is still offered. A quick burst of typing is one request.
 - Signature help is asked again once typing pauses, not on every transaction, and stays shown until the answer.
+- **A completion taken inside a snippet's field no longer ends the snippet** when the item is a snippet
+  with no fields of its own, as gopls sends a variable: Tab still goes to the next field, or past the end.
 
 ## [0.12.0] - 2026-11-26
 
