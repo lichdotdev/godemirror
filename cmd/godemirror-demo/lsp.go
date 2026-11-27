@@ -29,6 +29,7 @@ var (
 	flagAt       = flag.String("at", "", "with -edit, a line:col (from 1) to put the cursor at")
 	flagType     = flag.String("type", "", "headless, with -edit: text typed at the cursor, a character a frame, before the shot")
 	flagKey      = flag.String("key", "", "headless, with -edit: a key pressed after -type and -wait, as Shift+F12 or Return")
+	flagTop      = flag.Int("top", 0, "with -edit, scroll so this line (from 1) is the first on screen, after the first frame")
 	flagCtrl     = flag.Bool("ctrl", false, "headless: hold Ctrl with the pointer at -hover")
 	flagWait     = flag.Duration("wait", 0, "headless: keep drawing frames this long before the shot, for a server's answers")
 )
@@ -89,6 +90,18 @@ func printSymbols(syms []lsp.Symbol, indent string) {
 		fmt.Printf("%s%s %s (kind %d, line %d)\n", indent, s.Name, s.Detail, s.Kind, s.Selection.Start.Line+1)
 		printSymbols(s.Children, indent+"  ")
 	}
+}
+
+// snapToTop scrolls the editor to -top once, after the frame that placed
+// its lines.
+func (d *demo) snapToTop() {
+	if *flagTop <= 0 || d.topped {
+		return
+	}
+	d.topped = true
+	s := d.editor.State()
+	top, _ := d.editor.LineBlockAt(s.Line(min(*flagTop, s.Lines())).From)
+	d.editor.SnapScrollTop(top)
 }
 
 // placeCursor puts the editor's cursor at -at.
