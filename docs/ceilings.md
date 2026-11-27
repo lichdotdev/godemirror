@@ -308,7 +308,8 @@ file is the trap alone.
   goes to the next field, so a Tab is never typed there.
 - **Completions filter as a fuzzy subsequence, in the order given** (`Editor.Complete`): items keep the order
   the hook gives (`lsp` sorts by `sortText`), with no ranking of their own; an `Incomplete` result is asked again
-  on each character typed. Only one cursor completes: with several, nothing opens.
+  once typing pauses for 120 ms, its old items filtered meanwhile, so an item the new answer brings shows only
+  then. Only one cursor completes: with several, nothing opens.
 - **Diagnostics are mapped, not recomputed** (`Editor.SetDiagnostics`): between an edit and the server's next
   publish they move with the text around them, and one whose whole range was deleted is gone. `lsp` reads a
   publish in the version it names, through the last 32 versions; an older one is dropped. A dot marks the line
@@ -320,8 +321,8 @@ file is the trap alone.
 - **A go-to key changed takes effect a frame later** (`TypeDefinitionKey`, `ImplementationKey`,
   `ReferencesKey`): Gio routes a key by the filters the frame before it registered, so a key pressed in the
   frame its Shortcut was set is not taken. Highlighted references are dropped by any edit, not mapped.
-- **Signature help asks again on every transaction while it shows** (`SignatureHelp`): a keystroke, a click
-  or a move of the cursor is a request, with no debounce; only the active signature shows, with no way to
+- **Signature help asks again once a transaction is 120 ms old while it shows** (`SignatureHelp`): a click or
+  a move of the cursor is a request too, and the popup shows the last answer until the next lands; only the active signature shows, with no way to
   page through overloads. It follows one cursor: with several, it does not open.
 - **Rename asks no server first and edits only text** (`Rename`): the input holds the word at the cursor, with
   no `prepareRename` to check the symbol can be renamed or to pick its range; a `WorkspaceEdit`'s file

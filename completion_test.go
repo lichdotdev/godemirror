@@ -3,6 +3,7 @@ package godemirror
 import (
 	"context"
 	"testing"
+	"time"
 
 	"gioui.org/io/key"
 )
@@ -176,5 +177,90 @@ func TestAnItemReplacesItsOwnRange(t *testing.T) {
 	h.press(key.NameReturn, 0)
 	if got := h.ed.State().Doc(); got != "fmt.Println" {
 		t.Fatalf("doc %q, want fmt.Println: the range grows over what was typed after", got)
+	}
+}
+
+func TestABurstOfTypingAsksOnce(t *testing.T) {
+	h, asked := completingEditor(t, "x.", "Requested")
+	for _, s := range []string{"R", "e", "q", "u"} {
+		h.typeText(s)
+	}
+	h.waitForCompletions()
+	if req := <-asked; req.Pos != 6 {
+		t.Fatalf("asked at %d, want once at 6, after the burst", req.Pos)
+	}
+	h.advance(time.Second)
+	if len(asked) != 0 {
+		t.Fatalf("%d more requests for one burst of typing", len(asked))
+	}
+}
+
+// lateEditor is a focused editor whose Complete answers an incomplete
+// result from answers, keyed by the word typed, only once release gets a
+// value.
+func lateEditor(t *testing.T, answers map[string][]string) (*harness, chan string, chan struct{}) {
+	t.Helper()
+	h, _ := focusedEditor(t, EditorStateConfig{Doc: "x."}, SingleSelection(2, 2))
+	asked, release := make(chan string, 16), make(chan struct{})
+	h.ed.Complete = func(ctx context.Context, req CompletionRequest) CompletionResult {
+		typed := req.State.Doc()[req.From:req.Pos]
+		asked <- typed
+		select {
+		case <-release:
+		case <-ctx.Done():
+			return CompletionResult{}
+		}
+		r := CompletionResult{Incomplete: true}
+		for _, l := range answers[typed] {
+			r.Items = append(r.Items, CompletionItem{Label: l, From: req.From, To: req.Pos})
+		}
+		return r
+	}
+	return h, asked, release
+}
+
+func TestTheMenuStaysWhileALateAnswerComes(t *testing.T) {
+	h, asked, release := lateEditor(t, map[string][]string{
+		"Re":  {"Relaunch", "Requested", "ReadyFile"},
+		"Req": {"Requeue", "Requested"},
+	})
+	h.typeText("R")
+	h.typeText("e")
+	h.until("asked", func() bool { return len(asked) == 1 })
+	release <- struct{}{}
+	h.waitForCompletions()
+	h.press(key.NameDownArrow, 0)
+	h.typeText("q")
+	for range 40 {
+		if got := h.shownLabels(); !h.ed.completion.open || len(got) != 1 || got[0] != "Requested" {
+			t.Fatalf("while the answer for Req is on its way the menu shows %v, open %v", got, h.ed.completion.open)
+		}
+		h.advance(10 * time.Millisecond)
+	}
+	if got := <-asked; got != "Re" {
+		t.Fatalf("first request for %q", got)
+	}
+	if got := <-asked; got != "Req" {
+		t.Fatalf("asked again for %q, want Req", got)
+	}
+	release <- struct{}{}
+	h.until("swapped", func() bool { return len(h.shownLabels()) == 2 })
+	c := &h.ed.completion
+	if got := c.items[c.shown[c.sel]].Label; got != "Requested" {
+		t.Fatalf("chosen %q after the answer, want Requested kept", got)
+	}
+}
+
+func TestATriggerAsksAtOnce(t *testing.T) {
+	h, asked := completingEditor(t, "fmt", "Println")
+	h.typeText(".")
+	h.frame()
+	select {
+	case req := <-asked:
+		if req.Trigger != "." {
+			t.Fatalf("asked %+v", req)
+		}
+	case <-time.After(time.Second):
+		t.Fatal("a trigger character waited for a pause")
 	}
 }
