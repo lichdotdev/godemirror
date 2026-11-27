@@ -320,6 +320,9 @@ func (s EditorState) insertNewlineAndIndent() (TransactionSpec, bool) {
 			space := leadingSpace(s.LineAt(from).Text)
 			indent = countColumn(space, tabSize, len(space))
 		}
+		if s.conf.BracketIndent && opensBracket(line.Text[:from-line.From]) {
+			indent += s.indentWidth()
+		}
 		for to < line.To && allJSSpace(line.Text[to-line.From:runeEnd(line.Text, to-line.From)]) {
 			to = line.From + runeEnd(line.Text, to-line.From)
 		}

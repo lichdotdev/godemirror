@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **`EditorStateConfig.BracketIndent`** indents by brackets, where CodeMirror would ask a language: Enter
+  after an open `(`, `[` or `{` indents the new line one `IndentUnit` more (between `{}` the middle line), and
+  a closing bracket typed first on a line takes one unit off. Off by default, so Enter stays as it was.
 - **The `godemirror_nochroma` build tag** leaves out chroma's lexers, for a smaller WebAssembly build: files that
   no Lezer grammar or stream mode reads show plain. The site's demo drops from 22.4 MB to 16.7 MB (4.6 MB
   gzipped).

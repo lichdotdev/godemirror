@@ -332,6 +332,9 @@ func (e *Editor) onEdit(ev key.EditEvent) {
 	change := ChangeSpec{From: from, To: to, Insert: ev.Text}
 	// Gio's text input puts the cursor after what it inserted.
 	newSel := from + len(normalizeBreaks(ev.Text, e.state.conf.LineSeparator))
+	if !e.ime.composing {
+		change, newSel = e.state.outdentClosing(change)
+	}
 	e.mustDispatch(e.state.applyDefaultInsert(change, newSel, e.ime.composing))
 	if !e.ime.composing {
 		e.afterTyping(ev.Text)

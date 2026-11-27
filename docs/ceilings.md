@@ -230,7 +230,9 @@ file is the trap alone.
   as `@codemirror/lang-*`'s `indentNodeProp` would: the Lezer ports carry no indentation. CodeMirror's quirks
   stay: a line break at the very start of the document is indented to column 0, and the spaces before the
   cursor are dropped when its whole line, past the document's first lines, is blank. A tab stop is 4 columns,
-  as the views draw it.
+  as the views draw it. With `BracketIndent` set, brackets stand in for the syntax: a bracket left open on
+  the line indents the next one a unit more, and a closing bracket typed first on a line takes one unit off,
+  not the indentation of the line that opened it; brackets inside strings and comments count too.
 - **A press in an editor selects at once**: `@codemirror/view`'s mouse selection is ported (a click, a drag, a
   double click by character category, a triple click for the line and its break, Shift to extend the main
   range, Ctrl+click to add a range, or remove the cursor under it, with `AllowMultipleSelections`), but not its
