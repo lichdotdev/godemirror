@@ -130,7 +130,7 @@ func (e *Editor) keyFilters() []event.Filter {
 		key.Filter{Focus: v, Name: key.NameAlt, Optional: key.ModAlt | key.ModShift | key.ModShortcut | key.ModCtrl | key.ModSuper},
 		key.Filter{Focus: v, Name: key.NameCtrl, Optional: key.ModAlt | key.ModShift | key.ModShortcut | key.ModCtrl | key.ModSuper},
 	}
-	if e.completion.open || e.snippet != nil {
+	if e.completion.open || e.snippet != nil || e.IndentWithTab {
 		filters = append(filters, key.Filter{Focus: v, Name: key.NameTab, Optional: key.ModShift})
 	}
 	filters = append(filters, e.goToFilters()...)
@@ -230,6 +230,10 @@ func (e *Editor) onKey(gtx layout.Context, ev key.Event) {
 	}
 	mods := ev.Modifiers &^ key.ModShift
 	shift := ev.Modifiers.Contain(key.ModShift)
+	if e.IndentWithTab && ev.Name == key.NameTab && mods == 0 {
+		e.mustDispatch(e.state.indentByTab(shift))
+		return
+	}
 	switch {
 	case mods == key.ModShortcut && ev.Name == keyCopy:
 		e.copy(gtx, false)

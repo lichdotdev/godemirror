@@ -215,7 +215,8 @@ file is the trap alone.
   so macOS gets these bindings and none of CodeMirror's macOS ones (Cmd+arrows, Alt+arrows, the Emacs keys).
   Nothing else of `defaultKeymap` is bound yet: no syntax motion, moving or copying lines, commenting,
   bracket matching or indenting a selection, and Tab moves focus away, as without `indentWithTab`, unless
-  `OnKey` is set.
+  `OnKey` or `IndentWithTab` is set. `IndentWithTab`'s Tab inserts a unit at a cursor (CodeMirror's
+  `insertTab`, which writes a tab character instead) and indents the lines of a selection.
 - **With `OnKey` set, the editor takes every key read after it, and a key's text comes apart**: Gio gives a key to the first
   `gtx.Event` call of the frame whose filters match it, so while `OnKey` is set the editor's catch-all filter
   takes every key read after it, whatever `key.Filter`'s godoc says of an empty `Name` yielding to named

@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **`Editor.IndentWithTab`** binds Tab and Shift+Tab, as CodeMirror's `indentWithTab`: Tab inserts an
+  `IndentUnit` at each cursor, or indents the lines of a selection, and Shift+Tab takes a unit off the lines a
+  range is on. Off by default, so Tab still moves focus.
 - **`EditorStateConfig.BracketIndent`** indents by brackets, where CodeMirror would ask a language: Enter
   after an open `(`, `[` or `{` indents the new line one `IndentUnit` more (between `{}` the middle line), and
   a closing bracket typed first on a line takes one unit off. Off by default, so Enter stays as it was.
