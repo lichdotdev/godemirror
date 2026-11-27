@@ -85,3 +85,20 @@ func TestSignatureHelpAsksOnceForABurstAndStays(t *testing.T) {
 		t.Fatalf("%d requests for one burst of typing, want 1", n)
 	}
 }
+
+func TestTakingACompletionThatEndsInAParenOpensTheSignature(t *testing.T) {
+	h, triggers := signatureEditor(t, "time.Si")
+	h.ed.Complete = func(_ context.Context, req CompletionRequest) CompletionResult {
+		return CompletionResult{Items: []CompletionItem{{Label: "Since", Insert: "Since(${1:t})", Snippet: true, From: req.From, To: req.Pos}}}
+	}
+	h.press(key.NameSpace, key.ModShortcut)
+	h.until("offered", func() bool { return len(h.ed.completion.shown) > 0 })
+	h.press(key.NameReturn, 0)
+	if got := h.ed.State().Doc(); got != "time.Since(t)" {
+		t.Fatalf("doc %q", got)
+	}
+	h.until("signature shown", func() bool { return h.ed.signature.sig.Label != "" })
+	if got := <-triggers; got != "(" {
+		t.Fatalf("asked with trigger %q, want (", got)
+	}
+}
