@@ -30,7 +30,7 @@ var (
 	flagDiff    = flag.String("diff", "", "show the first file of this unified diff (git diff)")
 	flagNew     = flag.String("new", "", "with -diff, the new file's text, which fills the lines the diff left out")
 	flagChanges = flag.Bool("changes", false, "in a diff, tint the words that changed within a line")
-	flagSplit   = flag.Bool("split", false, "start a diff side by side")
+	flagSplit   = flag.Bool("split", false, "start a split diff")
 	flagNarrow  = flag.Bool("narrow", false, "in a diff, one line number per row and the revert in the gutter")
 	flagWrap    = flag.Bool("wrap", false, "wrap long lines instead of scrolling sideways")
 	flagEdit    = flag.Bool("edit", false, "show -file in an Editor")
@@ -79,7 +79,7 @@ func main() {
 		if err := d.attachLSP(w.Invalidate); err != nil {
 			log.Fatal(err)
 		}
-		w.Option(app.Title("godemirror: Alt+W wrap, Alt+S side by side, Alt+N comment on the selection"), app.Size(unit.Dp(*flagWidth), unit.Dp(*flagHeight)))
+		w.Option(app.Title("godemirror: Alt+W wrap, Alt+S split, Alt+N comment on the selection"), app.Size(unit.Dp(*flagWidth), unit.Dp(*flagHeight)))
 		if err := runWindow(w, d); err != nil {
 			log.Fatal(err)
 		}

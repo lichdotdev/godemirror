@@ -10,7 +10,7 @@ type LineRef struct {
 
 // DiffBlock is a BlockWidget anchored to a line of a file instead of a row
 // of the layout: a review thread under the line it is about, wherever
-// unified or side by side puts that line. Side by side, it opens on its
+// unified or split puts that line. Split, it opens on its
 // line's side and leaves the same room on the other.
 type DiffBlock struct {
 	At     LineRef

@@ -215,7 +215,7 @@ func (d *demo) bar(gtx layout.Context, t godemirror.Theme) layout.Dimensions {
 	}
 	split := "Unified"
 	if !d.diff.Split {
-		split = "Side by side"
+		split = "Split"
 	}
 	children := []layout.FlexChild{button(&d.editBtn, "Editor"), button(&d.diffBtn, "Diff")}
 	if d.showDiff {

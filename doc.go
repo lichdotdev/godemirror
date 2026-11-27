@@ -2,8 +2,8 @@
 // Editor with multiple cursors, undo history, snippets and the hooks a
 // language server fills (diagnostics, completion, hover, signature help, go
 // to definition, references, rename, code actions); a read-only View, and
-// Split for two documents side by side; and a DiffView, unified or side by
-// side, with an optional revert on each change. Code is drawn as one image per visible
+// Split for two documents in two columns; and a DiffView, unified or
+// split, with an optional revert on each change. Code is drawn as one image per visible
 // row and highlighted by Lezer grammars running natively, off the UI
 // goroutine.
 //

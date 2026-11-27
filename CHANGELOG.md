@@ -455,7 +455,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   a full screen of code costs a handful of quads. Highlighting runs off the UI
   goroutine; `SetContent` shows a new document from its top and
   `UpdateContent` swaps in a new version of it without moving the scroll.
-- **Side by side.** `Split` shows two documents row for row, scrolling down
+- **Two columns.** `Split` shows two documents row for row, scrolling down
   together and sideways each on its own, and it can wrap: a pair of lines takes
   the taller side's rows.
 - **Decorations and widgets.** `LineDecoration` tints a line and its gutter
@@ -474,7 +474,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **A diff view.** `DiffView` diffs two documents itself (`SetDocs`, line by
   line with Myers' algorithm) or shows a file of a `git diff` patch
   (`ParsePatch`, `SetPatch`). Unified, with an old | new line-number gutter,
-  or side by side, with deletions and additions paired and fillers hatched.
+  or split, with deletions and additions paired and fillers hatched.
   Unchanged runs collapse behind an expander (`Collapse`, or the gaps of the
   patch, filled through `DiffOptions.Expand` and `FillGap`, in parts if need
   be). Each chunk can be reverted through `DiffOptions.Revert`; `Chunks`,

@@ -70,7 +70,7 @@ type DiffColors struct {
 	// Separator rules the row standing for lines a diff leaves out, when it
 	// offers nothing to expand them with.
 	Separator color.NRGBA
-	// Filler hatches the row that, side by side, stands for a line only the
+	// Filler hatches the row that, in a split diff, stands for a line only the
 	// other side has.
 	Filler color.NRGBA
 	// AffordanceHover is the background of the default expand and revert

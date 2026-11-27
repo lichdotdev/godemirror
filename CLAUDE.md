@@ -1,7 +1,7 @@
 # godemirror
 
 `godemirror` is an **open-source Go library for code views and editing, native to Go**, on [Gio](https://gioui.org):
-the code view (`View`, `Split`), the diff view (`DiffView`, unified and side by side), opt-in, the editor
+the code view (`View`, `Split`), the diff view (`DiffView`, unified and split), opt-in, the editor
 (`Editor`), and the language-server client (`lsp`). Read-only stays the default; editing exists only where a
 caller builds an `Editor`. It started as a CodeMirror port and keeps what was ported, but CodeMirror is a
 reference, not a ceiling: when in doubt, ask how a Go caller would want it, and build what CodeMirror lacks
