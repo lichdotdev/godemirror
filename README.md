@@ -26,8 +26,9 @@ your colors, and attach gopls or any LSP server in a few lines.
 ## Why godemirror
 
 - **One UI stack.** The editor is drawn by Gio in your process. Keystrokes,
-  selection and scrolling stay in Go, so nothing crosses a JavaScript bridge,
-  and the library itself builds with `CGO_ENABLED=0`.
+  selection and scrolling stay in Go, so nothing crosses a JavaScript bridge.
+  The library's packages are pure Go; the Gio app around them builds as any
+  Gio app does, with cgo on Linux.
 - **CodeMirror's editing model, checked against CodeMirror.** The document,
   transactions, undo history and commands are ported from CodeMirror 6 and
   tested against goldens the real packages write, so cursor motion and undo
