@@ -130,7 +130,7 @@ func (e *Editor) keyFilters() []event.Filter {
 		key.Filter{Focus: v, Name: key.NameAlt, Optional: key.ModAlt | key.ModShift | key.ModShortcut | key.ModCtrl | key.ModSuper},
 		key.Filter{Focus: v, Name: key.NameCtrl, Optional: key.ModAlt | key.ModShift | key.ModShortcut | key.ModCtrl | key.ModSuper},
 	}
-	if e.completion.open || e.snippet != nil {
+	if e.completion.open || e.snippet != nil || e.IndentWithTab {
 		filters = append(filters, key.Filter{Focus: v, Name: key.NameTab, Optional: key.ModShift})
 	}
 	filters = append(filters, e.goToFilters()...)
@@ -230,6 +230,16 @@ func (e *Editor) onKey(gtx layout.Context, ev key.Event) {
 	}
 	mods := ev.Modifiers &^ key.ModShift
 	shift := ev.Modifiers.Contain(key.ModShift)
+	if e.IndentWithTab && ev.Name == key.NameTab && mods == 0 {
+		e.mustDispatch(e.state.indentByTab(shift))
+		return
+	}
+	if e.CloseBrackets && ev.Name == key.NameDeleteBackward && ev.Modifiers == 0 {
+		if spec, ok := e.state.deletePair(); ok {
+			e.mustDispatch(spec)
+			return
+		}
+	}
 	switch {
 	case mods == key.ModShortcut && ev.Name == keyCopy:
 		e.copy(gtx, false)
@@ -332,6 +342,12 @@ func (e *Editor) onEdit(ev key.EditEvent) {
 	change := ChangeSpec{From: from, To: to, Insert: ev.Text}
 	// Gio's text input puts the cursor after what it inserted.
 	newSel := from + len(normalizeBreaks(ev.Text, e.state.conf.LineSeparator))
+	if !e.ime.composing {
+		change, newSel = e.state.outdentClosing(change)
+		if e.CloseBrackets && change.Insert == ev.Text {
+			change, newSel = e.state.closePair(change)
+		}
+	}
 	e.mustDispatch(e.state.applyDefaultInsert(change, newSel, e.ime.composing))
 	if !e.ime.composing {
 		e.afterTyping(ev.Text)

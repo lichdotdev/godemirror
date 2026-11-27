@@ -6,6 +6,8 @@ import (
 
 	"gioui.org/layout"
 	"gioui.org/op"
+
+	"github.com/lichdotdev/godemirror/internal/lezer"
 )
 
 // Content is everything a View shows of one document. Labels and
@@ -116,9 +118,12 @@ func (v *View) highlight(c Content, replacement *Content) *pending {
 // again: the others keep their cells, colors and wrapping, and their row
 // images, renumbered, until c's own highlighting is ready.
 func (v *View) showEdit(c Content, keepTop, keepBottom int, middle string) {
+	carried := carryTags(v.doc, keepTop, len(v.doc.lines)-keepBottom, []rune(middle))
 	old, mid := v.doc, newDocument()
-	mid.add(middle, nil)
 	tail := len(old.lines) - keepBottom
+	for i, r := range []rune(middle) {
+		mid.add(string(r), carried[i])
+	}
 	v.doc = &document{
 		lines:  splice(old.lines, keepTop, tail, mid.lines),
 		tags:   splice(old.tags, keepTop, tail, mid.tags),
@@ -141,6 +146,41 @@ func (v *View) showEdit(c Content, keepTop, keepBottom int, middle string) {
 	v.measureLabels()
 	v.findMatches()
 	v.pending = v.highlight(c, nil)
+}
+
+// carryTags are the tags the runes of middle, the new text of lines
+// [from, to) of old, show until highlighting lands: as they were for the
+// text before and after the change, and the tag around a run typed inside a
+// token, so an edit does not blank its lines for the time highlighting takes.
+func carryTags(old *document, from, to int, middle []rune) []*lezer.TagSet {
+	var was []rune
+	var wasTags []*lezer.TagSet
+	for l := from; l < to; l++ {
+		if l > from {
+			was, wasTags = append(was, '\n'), append(wasTags, nil)
+		}
+		for i, r := range old.source[l] {
+			was = append(was, r)
+			wasTags = append(wasTags, old.tags[l][old.cellOf[l][i]])
+		}
+	}
+	pre := 0
+	for pre < len(was) && pre < len(middle) && was[pre] == middle[pre] {
+		pre++
+	}
+	suf := 0
+	for suf < len(was)-pre && suf < len(middle)-pre && was[len(was)-1-suf] == middle[len(middle)-1-suf] {
+		suf++
+	}
+	out := make([]*lezer.TagSet, len(middle))
+	copy(out, wasTags[:pre])
+	copy(out[len(middle)-suf:], wasTags[len(was)-suf:])
+	if pre > 0 && suf > 0 && wasTags[pre-1] == wasTags[len(was)-suf] {
+		for i := pre; i < len(middle)-suf; i++ {
+			out[i] = wasTags[pre-1]
+		}
+	}
+	return out
 }
 
 // splice is s with s[from:to] replaced by mid, in a new slice.

@@ -83,7 +83,7 @@ func main() {
 // editorConfig is the file the editor opens with, and goes back to before
 // the scripted edit plays.
 func editorConfig() godemirror.EditorStateConfig {
-	return godemirror.EditorStateConfig{Filename: "server.go", Doc: modified, AllowMultipleSelections: true, IndentUnit: "\t"}
+	return godemirror.EditorStateConfig{Filename: "server.go", Doc: modified, AllowMultipleSelections: true, IndentUnit: "\t", BracketIndent: true}
 }
 
 func newDemo() (*demo, error) {
@@ -115,6 +115,7 @@ func newDemo() (*demo, error) {
 	}
 	editor.RectangularSelection = true
 	editor.Complete, editor.CompletionTriggers = completeWords, []string{"."}
+	editor.IndentWithTab, editor.CloseBrackets = true, true
 	diff.Split = true
 	diff.SetDocs("server.go", original, modified)
 	th := material.NewTheme()

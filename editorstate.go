@@ -37,6 +37,12 @@ type EditorStateConfig struct {
 	// facet: a run of spaces, or of tabs, and two spaces when empty. Enter
 	// writes a new line's indentation in it.
 	IndentUnit string
+	// BracketIndent indents by brackets, where CodeMirror would ask the
+	// language: Enter after an unclosed (, [ or { on its line indents the
+	// new line one IndentUnit more, and a ), ] or } typed first on a line
+	// takes one unit off it. Off, Enter keeps the line's indentation, as
+	// CodeMirror does with no language.
+	BracketIndent bool
 	// Filename picks the language Doc is highlighted as, as Content.Filename.
 	Filename string
 	// StyleTags add rules to the Lezer grammars they name, as

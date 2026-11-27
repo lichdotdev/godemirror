@@ -202,9 +202,10 @@ file is the trap alone.
   wrapping of the lines the change touched and keeps the others', with their colors and row images. A
   keystroke in the middle of 13,000 lines of Java costs the UI goroutine about 1 ms where rebuilding the
   view's document took 23. Highlighting then reparses incrementally but builds every line's cells and tags
-  again, off the UI goroutine, as the ceiling on content changes says. Until it lands, the lines the change
-  touched show uncolored and the others keep their old colors, even those the change recolors (a comment
-  opened above them).
+  again, off the UI goroutine, as the ceiling on content changes says. Until it lands, every line keeps its old
+  colors: on the lines the change touched, the text before and after the change keeps its own, text typed
+  inside a token takes that token's and other new text shows uncolored; lines the change recolors (a comment
+  opened above them) change only when it lands.
 - **An editor has `@codemirror/commands`' standard keymap, as it binds off macOS, and nothing more**: arrows by
   character and, with Ctrl, by group; Up and Down; Page Up and Down; Home and End (to the wrapped row first,
   Home then to the line's indentation); Ctrl+Home and Ctrl+End; Shift for each; Enter; Ctrl+A; Backspace and
@@ -214,7 +215,10 @@ file is the trap alone.
   so macOS gets these bindings and none of CodeMirror's macOS ones (Cmd+arrows, Alt+arrows, the Emacs keys).
   Nothing else of `defaultKeymap` is bound yet: no syntax motion, moving or copying lines, commenting,
   bracket matching or indenting a selection, and Tab moves focus away, as without `indentWithTab`, unless
-  `OnKey` is set.
+  `OnKey` or `IndentWithTab` is set. `IndentWithTab`'s Tab inserts a unit at a cursor (CodeMirror's
+  `insertTab`, which writes a tab character instead) and indents the lines of a selection. `CloseBrackets`
+  pairs at one cursor only, does not wrap a selection in a pair, and steps over any closing character that is
+  next, not only one it inserted, as CodeMirror tracks.
 - **With `OnKey` set, the editor takes every key read after it, and a key's text comes apart**: Gio gives a key to the first
   `gtx.Event` call of the frame whose filters match it, so while `OnKey` is set the editor's catch-all filter
   takes every key read after it, whatever `key.Filter`'s godoc says of an empty `Name` yielding to named
@@ -229,7 +233,9 @@ file is the trap alone.
   as `@codemirror/lang-*`'s `indentNodeProp` would: the Lezer ports carry no indentation. CodeMirror's quirks
   stay: a line break at the very start of the document is indented to column 0, and the spaces before the
   cursor are dropped when its whole line, past the document's first lines, is blank. A tab stop is 4 columns,
-  as the views draw it.
+  as the views draw it. With `BracketIndent` set, brackets stand in for the syntax: a bracket left open on
+  the line indents the next one a unit more, and a closing bracket typed first on a line takes one unit off,
+  not the indentation of the line that opened it; brackets inside strings and comments count too.
 - **A press in an editor selects at once**: `@codemirror/view`'s mouse selection is ported (a click, a drag, a
   double click by character category, a triple click for the line and its break, Shift to extend the main
   range, Ctrl+click to add a range, or remove the cursor under it, with `AllowMultipleSelections`), but not its

@@ -9,12 +9,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **`Editor.CloseBrackets`** types brackets and quotes in pairs, as CodeMirror's `closeBrackets`: an opening
+  one typed before a space, a closing bracket or the line's end inserts its closing one, typing the closing one
+  steps over it, and Backspace in an empty pair deletes both. Off by default.
+- **`Editor.IndentWithTab`** binds Tab and Shift+Tab, as CodeMirror's `indentWithTab`: Tab inserts an
+  `IndentUnit` at each cursor, or indents the lines of a selection, and Shift+Tab takes a unit off the lines a
+  range is on. Off by default, so Tab still moves focus.
+- **`EditorStateConfig.BracketIndent`** indents by brackets, where CodeMirror would ask a language: Enter
+  after an open `(`, `[` or `{` indents the new line one `IndentUnit` more (between `{}` the middle line), and
+  a closing bracket typed first on a line takes one unit off. Off by default, so Enter stays as it was.
 - **The `godemirror_nochroma` build tag** leaves out chroma's lexers, for a smaller WebAssembly build: files that
   no Lezer grammar or stream mode reads show plain. The site's demo drops from 22.4 MB to 16.7 MB (4.6 MB
   gzipped).
 
 ### Fixed
 
+- **An edited line keeps its colors until highlighting catches up**, instead of showing uncolored for that
+  time: the text around the change keeps its tags, and text typed inside a token takes that token's. The gap
+  was invisible natively but flashed on every keystroke in a WebAssembly build.
 - **Taking a completion that ends in a signature trigger opens the signature help**, as typing the trigger
   would: a snippet like `Since($1)` from gopls now shows `Since(t time.Time)` with its field selected.
 - **The signature help no longer hides under the completion menu.** When the menu covers it, the signature
