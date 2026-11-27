@@ -9,6 +9,7 @@
     <img alt="Platform" src="https://img.shields.io/badge/tested%20on-Linux-333" />
     <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/license-MIT-blue" /></a>
   </p>
+  <p><a href="https://lichdotdev.github.io/godemirror/"><strong>Try the Editor in your browser</strong></a>, compiled to WebAssembly.</p>
   <img src="docs/media/hero.png" alt="The godemirror Editor on a Go file with gopls attached: wavy underlines and gutter dots on two errors, and the completion menu for time.Sin with Since chosen and its documentation beside the menu" width="880" />
 </div>
 
@@ -224,6 +225,10 @@ go run ./cmd/godemirror-demo -file view.go -wrap -theme nord   # a wrapped View
 Headless, `-shot out.png` writes the last frame, `-scale 2` draws it sharp,
 and `-record script -frames dir` runs a script of keys, typing and clicks and
 writes every frame; `go run ./cmd/godemirror-demo -h` lists the rest.
+
+The [site](https://lichdotdev.github.io/godemirror/) runs `cmd/wasmdemo`, the
+Editor and the DiffView built for the browser. `site/build.sh` builds it into
+`_site`; serve that directory (`python3 -m http.server -d _site`) to try it.
 
 ## Requirements
 

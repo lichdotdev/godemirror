@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>godemirror demo</title>
+<style>html,body{margin:0;height:100%;overflow:hidden;overscroll-behavior:contain;background:#09090b}</style></head>
+<body><script src="wasm_exec.js"></script><script>
+// The demo in a window of its own, as Gio expects; the page drives it with
+// postMessage and hears it is ready the same way.
+window.godemirrorReady = () => { godemirrorEmbed(); parent.postMessage({ godemirror: "ready" }, "*"); };
+window.addEventListener("message", (e) => {
+  const m = e.data && e.data.godemirror;
+  if (e.source !== parent || !m || typeof window["godemirror" + m.cmd] !== "function") return;
+  window["godemirror" + m.cmd](m.arg);
+});
+// Gio scrolls the editor on a wheel but leaves the event to the browser,
+// which would scroll the page under the frame too.
+window.addEventListener("wheel", (e) => e.preventDefault(), { passive: false });
+(async () => {
+  const go = new Go();
+  const resp = await fetch("main.wasm.gz");
+  let bytes = await resp.arrayBuffer();
+  // Gzip unless a server already decoded it (Content-Encoding: gzip).
+  const head = new Uint8Array(bytes, 0, 2);
+  if (head[0] === 0x1f && head[1] === 0x8b) {
+    bytes = await new Response(new Blob([bytes]).stream().pipeThrough(new DecompressionStream("gzip"))).arrayBuffer();
+  }
+  const r = await WebAssembly.instantiate(bytes, go.importObject);
+  go.run(r.instance);
+})();
+</script></body></html>

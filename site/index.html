@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>godemirror: a code editor for Gio apps, written in Go</title>
+<meta name="description" content="A code editor widget for Gio: syntax highlighting, completions from any language server and side-by-side diffs, in Go.">
+<meta property="og:title" content="godemirror: a code editor for Gio apps, written in Go">
+<meta property="og:description" content="Syntax highlighting, completions from any language server and side-by-side diffs, drawn by Gio in your own process.">
+<meta property="og:image" content="media/social-preview.png">
+<style>
+  /* LightTheme's greys around the page, DarkTheme inside the figures. */
+  :root {
+    --bg: #ebebed; --paper: #f5f5f6; --line: #d4d4d8; --fg: #18181b; --muted: #64636e;
+    --kw: #6c329f; --str: #206b38; --type: #006e74; --prop: #17559b; --lit: #9d5300;
+    --dark: #09090b; --dline: #27272a; --dfg: #fafafa; --dmuted: #9f9fa9; --dprop: #82b1ed; --dkw: #c396f5;
+    --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --mono: ui-monospace, "JetBrains Mono", "SFMono-Regular", Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  html { background: var(--bg); color: var(--fg); font: 16px/1.6 var(--sans); }
+  body { margin: 0; }
+  a { color: var(--prop); } a:hover { text-decoration: none; }
+  .wrap { max-width: 1160px; margin: 0 auto; padding: 0 28px; }
+  [hidden] { display: none !important; }
+
+  nav .wrap { display: flex; align-items: center; height: 56px; font: 13px var(--mono); gap: 24px; border-bottom: 1px solid var(--line); }
+  nav .logo { font-weight: 700; } nav .logo span { color: var(--kw); }
+  nav .r { margin-left: auto; display: flex; gap: 20px; } nav a { color: var(--muted); text-decoration: none; } nav a:hover { color: var(--fg); }
+
+  .hero { display: grid; grid-template-columns: 1.15fr 1fr; gap: 48px; padding: 72px 0 40px; align-items: end; }
+  .hero h1 { font: 600 44px/1.12 var(--mono); letter-spacing: -0.03em; margin: 0; }
+  .hero h1 em { font-style: normal; color: var(--kw); }
+  .hero p { color: var(--muted); font-size: 17px; margin: 0 0 20px; }
+  .hero .cta { display: flex; gap: 10px; flex-wrap: wrap; }
+  .b { font: 13px var(--mono); text-decoration: none; padding: 9px 14px; border-radius: 4px; border: 1px solid var(--fg); color: var(--fg); }
+  .b.dark { background: var(--fg); color: var(--bg); }
+
+  .fig { border: 1px solid var(--line); background: var(--paper); border-radius: 6px; padding: 10px; }
+  .fig-head { display: flex; justify-content: space-between; font: 12px var(--mono); color: var(--muted); padding: 2px 4px 10px; }
+  .panel { display: grid; grid-template-columns: 200px minmax(0, 1fr); border: 1px solid var(--dline); border-radius: 4px; overflow: hidden; background: var(--dark); }
+  .side { border-right: 1px solid var(--dline); padding: 10px 0; font: 13px var(--mono); color: var(--dmuted); }
+  .side .grp { padding: 10px 14px 4px; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #71717a; }
+  .side button { all: unset; cursor: pointer; display: flex; justify-content: space-between; width: calc(100% - 28px); padding: 5px 14px; }
+  .side button[aria-selected="true"] { background: #18181b; color: var(--dfg); box-shadow: inset 2px 0 0 var(--dprop); }
+  .side button:hover { color: var(--dfg); }
+  .side .n { color: #00d492; font-size: 11px; }
+  #giowindow { position: relative; height: 560px; }
+  #giowindow { overflow: hidden; min-width: 0; }
+  .loading { position: absolute; inset: 0; display: grid; place-items: center; color: var(--dmuted); font: 13px var(--mono); }
+  .demo-ready .loading { display: none; }
+  .fig-foot { display: flex; gap: 16px; font: 12px var(--mono); color: var(--muted); padding: 10px 4px 2px; flex-wrap: wrap; }
+
+  section { padding: 88px 0 0; }
+  .label { font: 12px var(--mono); color: var(--muted); margin: 0 0 8px; }
+  h2 { font: 600 30px/1.2 var(--mono); letter-spacing: -0.02em; margin: 0 0 12px; }
+  .lede { color: var(--muted); max-width: 700px; margin: 0 0 28px; }
+
+  .tour { display: grid; grid-template-columns: 300px 1fr; gap: 28px; }
+  .tour ol { list-style: none; margin: 0; padding: 0; font: 14px var(--mono); }
+  .tour li { border-left: 2px solid var(--line); padding: 10px 14px; color: var(--muted); cursor: pointer; transition: color .3s, border-color .3s; }
+  .tour li.on { border-left-color: var(--kw); color: var(--fg); }
+  .tour li small { display: block; font: 13px var(--sans); color: var(--muted); }
+  .stage { position: relative; border: 1px solid var(--dline); border-radius: 4px; overflow: hidden; background: var(--dark); aspect-ratio: 1920 / 1150; }
+  .stage img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: top left; opacity: 0; transition: opacity .6s ease; }
+  .stage img.on { opacity: 1; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 15px; background: var(--paper); border: 1px solid var(--line); }
+  th, td { text-align: left; padding: 12px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font: 600 12px var(--mono); color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+  td:first-child { font-family: var(--mono); font-size: 13px; color: var(--muted); width: 220px; }
+  td.us { color: var(--fg); }
+  .scroll { overflow-x: auto; }
+  .spec { display: grid; grid-template-columns: repeat(4, 1fr); border-top: 1px solid var(--line); }
+  .spec div { padding: 18px 16px 18px 0; border-bottom: 1px solid var(--line); }
+  .spec b { display: block; font: 600 22px var(--mono); }
+  .spec span { color: var(--muted); font-size: 14px; }
+  pre { font: 14px/1.6 var(--mono); background: var(--dark); color: var(--dfg); border-radius: 4px; padding: 18px 20px; overflow-x: auto; margin: 0; }
+  pre .c { color: #71717a; } pre .s { color: #82cb92; } pre .f { color: var(--dprop); } pre .t { color: #71d0d5; }
+  footer { margin-top: 96px; border-top: 1px solid var(--line); padding: 24px 0 40px; font: 13px var(--mono); color: var(--muted); }
+  footer .wrap { display: flex; gap: 22px; flex-wrap: wrap; } footer .r { margin-left: auto; }
+  .reveal { opacity: 0; transform: translateY(14px); transition: opacity .5s ease, transform .5s ease; } .reveal.in { opacity: 1; transform: none; }
+  @media (prefers-reduced-motion: reduce) { .reveal, .stage img { transition: none; } .reveal { opacity: 1; transform: none; } }
+  @media (max-width: 900px) {
+    .hero, .tour, .panel { grid-template-columns: 1fr; } .spec { grid-template-columns: 1fr 1fr; }
+    .hero { padding-top: 40px; } .hero h1 { font-size: 32px; }
+    .side { display: flex; flex-wrap: wrap; border-right: 0; border-bottom: 1px solid var(--dline); padding: 6px; }
+    .side .grp { display: none; } #themes { display: contents; }
+    .side button { width: auto; padding: 5px 10px; gap: 8px; }
+    #giowindow { height: 460px; }
+    table { font-size: 13px; } th, td { padding: 10px 8px; } th { letter-spacing: 0; } td:first-child { width: auto; }
+    nav .r .wide { display: none; }
+  }
+</style>
+</head>
+<body>
+<nav><div class="wrap"><span class="logo"><span>go</span>demirror</span><div class="r"><a href="#lsp">lsp</a><a class="wide" href="#compare">compare</a><a href="#start">start</a><a class="wide" href="https://pkg.go.dev/github.com/lichdotdev/godemirror">pkg.go.dev</a><a href="https://github.com/lichdotdev/godemirror">github</a></div></div></nav>
+
+<main class="wrap">
+  <div class="hero">
+    <h1>A code editor <em>widget</em> for Gio, in Go.</h1>
+    <div>
+      <p>Syntax highlighting, completions from any language server and side-by-side diffs for Go desktop apps, drawn by Gio in your own process, so the app ships one UI stack.</p>
+      <div class="cta"><a class="b dark" href="https://github.com/lichdotdev/godemirror">github.com/lichdotdev/godemirror</a><a class="b" href="#start">quick start</a></div>
+    </div>
+  </div>
+
+  <div class="fig">
+    <div class="fig-head"><span>[ fig. 1 ] the library, compiled to WebAssembly</span><span>live</span></div>
+    <div class="panel">
+      <div class="side" role="tablist">
+        <div class="grp">views</div>
+        <button role="tab" aria-selected="true" data-view="editor">Editor <span>server.go</span></button>
+        <button role="tab" aria-selected="false" data-view="diff">DiffView <span class="n">+6 −4</span></button>
+        <button role="tab" aria-selected="false" data-view="unified" data-unified>DiffView, unified</button>
+        <div class="grp">theme</div>
+        <div id="themes"></div>
+        <div class="grp">script</div>
+        <button id="replay">Replay the edit</button>
+      </div>
+      <div id="giowindow"><div class="loading">loading the WebAssembly build…</div></div>
+    </div>
+    <div class="fig-foot"><span>GOOS=js GOARCH=wasm</span><span>Lezer grammar for Go</span><span>Go Mono, built in</span><span>no language server in a browser: see fig. 2</span></div>
+  </div>
+
+  <section id="lsp">
+    <p class="label">[ fig. 2 ] package lsp, with gopls</p>
+    <h2>Attach a language server to the Editor.</h2>
+    <p class="lede"><code>lsp.Attach</code> sends every edit to the server and fills the Editor's hooks from its answers. <code>lsp/servers</code> knows 428 servers and how to install 252 of them. Tested with gopls.</p>
+    <div class="tour reveal">
+      <ol id="steps">
+        <li class="on" data-ms="16800">01 typing<small>completion after a dot or two letters, documentation beside the menu, signature help, Ctrl+click to a definition</small></li>
+        <li data-ms="3600">02 diagnostics<small>wavy underline, a dot in the gutter, F8 to the next</small></li>
+        <li data-ms="3600">03 code actions<small>Ctrl+. or the bulb in the gutter</small></li>
+        <li data-ms="3600">04 rename<small>F2, in place, across files</small></li>
+      </ol>
+      <div class="stage" id="stage">
+        <img class="on" id="tour" alt="Typing in the Editor with gopls attached: completion, signature help, then Ctrl+click to a definition">
+        <img src="media/diagnostics.png" alt="A diagnostic popup over an undefined name" loading="lazy">
+        <img src="media/code-actions.png" alt="Code actions listed under the cursor, the bulb in the gutter" loading="lazy">
+        <img src="media/rename.png" alt="F2 opens an input over a name" loading="lazy">
+      </div>
+    </div>
+  </section>
+
+  <section id="compare">
+    <p class="label">[ table 1 ] showing code in a Go desktop app</p>
+    <h2>Three ways to put code on screen.</h2>
+    <div class="scroll reveal"><table>
+      <tr><th></th><th>webview + CodeMirror or Monaco</th><th>plain text widget</th><th>godemirror</th></tr>
+      <tr><td>UI stacks</td><td>Gio and a browser engine, bridged</td><td>one</td><td class="us">one: Gio</td></tr>
+      <tr><td>highlighting</td><td>yes</td><td>no</td><td class="us">Lezer grammars in Go, off the UI goroutine</td></tr>
+      <tr><td>language server</td><td>through the bridge</td><td>no</td><td class="us">package lsp, in process</td></tr>
+      <tr><td>diff view</td><td>CodeMirror merge</td><td>no</td><td class="us">DiffView, with revert</td></tr>
+      <tr><td>theme</td><td>CSS, apart from the app</td><td>the app's</td><td class="us">the app's, plus ported CodeMirror themes</td></tr>
+    </table></div>
+  </section>
+
+  <section>
+    <p class="label">[ table 2 ] measured in the repository</p>
+    <div class="spec reveal">
+      <div><b>428</b><span>language servers in lsp/servers</span></div>
+      <div><b>252</b><span>with an install recipe</span></div>
+      <div><b>13,000</b><span>lines show at once, colored when ready</span></div>
+      <div><b>140 ms</b><span>a program scroll glides, eased out</span></div>
+    </div>
+  </section>
+
+  <section id="start">
+    <p class="label">[ listing 1 ] cmd/examples/lsp, abridged</p>
+    <h2>Quick start.</h2>
+    <pre class="reveal"><span class="c">// go get github.com/lichdotdev/godemirror</span>
+editor, err := godemirror.<span class="f">NewEditor</span>(<span class="s">"monospace"</span>, unit.<span class="f">Sp</span>(13))
+err = editor.<span class="f">SetState</span>(godemirror.<span class="t">EditorStateConfig</span>{Filename: path, Doc: text})
+
+srv := servers.<span class="f">Lookup</span>(path)[0]
+client, err := lsp.<span class="f">Start</span>(ctx, lsp.<span class="t">Config</span>{Command: srv.Command, RootDir: root})
+doc, err := lsp.<span class="f">Attach</span>(client, editor, lsp.<span class="f">FileURI</span>(path), lsp.<span class="t">Options</span>{
+	LanguageID: servers.<span class="f">LanguageID</span>(servers.<span class="f">FileType</span>(path)),
+	Invalidate: window.Invalidate,
+})
+editor.<span class="f">Layout</span>(gtx) <span class="c">// in the frame loop</span></pre>
+    <p class="lede" style="margin-top:16px">The library is pure Go; the app around it is an ordinary Gio app. Tested on Linux; macOS and Windows build but CI does not run them yet. Limits: <a href="https://github.com/lichdotdev/godemirror/blob/main/docs/ceilings.md">docs/ceilings.md</a>.</p>
+  </section>
+</main>
+<footer><div class="wrap"><a href="https://github.com/lichdotdev/godemirror">github</a><a href="https://pkg.go.dev/github.com/lichdotdev/godemirror">pkg.go.dev</a><a href="https://github.com/lichdotdev/godemirror/blob/main/CHANGELOG.md">changelog</a><span class="r">MIT</span></div></footer>
+
+<script src="demo.js"></script>
+<script>
+  const names = ["Dark", "Light", "One Dark", "GitHub Light", "Dracula", "Nord"];
+  const tb = document.getElementById("themes");
+  names.forEach((n, i) => { const b = document.createElement("button"); b.textContent = n; b.setAttribute("aria-selected", i === 0);
+    b.onclick = () => { demo.theme(i); tb.querySelectorAll("button").forEach((x, j) => x.setAttribute("aria-selected", j === i)); }; tb.appendChild(b); });
+  document.querySelectorAll(".side [data-view]").forEach((t) => t.onclick = () => {
+    document.querySelectorAll(".side [data-view]").forEach((x) => x.setAttribute("aria-selected", x === t));
+    const diff = t.dataset.view !== "editor";
+    demo.show(diff ? "diff" : "editor"); if (diff) demo.split(t.dataset.view === "diff");
+  });
+  // A phone's width holds too few columns for the file: wrap its lines.
+  const narrow = matchMedia("(max-width: 900px)");
+  demo.wrap(narrow.matches);
+  narrow.onchange = (e) => demo.wrap(e.matches);
+  document.getElementById("replay").onclick = () => { document.querySelector(".side [data-view=editor]").click(); demo.play(); };
+  // fig. 2: the steps advance on their own once on screen, each for as long
+  // as its data-ms; a click stops them on one. The recording restarts from
+  // its first frame each time it shows, from a blob fetched once.
+  const steps = [...document.querySelectorAll("#steps li")], imgs = [...document.querySelectorAll("#stage img")];
+  const tour = document.getElementById("tour");
+  let tourBlob = null, cur = 0, timer = null, started = false;
+  const restartTour = () => { if (!tourBlob) return; URL.revokeObjectURL(tour.src); tour.src = URL.createObjectURL(tourBlob); };
+  const go = (i) => {
+    cur = i;
+    steps.forEach((s, j) => s.classList.toggle("on", j === i));
+    imgs.forEach((m, j) => m.classList.toggle("on", j === i));
+    if (i === 0) restartTour();
+  };
+  const next = () => { timer = setTimeout(() => { go((cur + 1) % steps.length); next(); }, +steps[cur].dataset.ms); };
+  steps.forEach((s, i) => s.onclick = () => { clearTimeout(timer); go(i); });
+  new IntersectionObserver(async (e) => {
+    if (started || !e[0].isIntersecting) return;
+    started = true;
+    tourBlob = await (await fetch("media/tour.webp")).blob();
+    go(0); next();
+  }, { threshold: .4 }).observe(document.getElementById("stage"));
+</script>
+</body>
+</html>
