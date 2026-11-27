@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.13.0] - 2026-11-27
+
 ### Added
 
 - **`Editor.CloseBrackets`** types brackets and quotes in pairs, as CodeMirror's `closeBrackets`: an opening
@@ -503,7 +505,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   wrapping never splits one, and a gutter label's width counts them too.
   `Pos.Col` and `Span` still count runes.
 
-[Unreleased]: https://github.com/lichdotdev/godemirror/compare/v0.12.0...HEAD
+[Unreleased]: https://github.com/lichdotdev/godemirror/compare/v0.13.0...HEAD
+[0.13.0]: https://github.com/lichdotdev/godemirror/compare/v0.12.0...v0.13.0
 [0.12.0]: https://github.com/lichdotdev/godemirror/compare/v0.11.0...v0.12.0
 [0.11.0]: https://github.com/lichdotdev/godemirror/compare/v0.10.0...v0.11.0
 [0.10.0]: https://github.com/lichdotdev/godemirror/compare/v0.9.0...v0.10.0
