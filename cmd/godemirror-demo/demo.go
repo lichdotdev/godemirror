@@ -54,6 +54,8 @@ type demo struct {
 	focused bool
 	// client is the language server of -lsp.
 	client *lsp.Client
+	// topped is whether -top has been scrolled to.
+	topped bool
 }
 
 var portedThemes = map[string]godemirror.Theme{
@@ -255,6 +257,7 @@ func (d *demo) layout(gtx layout.Context) error {
 			d.focused = true
 		}
 		_, err = d.editor.Layout(gtx)
+		d.snapToTop()
 	case d.diff == nil:
 		_, err = d.file.Layout(gtx)
 	default:

@@ -1,20 +1,3 @@
-// Package godemirror is CodeMirror for Gio: a monospace document with a
-// line-number gutter, wrapping or horizontal scrolling, drawn as one image per
-// visible row so a full screen of code costs a handful of quads.
-//
-// A View shows one document and a Split shows two side by side, read-only.
-// Build them with New or NewSplit, which resolve a font family among the
-// installed fonts, or with NewFromFonts, which takes the font files
-// themselves. Give them a Content and call Layout every frame. An Editor is
-// the opt-in editable view, a port of CodeMirror's EditorState and its
-// transactions.
-//
-// A View or a Split belongs to the goroutine that lays it out: call its
-// methods and set its fields there, between frames. Only highlighting runs on
-// a goroutine of its own, and its result is taken in by a later Layout.
-//
-// The view's deliberate limits, and the traps they set for a caller, are in
-// docs/ceilings.md.
 package godemirror
 
 import (

@@ -61,11 +61,15 @@ func main() {
 	if err := d.placeCursor(); err != nil {
 		log.Fatal(err)
 	}
-	if *flagShot != "" || *flagBench > 0 {
+	if *flagShot != "" || *flagBench > 0 || *flagRecord != "" {
 		if err := d.attachLSP(nil); err != nil {
 			log.Fatal(err)
 		}
-		if err := runHeadless(d); err != nil {
+		run := runHeadless
+		if *flagRecord != "" {
+			run = runRecord
+		}
+		if err := run(d); err != nil {
 			log.Fatal(err)
 		}
 		return
@@ -101,7 +105,7 @@ func runWindow(w *app.Window, d *demo) error {
 }
 
 func runHeadless(d *demo) error {
-	size := image.Pt(*flagWidth, *flagHeight)
+	size := scaled(image.Pt(*flagWidth, *flagHeight))
 	win, err := headless.NewWindow(size.X, size.Y)
 	if err != nil {
 		return fmt.Errorf("headless window: %w", err)
@@ -133,7 +137,7 @@ func runHeadless(d *demo) error {
 			Ops:         &ops,
 			Now:         start,
 			Source:      router.Source(),
-			Metric:      unit.Metric{PxPerDp: 1, PxPerSp: 1},
+			Metric:      unit.Metric{PxPerDp: float32(*flagScale), PxPerSp: float32(*flagScale)},
 			Constraints: layout.Exact(size),
 		}
 		if err := d.layout(gtx); err != nil {
