@@ -67,7 +67,7 @@ func words(line string) []string {
 }
 
 // markChanges sets the spans of every deleted row paired by position with an
-// added row of its chunk, the pairing a side-by-side layout shows.
+// added row of its chunk, the pairing a split layout shows.
 func markChanges(rows []diffRow) {
 	var dels, adds []int
 	flush := func() {

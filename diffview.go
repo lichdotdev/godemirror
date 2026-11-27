@@ -33,7 +33,7 @@ type DiffOptions struct {
 	RevertWidget func(c Chunk, revert func()) layout.Widget
 
 	// UnifiedGutter is how a unified diff numbers its rows; the zero value
-	// is TwoColumnGutter. A side-by-side diff always has one number per
+	// is TwoColumnGutter. A split diff always has one number per
 	// row, each side's own.
 	UnifiedGutter UnifiedGutter
 	// RevertPlacement is where Revert's default and RevertWidget's widget
@@ -52,14 +52,14 @@ type DiffOptions struct {
 }
 
 // DiffView shows the difference between two versions of a file, unified in
-// one column or side by side, the way CodeMirror's merge view does: changed
+// one column or two, the way CodeMirror's merge view does: changed
 // lines tinted in the theme's Diff colors, each run of them a chunk that
 // lights up under the pointer. Build one with NewDiffView or
 // NewDiffViewFromFonts, give it a diff with SetDocs or SetPatch, and call
 // Layout every frame. Like a View, it belongs to the goroutine that lays it
 // out.
 type DiffView struct {
-	// Split shows the diff side by side, the original on the left; otherwise
+	// Split shows the diff in two columns, the original on the left; otherwise
 	// it is one column with the deletions above the additions.
 	Split bool
 	// Wrap breaks long lines instead of scrolling them sideways.
@@ -230,7 +230,7 @@ func (d *DiffView) searched() *View {
 func (d *DiffView) Chunks() []Chunk { return slices.Clone(d.chunks) }
 
 // Layout draws the diff into the whole of gtx.Constraints.Max, unified or
-// side by side, and then runs what its affordances were clicked for:
+// split, and then runs what its affordances were clicked for:
 // DiffOptions.Expand and Revert are called from here, after the frame is
 // drawn. Its error means what View.Layout's does.
 func (d *DiffView) Layout(gtx layout.Context) (layout.Dimensions, error) {
@@ -243,7 +243,7 @@ func (d *DiffView) Layout(gtx layout.Context) (layout.Dimensions, error) {
 	return d.unified.Layout(gtx)
 }
 
-// layOut lays the rows out, unified and side by side.
+// layOut lays the rows out, unified and split.
 func (d *DiffView) layOut() {
 	d.rows = d.src.rows(d.filled)
 	if d.opts.HighlightChanges {

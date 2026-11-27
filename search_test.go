@@ -369,6 +369,6 @@ func TestDiffViewMatchesAreThoseOfTheViewOnScreen(t *testing.T) {
 	d.Split = true
 	h.frame()
 	if got := len(d.Matches()); got != 2 {
-		t.Fatalf("side by side: %d matches, want the right side's 2", got)
+		t.Fatalf("split: %d matches, want the right side's 2", got)
 	}
 }

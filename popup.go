@@ -54,7 +54,7 @@ func (v *View) spanImage(s textSpan) *rowImage {
 	return img
 }
 
-// spansCells is how many cells spans take side by side.
+// spansCells is how many cells spans take laid in a row.
 func spansCells(spans []textSpan) int {
 	n := 0
 	for _, s := range spans {
@@ -63,7 +63,7 @@ func spansCells(spans []textSpan) int {
 	return n
 }
 
-// paintTextSpans draws spans side by side from at, the top left of the first,
+// paintTextSpans draws spans one after another from at, the top left of the first,
 // clipped to area.
 func (v *View) paintTextSpans(gtx layout.Context, spans []textSpan, at image.Point, area image.Rectangle) {
 	for _, s := range spans {

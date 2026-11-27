@@ -12,7 +12,7 @@ import (
 	"github.com/lichdotdev/godemirror/internal/glyphs"
 )
 
-// Split shows two documents side by side whose line i pairs with line i of
+// Split shows two documents in two columns, whose line i pairs with line i of
 // the other: the two sides of a diff. Each pair of lines starts on the same
 // row: unwrapped that holds by itself, and when the sides wrap, the side that
 // wraps into fewer rows is padded to the other's. A block under a line on one

@@ -27,7 +27,7 @@ type LineDecoration struct {
 	// Rule is a hairline through the middle of the line, across the code area.
 	Rule color.NRGBA
 	// Hatch strikes thin diagonal lines across the code area: the row a
-	// side-by-side diff stands in for a line only the other side has.
+	// split diff stands in for a line only the other side has.
 	Hatch color.NRGBA
 	// HoverGroup groups lines that light up together: while the pointer is
 	// over any line of a group, every line of it takes HoverBackground in

@@ -32,7 +32,7 @@ const (
 	// RevertInGutter puts it over the chunk's first row's gutter cell, in
 	// place of its line number, for a view too narrow to give up the code
 	// area's edge. The default affordance there is the compact "↩", which
-	// fits the cell; a side-by-side diff uses the new side's gutter.
+	// fits the cell; a split diff uses the new side's gutter.
 	RevertInGutter
 )
 

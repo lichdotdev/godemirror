@@ -29,7 +29,7 @@ file is the trap alone.
 - **A character is one or two cells, never zero**: the width table (`glyphs.Width`, Unicode 18.0.0's East
   Asian Wide and Fullwidth plus Emoji_Presentation) gives the wide ones two. Zero-width characters (combining
   marks, ZWJ, variation selectors) still take a cell each: a combining accent leaves a gap after its letter,
-  and an emoji sequence (a flag, a family, a skin tone) is its parts side by side. A text emoji made emoji by
+  and an emoji sequence (a flag, a family, a skin tone) is its parts one after another. A text emoji made emoji by
   U+FE0F (❤️) stays one cell. Color emoji fonts (Noto Color Emoji is CBDT) cannot be rasterized by `x/image`:
   fontconfig still picks them, so those emoji are blank, two cells wide, not boxes. A wide glyph is drawn from
   the left of its two cells, so a CJK font with a 1em advance leaves a sliver on its right.

@@ -1,6 +1,6 @@
 <div align="center">
   <h1>godemirror</h1>
-  <p><strong>A code editor for <a href="https://gioui.org">Gio</a> apps, written in Go: syntax highlighting, completions from any language server, and side-by-side diffs, without embedding a browser.</strong></p>
+  <p><strong>A code editor for <a href="https://gioui.org">Gio</a> apps, written in Go: syntax highlighting, completions from any language server, and split or unified diffs, without embedding a browser.</strong></p>
   <p>
     <a href="https://pkg.go.dev/github.com/lichdotdev/godemirror"><img alt="Go Reference" src="https://pkg.go.dev/badge/github.com/lichdotdev/godemirror.svg" /></a>
     <a href="https://github.com/lichdotdev/godemirror/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/lichdotdev/godemirror/actions/workflows/ci.yml/badge.svg" /></a>
@@ -91,7 +91,7 @@ and how to install it: `servers.Lookup("main.go")` returns gopls first.
 
 `View` shows a document read-only, with a line gutter, selection and copy,
 search, decorations on lines, any Gio widget on a line or between lines, and
-`Split` shows two side by side, row for row. Lines wrap the way CSS `pre-wrap`
+`Split` shows two in two columns, row for row. Lines wrap the way CSS `pre-wrap`
 does, each continuation row hanging under its line's indentation, or scroll
 sideways. A scroll the program makes glides there in 140 ms.
 
@@ -100,11 +100,11 @@ sideways. A scroll the program makes glides there in 140 ms.
 ### Diff view
 
 `DiffView` diffs two documents itself, or shows a file of a `git diff` patch,
-unified or side by side: unchanged runs collapsed behind expanders, the words
+unified or split: unchanged runs collapsed behind expanders, the words
 that changed within a line tinted, a Revert on the chunk under the pointer, and
 review threads anchored to file lines.
 
-<img src="docs/media/diff.png" alt="A DiffView side by side: a deleted line and an added one, words that changed tinted, an unchanged run collapsed, and a Revert on the chunk under the pointer" width="880" />
+<img src="docs/media/diff.png" alt="A split DiffView: a deleted line and an added one, words that changed tinted, an unchanged run collapsed, and a Revert on the chunk under the pointer" width="880" />
 
 ### Highlighting
 
@@ -176,7 +176,7 @@ view.SetContent(godemirror.Content{Filename: "main.go", Text: source})
 // in the frame loop: view.Layout(gtx)
 ```
 
-A diff, side by side, with a revert:
+A split diff with a revert:
 
 ```go
 diff, err := godemirror.NewDiffView("monospace", unit.Sp(13), godemirror.DiffOptions{

@@ -6,7 +6,7 @@ import "gioui.org/layout"
 // the mode it is in now (Split, Wrap) at the size and scale of gtx, so a
 // caller can give a DiffView exactly the room it needs, a file's diff in a
 // list of them, say, without laying it out. With Wrap, a line takes as many
-// rows as it wraps into at that width, and a side-by-side row is as tall as
+// rows as it wraps into at that width, and a split row is as tall as
 // the taller of its two sides.
 //
 // It counts the diff as set, each gap filled so far included, but not the

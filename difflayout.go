@@ -322,7 +322,7 @@ func unified(rows []diffRow, gutter UnifiedGutter) side {
 	})
 }
 
-// split is the side-by-side layout: row N of one side is row N of the other.
+// split is the split layout: row N of one side is row N of the other.
 // An unchanged row sits on both; a chunk pairs its deletions with its
 // additions by position, and the shorter column is padded with fillers. The
 // affordances live on the right, the new side.
