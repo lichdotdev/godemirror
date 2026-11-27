@@ -24,6 +24,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **A dead key no longer throws the text and the caret elsewhere in a browser** (` on an ABNT2 keyboard,
+  then a letter): Gio's browser text input took its whole textarea, the text the editor gave it around the
+  caret, for the composed text, and inserted it again. In a browser the editor now gives it no text around
+  the caret.
 - **An edited line keeps its colors until highlighting catches up**, instead of showing uncolored for that
   time: the text around the change keeps its tags, and text typed inside a token takes that token's. The gap
   was invisible natively but flashed on every keystroke in a WebAssembly build.
