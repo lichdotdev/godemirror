@@ -16,6 +16,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Signature help is asked again once typing pauses, not on every transaction, and stays shown until the answer.
 - **A completion taken inside a snippet's field no longer ends the snippet** when the item is a snippet
   with no fields of its own, as gopls sends a variable: Tab still goes to the next field, or past the end.
+- **An `Editor` asks for the text input when it is pressed or focused**, so typing reaches it in a browser
+  (WebAssembly), on Android and on iOS, which open their text input only when asked. A read-only `View` still
+  does not ask.
 
 ## [0.12.0] - 2026-11-26
 

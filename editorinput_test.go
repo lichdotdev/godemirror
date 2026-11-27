@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"gioui.org/io/input"
 	"gioui.org/io/key"
 	"gioui.org/io/transfer"
 	"gioui.org/layout"
@@ -325,5 +326,26 @@ func TestTypingAtTheEndScrollsTheCursorIntoView(t *testing.T) {
 	_, top := h.ed.coordsAt(len(h.ed.State().Doc()), -1)
 	if top < h.v.scroll.Y || top+h.v.r.CellH() > h.v.scroll.Y+h.size.Y {
 		t.Fatalf("the cursor's row at %d is off screen, scrolled to %d", top, h.v.scroll.Y)
+	}
+}
+
+// A press on an Editor gave it the keys but never asked for the text input,
+// which a browser, Android and iOS only open when asked: typing reached
+// nothing there.
+func TestAPressOnTheEditorOpensTheTextInput(t *testing.T) {
+	h := newEditorHarness(t, EditorStateConfig{Doc: "abc"})
+	h.router.TextInputState() // the frames before the press
+	h.click(h.at(0, 1), 0)
+	if got := h.router.TextInputState(); got != input.TextInputOpen {
+		t.Fatalf("text input state %v after a press, want TextInputOpen", got)
+	}
+}
+
+func TestAPressOnAViewLeavesTheTextInputClosed(t *testing.T) {
+	h := newHarness(t, "abc")
+	h.router.TextInputState()
+	h.click(h.at(0, 1), 0)
+	if got := h.router.TextInputState(); got == input.TextInputOpen {
+		t.Fatal("a read-only view opened the text input")
 	}
 }

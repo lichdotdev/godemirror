@@ -131,6 +131,9 @@ type View struct {
 	hatches map[hatchKey]*rowImage
 	rows    map[rowKey]*rowImage
 	gutter  map[gutterKey]*rowImage
+	// editable is whether an Editor edits the view's document, which asks
+	// for the text input when the view is pressed.
+	editable bool
 	// extraSpans, when set, are more spans to tint on a line, an Editor's
 	// highlighted references.
 	extraSpans func(line int) []Span

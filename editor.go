@@ -280,6 +280,7 @@ func newEditor(v *View) *Editor {
 		TypeDefinitionKey: DefaultTypeDefinitionKey, ImplementationKey: DefaultImplementationKey,
 		ReferencesKey: DefaultReferencesKey}
 	v.extraSpans = e.occurrenceSpans
+	v.editable = true
 	e.popups.over = -1
 	e.mouse.e = e
 	v.selecting = &e.mouse
