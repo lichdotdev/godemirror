@@ -114,7 +114,7 @@ func newDemo() (*demo, error) {
 		return nil, err
 	}
 	editor.RectangularSelection = true
-	editor.Complete, editor.CompletionTriggers = completeWords, []string{"."}
+	editor.Complete, editor.CompletionTriggers = complete, []string{"."}
 	editor.IndentWithTab, editor.CloseBrackets = true, true
 	diff.Split = true
 	diff.SetDocs("server.go", original, modified)
