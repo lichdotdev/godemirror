@@ -21,7 +21,7 @@ numbers and a language server. godemirror is a Gio widget instead. You lay out i
 your colors, and attach gopls or any LSP server in a few lines.
 
 <p align="center">
-  <img src="docs/media/tour.webp" alt="Typing in the Editor with gopls: the completion menu opens and Since is taken, a snippet field is filled, signature help shows the active parameter of http.Error in bold, and Ctrl+click on ErrNotFound glides up to its definition" width="880" />
+  <img src="docs/media/tour.webp" alt="Typing in the Editor with gopls: the completion menu opens and Since is taken, signature help opens on its parameter while the snippet field is filled, signature help shows the active parameter of http.Error in bold, hovering ErrNotFound shows its declaration and documentation, and Ctrl+click on it glides up to its definition" width="880" />
 </p>
 
 ## Why godemirror
