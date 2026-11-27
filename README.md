@@ -1,98 +1,106 @@
 <div align="center">
   <h1>godemirror</h1>
-  <p><strong>CodeMirror, native to Go.</strong></p>
-  <p>
-    A code view and a diff view for <a href="https://gioui.org">Gio</a>:
-    syntax-highlighted code with a line gutter, wrapping or sideways scrolling,
-    selection and copy, line decorations, widgets on and between lines,
-    diffs unified or side by side, and an opt-in editor. Drawn as one image per
-    visible row, so a full screen of code costs a handful of quads.
-  </p>
+  <p><strong>A code editor library for Go and <a href="https://gioui.org">Gio</a>, with a language-server client, a code view and a diff view.</strong></p>
   <p>
     <a href="https://pkg.go.dev/github.com/lichdotdev/godemirror"><img alt="Go Reference" src="https://pkg.go.dev/badge/github.com/lichdotdev/godemirror.svg" /></a>
     <a href="https://github.com/lichdotdev/godemirror/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/lichdotdev/godemirror/actions/workflows/ci.yml/badge.svg" /></a>
     <img alt="Go" src="https://img.shields.io/badge/Go-1.27-00ADD8?logo=go&logoColor=white" />
     <img alt="Gio" src="https://img.shields.io/badge/Gio-v0.10-333" />
-    <img alt="Platform" src="https://img.shields.io/badge/platform-Linux-333" />
+    <img alt="Platform" src="https://img.shields.io/badge/tested%20on-Linux-333" />
     <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/license-MIT-blue" /></a>
   </p>
-  <img src="docs/media/diff.png" alt="A DiffView side by side: deletions on the left and additions on the right, unchanged runs collapsed behind expanders, filler rows hatched where only one side has lines, the words that changed within a line tinted, and the chunk under the pointer lit with its Revert" width="1000" />
+  <img src="docs/media/hero.png" alt="The godemirror Editor on a Go file with gopls attached: wavy underlines and gutter dots on two errors, and the completion menu for time.Sin with Since chosen and its documentation beside the menu" width="880" />
 </div>
+
+<p align="center">
+  <img src="docs/media/tour.webp" alt="Typing in the Editor with gopls: the completion menu opens and Since is taken, a snippet field is filled, signature help shows the active parameter of http.Error in bold, and Ctrl+click on ErrNotFound glides up to its definition" width="880" />
+</p>
 
 ## Why godemirror
 
-On the web, an app that shows code reaches for
-[CodeMirror](https://codemirror.net): highlighting, decorations, widgets
-between lines, a merge view. A native Go app has had nothing like it, and
-drawing code with a GUI toolkit's text stack is slow at full screen.
-godemirror brings that experience to Go: file previews, diffs, code review,
-logs, and, when you ask for it, an editor whose document and selection follow
-CodeMirror 6's own rules.
+- **Native, no webview.** A Go program draws code with Gio: no browser, no
+  JavaScript, no IPC, and it builds with `CGO_ENABLED=0`.
+- **One image per visible row.** Text is rasterized into row images and
+  cached, so a full screen of code costs a handful of quads, and a
+  13,000-line file shows at once.
+- **Lezer grammars, running natively.** CSS, Go, HTML, Java, JavaScript,
+  TypeScript, Python and Rust are parsed by a Go port of CodeMirror's Lezer,
+  off the UI goroutine, and tagged exactly as CodeMirror tags them.
+- **A language server, built in.** Diagnostics, completion, hover, signature
+  help, go to definition, references, rename, code actions, formatting and an
+  outline, from any LSP server, with a catalog of 428 of them.
+- **Diffs with a revert.** Unified or side by side, unchanged runs collapsed,
+  the words that changed tinted, a Revert on each chunk.
 
-godemirror lets you:
+## Features
 
-- **Show code that reads like code.** Monospace rows highlighted from the file
-  name and colored by a `HighlightStyle`, as in CodeMirror. CSS, Go, HTML, Java,
-  JavaScript, TypeScript, Python and Rust are parsed by a Go port of
-  CodeMirror's own Lezer parser and grammars, and Kotlin and shell scripts by
-  a port of the `@codemirror/legacy-modes` modes CodeMirror reads them with, so
-  they are tagged exactly as CodeMirror tags them; other languages are read by
-  [chroma](https://github.com/alecthomas/chroma) and tagged with the
-  CodeMirror tags their Lezer grammars give the same constructs. `StyleTags`
-  make a Lezer grammar's tags finer, as CodeMirror's `styleTags` does
-  (`RicherJavaTags`, `RicherGoTags`, `RicherJavaScriptTags`, `RicherPythonTags`, `RicherRustTags`), and
-  `StyleRule.Names` tags a name by its text, as `GoBuiltinTags` and its siblings do for builtins.
-  The themes: `DarkTheme`, `LightTheme`, a ported CodeMirror theme (`OneDark`,
-  `Dracula`, `GitHubLight`, `GitHubDark`, `Nord`) or a theme of your own. Highlighting runs off the UI
-  goroutine: a 13,000-line file shows at once and takes its colors when they are
-  ready.
-- **Wrap, or don't.** Lines break after spaces the way CSS `pre-wrap` does, each
-  continuation row hanging under its line's own indentation, or scroll sideways
-  with Shift and the wheel.
-- **Decorate lines.** Tint a line and its gutter cell, put a strip down the
-  gutter, rule a separator, hatch a filler row, and replace the line numbers
-  with labels of your own: everything a diff needs.
-- **Put widgets on lines.** Any Gio widget after a line's text or against the
-  right edge (an *Expand 44 unchanged lines* button, a *Revert*), optionally
-  shown only while the pointer is over the line's hover group.
-- **Open space between lines.** A `BlockWidget` lays out any Gio widget under a
-  line: a review thread, a comment box with an Editor. Its state is yours, so
-  rebuilding the content around it never loses what was being typed.
-- **Split side by side.** Two documents row for row, scrolling down together and
-  sideways each on its own. Unlike two CodeMirror editors, the split can wrap: a
-  pair of lines takes the taller side's rows, and a block on one side leaves the
-  same room on the other.
-- **Show a diff.** `DiffView` diffs two documents itself or shows a file of a
-  `git diff` patch: unified with old and new line numbers, or side by side,
-  unchanged runs collapsed behind an expander, a Revert on each chunk, and
-  review threads anchored to file lines. Its colors are part of the theme.
-- **Search.** `SetSearch` highlights every match of a literal or a regexp,
-  case-sensitive or not, whole words or not; `FindNext` and `FindPrevious` walk
-  the matches, wrapping, selecting each one and scrolling it into view. The
-  search box is yours to draw. In a `DiffView` one query looks through the
-  unified view and both sides of the split.
-- **Edit, when asked.** An `Editor` holds an `EditorState`, a port of
-  `@codemirror/state`: a document, a selection of one or more ranges, and
-  transactions you `Dispatch` to change them, as one change set each. The user
-  types (input methods included), moves and selects with CodeMirror's standard
-  keymap and its mouse selection, adds cursors above and below, at the next
-  occurrence (Ctrl+D) or at every one, or drags a rectangle with Alt, copies,
-  cuts and pastes, and undoes and redoes as CodeMirror's history groups the
-  changes; Enter keeps the line's indentation in your `IndentUnit`. It reports
-  what changed through `OnUpdate`, after the frame, so you can read the new
-  document and map your own positions through the changes. Everything else
-  stays read-only.
-- **Select and copy.** Drag (past an edge the view scrolls along), double click
-  for a word, triple click for a line, Shift+click to extend, Ctrl+A and
-  Ctrl+C. Copying gives back the text as it was, tabs included, and
-  `SelectedLines` turns the selection into the line span an action works on.
-- **Jumps glide.** A scroll the program makes (`SetScrollTop`, `ScrollToLine`,
-  PageDown, a far cursor move in an `Editor`) slides there in 140 ms, eased
-  out; a jump of a few rows, the wheel and the touchpad stay direct.
-  `SnapScrollTop` and `ReduceMotion` land at once, and `OnScroll` hears only
-  the user's own scrolls.
+### Editor
 
-## Getting started
+`Editor` is the opt-in editable view, with the document model of CodeMirror 6
+ported to Go: transactions, change sets you can map positions through,
+multiple cursors (Ctrl+D, Ctrl+Alt+Up/Down, and Alt+drag for a rectangle with
+`RectangularSelection`), undo
+history that groups changes as CodeMirror does, input methods, snippets with
+fields Tab visits, and decorations and widgets that follow edits. Its hooks
+(`Complete`, `Hover`, `SignatureHelp`, `Definition`, `References`, `Rename`,
+`CodeActions`) take any source; `lsp` fills them from a language server.
+
+<img src="docs/media/diagnostics.png" alt="A diagnostic popup over an undefined name: the message after a red dot, and the source and code under it" width="640" />
+
+### Language servers
+
+`lsp` is a Language Server Protocol 3.17 client: `lsp.Start` runs a server,
+`lsp.Attach` binds it to an `Editor`, and from then on edits go to the server
+and its answers show in the editor. Diagnostics are underlined with a dot in
+the gutter, F8 walks them, and hover renders the server's Markdown with its
+code highlighted. Ctrl+. or the bulb lists the code actions on a line, F2
+renames in place, F12 and Ctrl+click go to a definition, and Shift+F12
+highlights the references. `Document.Format` and `Document.Symbols` format the
+document and list its outline. `lsp/servers` knows which server a file wants
+and how to install it: `servers.Lookup("main.go")` returns gopls first.
+
+<p>
+  <img src="docs/media/code-actions.png" alt="The code actions of gopls listed under an undefined name, the bulb in the gutter" width="430" />
+  <img src="docs/media/rename.png" alt="F2 opens an input over the name started, holding it selected" width="430" />
+</p>
+
+### Code view
+
+`View` shows a document read-only, with a line gutter, selection and copy,
+search, decorations on lines, any Gio widget on a line or between lines, and
+`Split` shows two side by side, row for row. Lines wrap the way CSS `pre-wrap`
+does, each continuation row hanging under its line's indentation, or scroll
+sideways. A scroll the program makes glides there in 140 ms.
+
+<img src="docs/media/wrap.png" alt="A Go file wrapped to a narrow width, each continuation row hanging under its line's indentation" width="620" />
+
+### Diff view
+
+`DiffView` diffs two documents itself, or shows a file of a `git diff` patch,
+unified or side by side: unchanged runs collapsed behind expanders, the words
+that changed within a line tinted, a Revert on the chunk under the pointer, and
+review threads anchored to file lines.
+
+<img src="docs/media/diff.png" alt="A DiffView side by side: a deleted line and an added one, words that changed tinted, an unchanged run collapsed, and a Revert on the chunk under the pointer" width="880" />
+
+### Highlighting
+
+A file's language is picked by its name. Lezer grammars, and the Kotlin and
+shell modes of CodeMirror's legacy modes, tag code exactly as CodeMirror does;
+other languages are read by [chroma](https://github.com/alecthomas/chroma) and
+given the same tags. `StyleTags` make a grammar's tags finer
+(`RicherGoTags` and its siblings), and `Highlight` hands the highlighted runs
+of any text to a caller that draws it.
+
+### Themes
+
+`DarkTheme` and `LightTheme`, CodeMirror themes ported spec for spec
+(`OneDark`, `GitHubLight`, `GitHubDark`, `Dracula`, `Nord`), or a theme of your
+own built from a `HighlightStyle`.
+
+<img src="docs/media/themes.png" alt="The same Go code in DarkTheme, LightTheme, OneDark, GitHubLight, Dracula and Nord" width="760" />
+
+## Quick start
 
 godemirror needs **Go 1.27** or later.
 
@@ -100,184 +108,106 @@ godemirror needs **Go 1.27** or later.
 go get github.com/lichdotdev/godemirror
 ```
 
+An `Editor` on a file, with the language server the catalog picks for it. This
+is the heart of [`cmd/examples/lsp`](cmd/examples/lsp/main.go), which compiles
+with the library; run it with `go run ./cmd/examples/lsp main.go`.
+
 ```go
-view, err := godemirror.New("JetBrainsMono Nerd Font", unit.Sp(13))
+editor, err := godemirror.NewEditor("monospace", unit.Sp(13))
+if err != nil {
+	return err
+}
+if err := editor.SetState(godemirror.EditorStateConfig{Filename: path, Doc: string(text)}); err != nil {
+	return err
+}
+
+srv := servers.Lookup(path)[0] // gopls for a .go file
+client, err := lsp.Start(ctx, lsp.Config{Command: srv.Command, RootDir: root, Settings: srv.Settings})
+if err != nil {
+	return err
+}
+defer client.Close()
+doc, err := lsp.Attach(client, editor, lsp.FileURI(path), lsp.Options{
+	LanguageID: servers.LanguageID(servers.FileType(path)),
+	Invalidate: window.Invalidate, // diagnostics arrive between frames
+})
+if err != nil {
+	return err
+}
+defer doc.Close()
+
+// in the frame loop, for each app.FrameEvent
+if _, err := editor.Layout(gtx); err != nil {
+	return err
+}
+```
+
+A read-only view:
+
+```go
+view, err := godemirror.New("monospace", unit.Sp(13))
 if err != nil {
 	return err
 }
 view.SetContent(godemirror.Content{Filename: "main.go", Text: source})
-
-// in your frame loop
-if _, err := view.Layout(gtx); err != nil {
-	return err
-}
+// in the frame loop: view.Layout(gtx)
 ```
 
-To edit, build an `Editor` instead and change its document with transactions:
+A diff, side by side, with a revert:
 
 ```go
-editor, err := godemirror.NewEditor("JetBrainsMono Nerd Font", unit.Sp(13))
+diff, err := godemirror.NewDiffView("monospace", unit.Sp(13), godemirror.DiffOptions{
+	Collapse: &godemirror.Collapse{Margin: 3, MinSize: 4},
+	Revert:   func(c godemirror.Chunk) { /* put c.Lines back in the file */ },
+})
 if err != nil {
 	return err
 }
-if err := editor.SetState(godemirror.EditorStateConfig{Filename: "main.go", Doc: source}); err != nil {
-	return err
-}
-editor.OnUpdate = func(u godemirror.Update) {
-	if u.DocChanged() {
-		save(u.State.Doc())
-	}
-}
-// replace bytes [from, to) of the document, as one transaction
-err = editor.Dispatch(godemirror.TransactionSpec{
-	Changes: []godemirror.ChangeSpec{{From: from, To: to, Insert: "resolved"}},
-})
+diff.Split = true
+diff.SetDocs("main.go", original, modified)
+// in the frame loop: diff.Layout(gtx)
 ```
 
-An editor's positions are byte offsets into `EditorState.Doc`, whose lines are
-joined by `"\n"` (`LineSeparator` keeps a CRLF file CRLF in `SliceDoc`); the
-read-only views count a `Pos` column in runes.
+An `Editor` counts positions in UTF-8 bytes of `EditorState.Doc`; the read-only
+views count a `Pos` column in runes.
 
-`Content` also carries `Labels`, `Decorations`, `Widgets` and `Blocks`, indexed
-by document line. `SetContent` shows a new document from its top;
-`UpdateContent` swaps in a new version of the same one (a diff with lines pulled
-in) without moving the scroll. For two sides, build a `godemirror.Split` and
-give `Left` and `Right` their own content.
+## Compared with CodeMirror
 
-### Language servers
-
-`lsp` is a Language Server Protocol client: start a server, attach an `Editor`
-to a document, and the editor shows the server's diagnostics and offers its
-completions, hover and go to definition.
-
-```go
-client, err := lsp.Start(ctx, lsp.Config{Command: []string{"gopls"}, RootDir: root})
-if err != nil {
-	return err
-}
-doc, err := lsp.Attach(client, editor, lsp.FileURI(path), lsp.Options{
-	LanguageID: "go",
-	Invalidate: window.Invalidate, // diagnostics arrive between frames
-})
-editor.OnDefinition = func(l godemirror.Location) { open(l.URI, l.Start) }
-// doc.Save() after writing the file, doc.Close() when it closes
-```
-
-The editor's hooks (`SetDiagnostics`, `Complete`, `Hover`, `SignatureHelp`,
-`Definition`, `References`, `Rename`, `CodeActions` and the rest) take any
-source, not only a language server; `doc.Format(ctx)` and `doc.Symbols(ctx)`
-format the document and list its outline. `lsp/servers` is a catalog of servers
-converted from nvim-lspconfig and mason-registry: `servers.Lookup("main.go")`
-returns the candidates for a file, the common one first, with its command,
-root markers, default settings and an install recipe. It only describes; it
-never runs a server or an install.
-
-The deliberate limits, and what they mean for a caller, are in
-[`docs/ceilings.md`](docs/ceilings.md).
-
-## Coming from CodeMirror
+godemirror started as a port of CodeMirror 6 and keeps what it ported checked
+against the real packages; what CodeMirror lacks, it builds.
 
 | CodeMirror 6 | godemirror |
 |---|---|
-| `EditorView` with `EditorState.readOnly` | `View` |
-| `EditorView`, `EditorState.create` | `Editor`, `NewEditor`, `SetState(EditorStateConfig)` |
-| `view.dispatch(spec)`, `updateListener` | `Dispatch(TransactionSpec)`, `OnUpdate` |
-| `ChangeSet`, `mapPos`, `MapMode` | `ChangeSet`, `MapPos`, `MapPosTrack` |
-| `EditorSelection`, `SelectionRange`, `allowMultipleSelections` | `EditorSelection`, `SelectionRange`, `EditorStateConfig.AllowMultipleSelections` |
-| `changeByRange`, `replaceSelection` | `ChangeByRange`, `ReplaceSelection` |
-| `standardKeymap`, `drawSelection`, `indentUnit`, `view.focus()` | built into `Editor`, `Theme.Cursor`, `EditorStateConfig.IndentUnit`, `Focus` |
-| `addCursorAbove`, `addCursorBelow`, `simplifySelection` | built into `Editor` (Ctrl+Alt+Up/Down, Escape) |
-| `EditorView.domEventHandlers({keydown})`, `coordsAtPos` | `Editor.OnKey`, `Editor.CoordsAtPos` |
-| `rectangularSelection()`, `crosshairCursor()` | `Editor.RectangularSelection`, `Editor.CrosshairCursor` |
-| `selectNextOccurrence`, `selectSelectionMatches` | built into `Editor` (Ctrl+D, Ctrl+Shift+L) |
-| `history()`, `undo`, `redo`, `undoDepth`, `redoDepth` | built into `Editor`, `Undo`, `Redo`, `UndoDepth`, `RedoDepth` |
-| `isolateHistory`, `Transaction.addToHistory`, `Transaction.time` | `TransactionSpec.IsolateHistory`, `SkipHistory`, `Time` |
-| `Decoration.line`, `Decoration.widget` in a state field, `RangeSet.map` | `LineDecorationAt`, `LineWidgetAt` in `Decorations`, set by `EditorStateConfig` or `TransactionSpec.Decorations` and mapped through every change |
-| `EditorView.lineWrapping` | `View.Wrap` |
-| `EditorView.theme` | `Theme` |
-| `tags` (`@lezer/highlight`), `HighlightStyle.define` | package `tags`, `NewHighlightStyle` |
-| `highlightCode` (`@lezer/highlight`) | `Highlight` |
-| `lineNumbers({formatNumber})` | `Content.Labels` |
-| `Decoration.line`, `gutterLineClass` | `LineDecoration` |
-| `Decoration.mark` | `LineDecoration.Spans` |
-| `Decoration.widget` | `LineWidget` (on a line), `BlockWidget` (between lines) |
-| `state.selection`, `dispatch({selection})` | `Selection`, `Select`, `SelectLines` |
-| `SearchQuery`, `findNext`, `findPrevious` | `SearchQuery`, `SetSearch`, `FindNext`, `FindPrevious`, `Matches` (no panel: draw your own search box) |
-| `EditorView.scrollIntoView` | `ScrollToLine` |
-| `scrollDOM.scrollTop`, `lineBlockAt`, `lineBlockAtHeight`, `contentHeight` | `ScrollTop`, `SetScrollTop` (`SnapScrollTop`, `ScrollTarget`), `LineBlock` (`LineBlockAt` on an `Editor`), `LineAtHeight` (`LineBlockAtHeight`), `ContentHeight`, and `OnScroll` |
-| `state.doc.lines`, `doc.line(n)` | `LineCount`, `LineText` |
-| `MergeView`, `unifiedMergeView` | `DiffView` (`Split` on or off) |
-| `collapseUnchanged` | `DiffOptions.Collapse`, or the gaps of a patch |
-| `mergeControls` | `DiffOptions.Revert`, `Chunks` |
-| `highlightChanges` | `DiffOptions.HighlightChanges` |
+| `EditorView`, `EditorState`, `view.dispatch`, `updateListener` | `Editor`, `EditorState`, `Dispatch`, `OnUpdate` |
+| `ChangeSet`, `EditorSelection`, `history()` | `ChangeSet`, `EditorSelection`, built into `Editor` |
+| `@codemirror/autocomplete`, `@codemirror/lint`, `hoverTooltip` | `Complete`, `SetDiagnostics`, `Hover` |
+| `@codemirror/lsp-client` | package `lsp`, with rename, code actions and formatting |
+| `EditorView` read-only, `lineWrapping` | `View`, `View.Wrap` |
+| `MergeView`, `unifiedMergeView` | `DiffView` |
+| `HighlightStyle.define`, `@lezer/highlight` | `NewHighlightStyle`, package `tags` |
 
-## The diff view
-
-`DiffView` shows the difference between two versions of a file, the way
-CodeMirror's merge view does: unified, with the old and the new line number
-side by side in the gutter, or side by side, with each deletion paired with
-the addition that replaced it.
-
-```go
-diff, err := godemirror.NewDiffView("JetBrainsMono Nerd Font", unit.Sp(13), godemirror.DiffOptions{
-	Collapse:         &godemirror.Collapse{Margin: 3, MinSize: 4},
-	HighlightChanges: true,
-	Revert:           func(c godemirror.Chunk) { /* put c.Lines back in the file */ },
-})
-if err != nil {
-	return err
-}
-diff.SetDocs("main.go", original, modified)
-
-// in your frame loop
-if _, err := diff.Layout(gtx); err != nil {
-	return err
-}
-```
-
-`SetDocs` diffs two documents itself. To show what git already diffed, read the
-patch with `ParsePatch` and pass a file to `SetPatch`; the unchanged lines git
-left out are asked for through `DiffOptions.Expand` and laid in with `FillGap`,
-in as many parts as your backend answers in. `Chunks`, `SelectedRange` and
-`SelectedChanges` read the diff in file line numbers, and `SetBlocks` anchors
-a review thread to a line of either file. The colors live in `Theme.Diff`, in
-both `DarkTheme` and `LightTheme`.
-
-For a narrow view, `DiffOptions.UnifiedGutter` set to `OneColumnGutter` numbers a
-unified diff's rows once (the new file's number, or the old one's for a deleted
-line), and `RevertPlacement` set to `RevertInGutter` puts the revert over the
-chunk's first line number instead of over the end of the code. `Height(gtx,
-width)` is how tall the rows are at a width, wrapped or not, unified or split,
-for a caller that gives each diff exactly the room it needs.
+**Limits.** What godemirror does not do, and the traps a caller should know,
+are in [`docs/ceilings.md`](docs/ceilings.md).
 
 ## The demo
 
-`cmd/godemirror-demo` shows what the library draws, in a window or headless: a
-file in a `View` or an `Editor`, or a diff in a `DiffView`, with expandable gaps, Revert on
-hover and comments anchored to lines as `DiffBlock`s.
+`cmd/godemirror-demo` shows what the library draws, in a window or headless:
 
 ```bash
-go run ./cmd/godemirror-demo -file view.go                   # a file
-go run ./cmd/godemirror-demo -old a.go -file b.go -changes   # a diff of two files
-git diff > /tmp/change.patch
-go run ./cmd/godemirror-demo -diff /tmp/change.patch -new path/to/changed/file -split
+go run ./cmd/godemirror-demo -edit -file main.go -lsp gopls   # an Editor with gopls
+go run ./cmd/godemirror-demo -old a.go -file b.go -split       # a diff of two files
+go run ./cmd/godemirror-demo -file view.go -wrap -theme nord   # a wrapped View
 ```
 
-In the window: **Alt+W** toggles wrapping, **Alt+S** switches a diff between
-unified and side by side, and **Alt+N** opens a comment under the selected
-lines. Reverting a chunk of two files puts it back and shows the diff again.
-`-narrow` uses the narrow gutter, `-search text` highlights its matches and selects the first (with `-edit`,
-which shows the file in an `Editor`, it selects them all), `-light` uses
-`LightTheme`, and `-bench N` with `-shot out.png` runs it headless
-and reports frame times. With `-edit`, `-lsp gopls` attaches a language server
-started in the file's directory; headless, `-at line:col` and `-type text` type
-at a place, `-hover x,y` rests the pointer (with `-ctrl`, Ctrl held), and
-`-wait 4s` keeps drawing until the server has answered, and `-key Shift+F12`
-then presses a key; `-format` formats the file through the server, and
-`-settings '{"gopls":{...}}'` gives the server its settings, and `-symbols`
-prints the file's outline.
+Headless, `-shot out.png` writes the last frame, `-scale 2` draws it sharp,
+and `-record script -frames dir` runs a script of keys, typing and clicks and
+writes every frame; `go run ./cmd/godemirror-demo -h` lists the rest.
 
 ## Requirements
+
+Linux is the platform godemirror is built and tested on. macOS and Windows
+build, and find fonts by scanning their font directories, but CI does not run
+there yet.
 
 - **Go 1.27**. The library is pure Go and builds with `CGO_ENABLED=0`; the demo
   opens a window through Gio's `app` package, which needs a C toolchain on
