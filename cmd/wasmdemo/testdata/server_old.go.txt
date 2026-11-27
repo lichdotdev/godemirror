@@ -1,0 +1,71 @@
+// Package inventory serves the stock of a small shop over HTTP.
+package inventory
+
+import (
+	"encoding/json"
+	"errors"
+	"net/http"
+	"sync"
+	"time"
+)
+
+// Item is a product on the shelves.
+type Item struct {
+	SKU      string    `json:"sku"`
+	Name     string    `json:"name"`
+	Quantity int       `json:"quantity"`
+	Updated  time.Time `json:"updated"`
+}
+
+// ErrNotFound is returned for a SKU the store does not carry.
+var ErrNotFound = errors.New("inventory: item not found")
+
+// Store keeps the items in memory, safe for concurrent use.
+type Store struct {
+	mu    sync.RWMutex
+	items map[string]Item
+}
+
+// ServeHTTP answers GET /items/{sku} with the item as JSON.
+func (s *Store) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	sku := r.PathValue("sku")
+	started := time.Now()
+	item, err := s.Get(sku)
+	if errors.Is(err, ErrNotFound) {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(item); err != nil {
+		logFailure(sku, err)
+	}
+	
+}
+
+// Get returns the item with the given SKU.
+func (s *Store) Get(sku string) (Item, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	item, ok := s.items[sku]
+	if !ok {
+		return Item{}, ErrNotFound
+	}
+	return item, nil
+}
+
+// Restock adds n units of an item, creating it when it is new.
+func (s *Store) Restock(sku, name string, n int) Item {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	item := s.items[sku]
+	item.SKU, item.Name = sku, name
+	item.Quantity += n
+	item.Updated = time.Now()
+	s.items[sku] = item
+	return item
+}
+
+// NewStore returns an empty store.
+func NewStore() *Store {
+	return &Store{items: make(map[string]Item)}
+}
