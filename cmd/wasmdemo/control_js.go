@@ -9,7 +9,7 @@ import (
 
 // listen lets the page drive the demo: godemirrorShow("editor" or "diff"),
 // godemirrorSplit(bool), godemirrorTheme(index), godemirrorWrap(bool),
-// godemirrorPlay() for the scripted edit, godemirrorStop() to end it, and
+// godemirrorPlay(auto) for the scripted edit, godemirrorStop() to end it, and
 // godemirrorEmbed() to hide the demo's own buttons. The page hears they are
 // there through godemirrorReady, after the first frame.
 func listen(send func(func(*demo))) {
@@ -33,7 +33,13 @@ func listen(send func(func(*demo))) {
 		return nil
 	}))
 	var playing atomic.Bool
-	g.Set("godemirrorPlay", js.FuncOf(func(js.Value, []js.Value) any {
+	g.Set("godemirrorPlay", js.FuncOf(func(_ js.Value, args []js.Value) any {
+		// godemirrorPlay(true) is the page playing on its own, which waits
+		// for no one once the user has touched the demo.
+		if len(args) > 0 && args[0].Truthy() && interrupted.Load() {
+			return nil
+		}
+		interrupted.Store(false)
 		// A play asked while one runs is dropped: the two would type into
 		// each other.
 		if playing.CompareAndSwap(false, true) {

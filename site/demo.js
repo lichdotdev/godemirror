@@ -18,6 +18,7 @@
     theme: (i) => call("Theme", i),
     wrap: (on) => call("Wrap", on),
     play: () => call("Play"),
+    autoplay: () => call("Play", true),
     whenReady: (f) => (ready ? f() : queue.push(f)),
   };
   window.addEventListener("message", (e) => {
@@ -32,7 +33,7 @@
   new IntersectionObserver((entries) => {
     if (!played && entries.some((e) => e.intersectionRatio >= 0.5)) {
       played = true;
-      setTimeout(() => window.demo.play(), 600);
+      setTimeout(() => window.demo.autoplay(), 600);
     }
   }, { threshold: [0.5] }).observe(host);
 

@@ -23,14 +23,14 @@ const (
 
 var skuWord = regexp.MustCompile(`\bsku\b`)
 
-// interrupted stops the script: the user pressed or typed in the demo, and
-// the script would go on moving the cursor and typing under them.
+// interrupted stops the script, and keeps it from playing on its own: the
+// user pressed or typed in the demo, and the script would reset the file and
+// move the cursor under them. Only a replay they ask for clears it.
 var interrupted atomic.Bool
 
 // play runs the script on the file as it opened, each step sent to the UI
 // goroutine through do, in order, until interrupted.
 func play(send func(func(*demo))) {
-	interrupted.Store(false)
 	do := func(f func(*demo)) {
 		if !interrupted.Load() {
 			send(func(d *demo) {

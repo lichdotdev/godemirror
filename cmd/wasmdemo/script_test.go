@@ -6,6 +6,7 @@ import (
 )
 
 func TestAnInterruptedPlayStopsSendingSteps(t *testing.T) {
+	interrupted.Store(false)
 	steps := 0
 	send := func(func(*demo)) {
 		steps++
