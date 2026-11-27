@@ -7,7 +7,7 @@ root=$(cd "$(dirname "$0")/.." && pwd)
 out=${1:-$root/_site}
 rm -rf "$out"
 mkdir -p "$out/media"
-cp "$root"/site/index.html "$root"/site/demo.js "$root"/site/demo-frame.html "$out"/
+cp "$root"/site/index.html "$root"/site/demo.js "$root"/site/demo-frame.html "$root"/site/icon.svg "$root"/site/favicon.ico "$root"/site/apple-touch-icon.png "$out"/
 for f in hero.png diagnostics.png code-actions.png rename.png tour.webp social-preview.png; do
 	cp "$root/docs/media/$f" "$out/media/"
 done
